@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "archetype",
+  "version": "${version}",
+  "name": "Archetype",
+  "description": "Class system for Minecraft. Pick a class, gain unique abilities and passives.",
+  "authors": ["ZorahM"],
+  "contact": {},
+  "license": "All Rights Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.mod.archetype.fabric.ArchetypeFabric"],
+    "client": ["com.mod.archetype.fabric.ArchetypeFabricClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "architectury": ">=9"
+  }
+}

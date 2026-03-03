@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "All Rights Reserved"
+
+[[mods]]
+modId = "archetype"
+version = "${version}"
+displayName = "Archetype"
+authors = "ZorahM"
+description = '''
+Class system for Minecraft. Pick a class, gain unique abilities and passives.
+'''
+
+[[dependencies.archetype]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.archetype]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.archetype]]
+modId = "architectury"
+mandatory = true
+versionRange = "[9,)"
+ordering = "AFTER"
+side = "BOTH"
