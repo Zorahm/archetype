@@ -1,0 +1,90 @@
+{
+  "name": "class.archetype.ram.name",
+  "description": "class.archetype.ram.description",
+  "icon": "archetype:textures/gui/class/ram.png",
+  "color": "CC2200",
+  "category": "DAMAGE",
+  "size_modifier": 1.25,
+  "lore": [
+    "class.archetype.ram.lore_1"
+  ],
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.max_health",
+      "operation": "ADDITION",
+      "value": 2.0
+    },
+    {
+      "attribute": "minecraft:generic.attack_speed",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.2
+    },
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "operation": "MULTIPLY_BASE",
+      "value": 0.1
+    }
+  ],
+  "passive_abilities": [
+    {
+      "type": "archetype:fire_immunity",
+      "params": {},
+      "positive": true,
+      "name": "passive.archetype.ram.hot_blood.name",
+      "description": "passive.archetype.ram.hot_blood.description"
+    },
+    {
+      "type": "archetype:fire_attack",
+      "params": {},
+      "positive": true,
+      "name": "passive.archetype.ram.fire_conspiracy.name",
+      "description": "passive.archetype.ram.fire_conspiracy.description"
+    },
+    {
+      "type": "archetype:destroy_holy_items",
+      "params": {},
+      "positive": false,
+      "name": "passive.archetype.ram.enemy_of_angel.name",
+      "description": "passive.archetype.ram.enemy_of_angel.description"
+    },
+    {
+      "type": "archetype:shield_block",
+      "params": {},
+      "positive": false,
+      "name": "passive.archetype.ram.growth_problems.name",
+      "description": "passive.archetype.ram.growth_problems.description"
+    },
+    {
+      "type": "archetype:tool_fragility",
+      "params": {},
+      "positive": false,
+      "name": "passive.archetype.ram.fragile_world.name",
+      "description": "passive.archetype.ram.fragile_world.description"
+    }
+  ],
+  "active_abilities": [
+    {
+      "type": "archetype:rage_dash",
+      "slot": "ability_1",
+      "cooldown": 0,
+      "resource_cost": 10,
+      "unlock_level": 1,
+      "params": {
+        "dash_speed": 4.0,
+        "knockback_strength": 1.5
+      },
+      "name": "ability.archetype.ram.rage.name",
+      "description": "ability.archetype.ram.rage.description",
+      "icon": "archetype:textures/gui/ability/rage.png"
+    }
+  ],
+  "resource": {
+    "type": "resource.archetype.rage",
+    "max": 100,
+    "start": 0,
+    "drain_per_second": 0,
+    "regen_per_second": 1.67,
+    "color": "FF4400",
+    "icon": "archetype:textures/gui/resource/rage.png"
+  }
+}

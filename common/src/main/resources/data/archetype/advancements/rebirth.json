@@ -1,0 +1,19 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:totem_of_undying"
+    },
+    "title": {"translate": "advancement.archetype.rebirth.title"},
+    "description": {"translate": "advancement.archetype.rebirth.description"},
+    "frame": "challenge"
+  },
+  "parent": "archetype:choose_class",
+  "criteria": {
+    "rebirth": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "rebirth"
+      }
+    }
+  }
+}

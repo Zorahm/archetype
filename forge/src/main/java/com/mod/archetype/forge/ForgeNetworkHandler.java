@@ -13,6 +13,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class ForgeNetworkHandler implements NetworkHandler {
@@ -54,13 +55,14 @@ public class ForgeNetworkHandler implements NetworkHandler {
 
     @Override
     public <T> void registerServerReceiver(ResourceLocation id, Class<T> packetClass,
+                                            BiConsumer<T, FriendlyByteBuf> encoder,
                                             Function<FriendlyByteBuf, T> decoder,
                                             ServerPacketHandler<T> handler) {
         int thisId = packetId++;
         packetIds.put(packetClass, thisId);
 
         CHANNEL.registerMessage(thisId, packetClass,
-                (packet, buf) -> {}, // encode delegated to packet itself
+                encoder::accept,
                 decoder::apply,
                 (packet, ctx) -> {
                     ctx.get().enqueueWork(() -> {
@@ -77,13 +79,14 @@ public class ForgeNetworkHandler implements NetworkHandler {
 
     @Override
     public <T> void registerClientReceiver(ResourceLocation id, Class<T> packetClass,
+                                            BiConsumer<T, FriendlyByteBuf> encoder,
                                             Function<FriendlyByteBuf, T> decoder,
                                             ClientPacketHandler<T> handler) {
         int thisId = packetId++;
         packetIds.put(packetClass, thisId);
 
         CHANNEL.registerMessage(thisId, packetClass,
-                (packet, buf) -> {}, // encode delegated to packet itself
+                encoder::accept,
                 decoder::apply,
                 (packet, ctx) -> {
                     ctx.get().enqueueWork(() -> handler.handle(packet));

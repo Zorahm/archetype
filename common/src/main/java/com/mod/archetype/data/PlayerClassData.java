@@ -1,10 +1,12 @@
 package com.mod.archetype.data;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,6 +23,8 @@ public class PlayerClassData {
     private Map<ResourceLocation, Integer> cooldowns = new HashMap<>();
     private Set<Integer> activeConditionalSets = new HashSet<>();
     private Map<ResourceLocation, Boolean> toggleStates = new HashMap<>();
+    private long lastClassChangeTime;
+    private Set<ResourceLocation> triedClasses = new HashSet<>();
 
     @Nullable
     public ResourceLocation getCurrentClassId() {
@@ -83,6 +87,47 @@ public class PlayerClassData {
         }
     }
 
+    public boolean isOnCooldown(ResourceLocation abilityId) {
+        return cooldowns.containsKey(abilityId) && cooldowns.get(abilityId) > 0;
+    }
+
+    public int getRemainingCooldown(ResourceLocation abilityId) {
+        return cooldowns.getOrDefault(abilityId, 0);
+    }
+
+    public void tickCooldowns() {
+        cooldowns.entrySet().removeIf(entry -> {
+            int newTicks = entry.getValue() - 1;
+            if (newTicks <= 0) {
+                return true;
+            }
+            entry.setValue(newTicks);
+            return false;
+        });
+    }
+
+    public void addExperience(int amount, int maxLevel, int[] expTable) {
+        if (classLevel >= maxLevel) {
+            classExperience = 0;
+            return;
+        }
+        
+        classExperience += amount;
+        
+        while (classLevel < maxLevel && classExperience >= expTable[classLevel]) {
+            classExperience -= expTable[classLevel];
+            classLevel++;
+        }
+        
+        if (classLevel >= maxLevel) {
+            classExperience = 0;
+        }
+    }
+
+    public boolean canChangeClass(long currentTime, long cooldownTicks) {
+        return currentTime - lastClassChangeTime >= cooldownTicks;
+    }
+
     public Set<Integer> getActiveConditionalSets() {
         return activeConditionalSets;
     }
@@ -99,6 +144,26 @@ public class PlayerClassData {
         toggleStates.put(abilityId, state);
     }
 
+    public long getLastClassChangeTime() {
+        return lastClassChangeTime;
+    }
+
+    public void setLastClassChangeTime(long time) {
+        this.lastClassChangeTime = time;
+    }
+
+    public Set<ResourceLocation> getTriedClasses() {
+        return triedClasses;
+    }
+
+    public boolean hasTriedClass(ResourceLocation classId) {
+        return triedClasses.contains(classId);
+    }
+
+    public void addTriedClass(ResourceLocation classId) {
+        triedClasses.add(classId);
+    }
+
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
 
@@ -109,24 +174,32 @@ public class PlayerClassData {
         tag.putInt("Level", classLevel);
         tag.putInt("Experience", classExperience);
         tag.putFloat("Resource", resourceCurrent);
+        tag.putLong("LastChangeTime", lastClassChangeTime);
 
         CompoundTag cooldownTag = new CompoundTag();
         cooldowns.forEach((id, ticks) -> cooldownTag.putInt(id.toString(), ticks));
         tag.put("Cooldowns", cooldownTag);
 
-        int[] conditionalArray = activeConditionalSets.stream().mapToInt(Integer::intValue).toArray();
-        tag.putIntArray("ConditionalSets", conditionalArray);
-
         CompoundTag toggleTag = new CompoundTag();
         toggleStates.forEach((id, state) -> toggleTag.putBoolean(id.toString(), state));
         tag.put("Toggles", toggleTag);
+
+        ListTag triedTag = new ListTag();
+        triedClasses.forEach(id -> triedTag.add(StringTag.valueOf(id.toString())));
+        tag.put("TriedClasses", triedTag);
+
+        tag.putIntArray("ActiveCondSets", activeConditionalSets.stream().mapToInt(Integer::intValue).toArray());
 
         return tag;
     }
 
     public void load(CompoundTag tag) {
         if (tag.contains("ClassId")) {
-            currentClassId = new ResourceLocation(tag.getString("ClassId"));
+            try {
+                currentClassId = new ResourceLocation(tag.getString("ClassId"));
+            } catch (Exception e) {
+                currentClassId = null;
+            }
         } else {
             currentClassId = null;
         }
@@ -135,15 +208,19 @@ public class PlayerClassData {
         if (classLevel < 1) classLevel = 1;
         classExperience = tag.getInt("Experience");
         resourceCurrent = tag.getFloat("Resource");
+        lastClassChangeTime = tag.getLong("LastChangeTime");
 
         cooldowns.clear();
         CompoundTag cooldownTag = tag.getCompound("Cooldowns");
         for (String key : cooldownTag.getAllKeys()) {
-            cooldowns.put(new ResourceLocation(key), cooldownTag.getInt(key));
+            try {
+                cooldowns.put(new ResourceLocation(key), cooldownTag.getInt(key));
+            } catch (Exception ignored) {
+            }
         }
 
         activeConditionalSets.clear();
-        int[] conditionalArray = tag.getIntArray("ConditionalSets");
+        int[] conditionalArray = tag.getIntArray("ActiveCondSets");
         for (int i : conditionalArray) {
             activeConditionalSets.add(i);
         }
@@ -151,7 +228,19 @@ public class PlayerClassData {
         toggleStates.clear();
         CompoundTag toggleTag = tag.getCompound("Toggles");
         for (String key : toggleTag.getAllKeys()) {
-            toggleStates.put(new ResourceLocation(key), toggleTag.getBoolean(key));
+            try {
+                toggleStates.put(new ResourceLocation(key), toggleTag.getBoolean(key));
+            } catch (Exception ignored) {
+            }
+        }
+
+        triedClasses.clear();
+        ListTag triedTag = tag.getList("TriedClasses", 8);
+        for (int i = 0; i < triedTag.size(); i++) {
+            try {
+                triedClasses.add(new ResourceLocation(triedTag.getString(i)));
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -212,5 +301,26 @@ public class PlayerClassData {
         cooldowns.clear();
         activeConditionalSets.clear();
         toggleStates.clear();
+        lastClassChangeTime = 0;
+        triedClasses.clear();
+    }
+
+    public PlayerClassData copy() {
+        PlayerClassData copied = new PlayerClassData();
+        copied.currentClassId = this.currentClassId;
+        copied.classAssignedTime = this.classAssignedTime;
+        copied.classLevel = this.classLevel;
+        copied.classExperience = this.classExperience;
+        copied.resourceCurrent = this.resourceCurrent;
+        copied.lastClassChangeTime = this.lastClassChangeTime;
+        copied.cooldowns = new HashMap<>(this.cooldowns);
+        copied.activeConditionalSets = new HashSet<>(this.activeConditionalSets);
+        copied.toggleStates = new HashMap<>(this.toggleStates);
+        copied.triedClasses = new HashSet<>(this.triedClasses);
+        return copied;
+    }
+
+    public static int experienceForLevel(int level, int baseExp) {
+        return (int)(baseExp * Math.pow(level - 1, 1.5));
     }
 }

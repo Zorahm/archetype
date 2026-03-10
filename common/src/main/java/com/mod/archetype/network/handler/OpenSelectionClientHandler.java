@@ -10,8 +10,8 @@ public class OpenSelectionClientHandler {
         Minecraft.getInstance().execute(() -> {
             Archetype.LOGGER.debug("Opening class selection screen, mode={}",
                     packet.isReborn() ? "reborn" : "first_select");
-            // ClassSelectionScreen will be implemented in GUI module
-            // Minecraft.getInstance().setScreen(new ClassSelectionScreen(packet.isReborn()));
+            Minecraft.getInstance().setScreen(
+                    new com.mod.archetype.gui.ClassSelectionScreen(packet.isReborn() ? 1 : 0));
         });
     }
 }

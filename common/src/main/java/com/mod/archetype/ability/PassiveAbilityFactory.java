@@ -1,8 +1,8 @@
 package com.mod.archetype.ability;
 
-import com.google.gson.JsonObject;
+import com.mod.archetype.core.PlayerClass;
 
 @FunctionalInterface
 public interface PassiveAbilityFactory {
-    PassiveAbility create(JsonObject params);
+    PassiveAbility create(PlayerClass.PassiveAbilityEntry entry);
 }

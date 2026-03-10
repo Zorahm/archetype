@@ -1,0 +1,20 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:dragon_egg"
+    },
+    "title": {"translate": "advancement.archetype.reach_level_10.title"},
+    "description": {"translate": "advancement.archetype.reach_level_10.description"},
+    "frame": "challenge"
+  },
+  "parent": "archetype:reach_level_5",
+  "criteria": {
+    "reach_level": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "level_up",
+        "min_level": 10
+      }
+    }
+  }
+}

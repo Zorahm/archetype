@@ -4,11 +4,14 @@ import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbilityRegistry;
 import com.mod.archetype.ability.ActiveAbility;
 import com.mod.archetype.ability.PassiveAbility;
+import com.mod.archetype.advancement.ClassActionTrigger;
 import com.mod.archetype.condition.Condition;
 import com.mod.archetype.condition.ConditionRegistry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.NetworkHandler;
 import com.mod.archetype.platform.PlayerDataAccess;
+import com.mod.archetype.ability.active.RageDashAbility;
+import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -17,7 +20,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,29 +29,20 @@ public class ClassManager {
     private static final ClassManager INSTANCE = new ClassManager();
 
     private final Map<UUID, ActiveClassInstance> activeInstances = new ConcurrentHashMap<>();
-    private final Map<ResourceLocation, PlayerClass> classRegistry = new HashMap<>();
 
     public static ClassManager getInstance() {
         return INSTANCE;
     }
 
-    // --- Registry ---
-
-    public void registerClass(PlayerClass playerClass) {
-        classRegistry.put(playerClass.getId(), playerClass);
-    }
-
-    public void clearRegistry() {
-        classRegistry.clear();
-    }
+    // --- Registry (delegates to ClassRegistry) ---
 
     @Nullable
     public PlayerClass getClassDefinition(ResourceLocation id) {
-        return classRegistry.get(id);
+        return ClassRegistry.getInstance().get(id).orElse(null);
     }
 
     public Collection<PlayerClass> getAllClasses() {
-        return Collections.unmodifiableCollection(classRegistry.values());
+        return ClassRegistry.getInstance().getAll();
     }
 
     // --- Class Assignment ---
@@ -56,7 +50,7 @@ public class ClassManager {
     public AssignResult assignClass(ServerPlayer player, ResourceLocation classId) {
         assert !player.level().isClientSide : "assignClass must be called on server";
 
-        PlayerClass classDef = classRegistry.get(classId);
+        PlayerClass classDef = ClassRegistry.getInstance().get(classId).orElse(null);
         if (classDef == null) {
             return AssignResult.failure("archetype.error.class_not_found");
         }
@@ -110,6 +104,9 @@ public class ClassManager {
         // Publish event
         ArchetypeEvents.CLASS_ASSIGNED.invoker().onAssigned(player, classDef);
 
+        // Trigger advancements
+        ClassActionTrigger.INSTANCE.trigger(player, "choose_class", data.getClassLevel());
+
         Archetype.LOGGER.info("Player {} assigned class {}", player.getName().getString(), classId);
         return AssignResult.success();
     }
@@ -122,7 +119,7 @@ public class ClassManager {
             return AssignResult.failure("archetype.error.no_class");
         }
 
-        PlayerClass classDef = classRegistry.get(data.getCurrentClassId());
+        PlayerClass classDef = ClassRegistry.getInstance().get(data.getCurrentClassId()).orElse(null);
         ActiveClassInstance instance = activeInstances.get(player.getUUID());
 
         // Remove attribute modifiers
@@ -203,11 +200,9 @@ public class ClassManager {
             checkConditionalAttributes(player, instance, data);
         }
 
-        // Every 20 ticks: tick passives
-        if (tick % 20 == 0) {
-            for (PassiveAbility passive : instance.getActivePassives()) {
-                passive.tick(player);
-            }
+        // Every tick: tick passives (each passive manages its own frequency internally)
+        for (PassiveAbility passive : instance.getActivePassives()) {
+            passive.tick(player);
         }
 
         // Every 10 ticks: update resource drain/regen
@@ -227,7 +222,7 @@ public class ClassManager {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         if (!data.hasClass()) return;
 
-        PlayerClass classDef = classRegistry.get(data.getCurrentClassId());
+        PlayerClass classDef = ClassRegistry.getInstance().get(data.getCurrentClassId()).orElse(null);
         if (classDef != null && classDef.getResource() != null) {
             data.setResourceCurrent(classDef.getResource().startValue());
         }
@@ -238,7 +233,7 @@ public class ClassManager {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         if (!data.hasClass()) return;
 
-        PlayerClass classDef = classRegistry.get(data.getCurrentClassId());
+        PlayerClass classDef = ClassRegistry.getInstance().get(data.getCurrentClassId()).orElse(null);
         if (classDef == null) {
             // Class was removed from registry
             Archetype.LOGGER.warn("Player {} has class {} which no longer exists, removing",
@@ -261,7 +256,7 @@ public class ClassManager {
     public void onPlayerJoin(ServerPlayer player) {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         if (data.hasClass()) {
-            PlayerClass classDef = classRegistry.get(data.getCurrentClassId());
+            PlayerClass classDef = ClassRegistry.getInstance().get(data.getCurrentClassId()).orElse(null);
             if (classDef == null) {
                 Archetype.LOGGER.warn("Player {} has class {} which no longer exists, removing",
                         player.getName().getString(), data.getCurrentClassId());
@@ -273,8 +268,12 @@ public class ClassManager {
             applyAttributes(player, classDef);
             rebuildInstance(player, data);
             syncToClient(player);
+        } else {
+            // No class — open selection screen
+            NetworkHandler.INSTANCE.sendToPlayer(player,
+                    new com.mod.archetype.network.OpenClassSelectionPacket(
+                            com.mod.archetype.network.OpenClassSelectionPacket.MODE_FIRST_SELECT));
         }
-        // If no class and first join → open selection screen (handled by network/command layer)
     }
 
     public void onPlayerLeave(ServerPlayer player) {
@@ -452,7 +451,10 @@ public class ClassManager {
 
         float current = data.getResourceCurrent();
         float drain = resource.drainPerSecond() * 0.5f; // 10 ticks = 0.5 sec
-        float regen = resource.regenPerSecond() * 0.5f;
+
+        // Check if regen is blocked (e.g. by Ram's obsidian dome)
+        float regen = RageDashAbility.isRegenBlocked(player)
+                ? 0 : resource.regenPerSecond() * 0.5f;
 
         current = current - drain + regen;
         current = Math.max(0, Math.min(resource.maxValue(), current));
@@ -460,7 +462,7 @@ public class ClassManager {
     }
 
     private void rebuildInstance(ServerPlayer player, PlayerClassData data) {
-        PlayerClass classDef = classRegistry.get(data.getCurrentClassId());
+        PlayerClass classDef = ClassRegistry.getInstance().get(data.getCurrentClassId()).orElse(null);
         if (classDef == null) return;
 
         List<PassiveAbility> passives = new ArrayList<>();
@@ -484,7 +486,32 @@ public class ClassManager {
     }
 
     private void syncToClient(ServerPlayer player) {
-        // Will be implemented via SyncClassDataPacket in OPUS_03
+        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
+        if (!data.hasClass()) {
+            NetworkHandler.INSTANCE.sendToPlayer(player,
+                    new com.mod.archetype.network.SyncClassDataPacket(
+                            false, null, 0, 0, 0, 0,
+                            java.util.Map.of(), java.util.Map.of()));
+            return;
+        }
+
+        PlayerClass classDef = ClassRegistry.getInstance().get(data.getCurrentClassId()).orElse(null);
+        float resourceMax = classDef != null && classDef.getResource() != null
+                ? classDef.getResource().maxValue() : 0;
+
+        // Build cooldown entries
+        Map<ResourceLocation, com.mod.archetype.network.SyncClassDataPacket.CooldownEntry> cooldownEntries = new HashMap<>();
+        for (var entry : data.getCooldowns().entrySet()) {
+            cooldownEntries.put(entry.getKey(),
+                    new com.mod.archetype.network.SyncClassDataPacket.CooldownEntry(entry.getValue(), entry.getValue()));
+        }
+
+        NetworkHandler.INSTANCE.sendToPlayer(player,
+                new com.mod.archetype.network.SyncClassDataPacket(
+                        true, data.getCurrentClassId(),
+                        data.getClassLevel(), data.getClassExperience(),
+                        data.getResourceCurrent(), resourceMax,
+                        cooldownEntries, new HashMap<>(data.getToggleStates())));
     }
 
     private static UUID generateModifierUUID(ResourceLocation attribute) {
@@ -497,7 +524,7 @@ public class ClassManager {
 
     // --- Result ---
 
-    public record AssignResult(boolean success, @Nullable String failReasonKey) {
+    public record AssignResult(boolean succeeded, @Nullable String failReasonKey) {
         public static AssignResult success() {
             return new AssignResult(true, null);
         }

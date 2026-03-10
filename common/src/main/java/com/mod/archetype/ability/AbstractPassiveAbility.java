@@ -1,21 +1,22 @@
 package com.mod.archetype.ability;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class AbstractPassiveAbility implements PassiveAbility {
 
+    protected final PassiveAbilityEntry entry;
     protected final JsonObject params;
-    protected final boolean positive;
-    protected final String nameKey;
-    protected final String descriptionKey;
 
-    protected AbstractPassiveAbility(JsonObject params, boolean positive, String nameKey, String descriptionKey) {
-        this.params = params;
-        this.positive = positive;
-        this.nameKey = nameKey;
-        this.descriptionKey = descriptionKey;
+    protected AbstractPassiveAbility(PassiveAbilityEntry entry) {
+        this.entry = entry;
+        this.params = entry.params();
     }
 
     @Override
@@ -26,17 +27,17 @@ public abstract class AbstractPassiveAbility implements PassiveAbility {
 
     @Override
     public boolean isPositive() {
-        return positive;
+        return entry.positive();
     }
 
     @Override
     public String getNameKey() {
-        return nameKey;
+        return entry.nameKey();
     }
 
     @Override
     public String getDescriptionKey() {
-        return descriptionKey;
+        return entry.descriptionKey();
     }
 
     // JSON helper methods
@@ -74,5 +75,16 @@ public abstract class AbstractPassiveAbility implements PassiveAbility {
             return params.get(key).getAsBoolean();
         }
         return defaultValue;
+    }
+
+    protected List<String> getStringList(String key) {
+        List<String> result = new ArrayList<>();
+        if (params.has(key) && params.get(key).isJsonArray()) {
+            JsonArray arr = params.getAsJsonArray(key);
+            for (int i = 0; i < arr.size(); i++) {
+                result.add(arr.get(i).getAsString());
+            }
+        }
+        return result;
     }
 }

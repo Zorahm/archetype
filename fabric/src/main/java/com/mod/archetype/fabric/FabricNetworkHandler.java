@@ -1,6 +1,5 @@
 package com.mod.archetype.fabric;
 
-import com.mod.archetype.Archetype;
 import com.mod.archetype.platform.NetworkHandler;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -13,12 +12,13 @@ import net.minecraft.world.entity.Entity;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class FabricNetworkHandler implements NetworkHandler {
 
     private final Map<Class<?>, ResourceLocation> packetChannels = new HashMap<>();
-    private final Map<Class<?>, PacketEncoder<?>> packetEncoders = new HashMap<>();
+    private final Map<Class<?>, BiConsumer<?, FriendlyByteBuf>> packetEncoders = new HashMap<>();
 
     @Override
     public void init() {
@@ -32,9 +32,9 @@ public class FabricNetworkHandler implements NetworkHandler {
         if (channel == null) return;
 
         FriendlyByteBuf buf = PacketByteBufs.create();
-        PacketEncoder<T> encoder = (PacketEncoder<T>) packetEncoders.get(packet.getClass());
+        BiConsumer<T, FriendlyByteBuf> encoder = (BiConsumer<T, FriendlyByteBuf>) packetEncoders.get(packet.getClass());
         if (encoder != null) {
-            encoder.encode(packet, buf);
+            encoder.accept(packet, buf);
         }
         ServerPlayNetworking.send(player, channel, buf);
     }
@@ -46,9 +46,9 @@ public class FabricNetworkHandler implements NetworkHandler {
         if (channel == null) return;
 
         FriendlyByteBuf buf = PacketByteBufs.create();
-        PacketEncoder<T> encoder = (PacketEncoder<T>) packetEncoders.get(packet.getClass());
+        BiConsumer<T, FriendlyByteBuf> encoder = (BiConsumer<T, FriendlyByteBuf>) packetEncoders.get(packet.getClass());
         if (encoder != null) {
-            encoder.encode(packet, buf);
+            encoder.accept(packet, buf);
         }
         ClientPlayNetworking.send(channel, buf);
     }
@@ -56,15 +56,15 @@ public class FabricNetworkHandler implements NetworkHandler {
     @Override
     @SuppressWarnings("unchecked")
     public <T> void sendToTracking(Entity entity, T packet) {
-        if (!(entity.level().getServer() != null)) return;
+        if (entity.level().getServer() == null) return;
 
         ResourceLocation channel = packetChannels.get(packet.getClass());
         if (channel == null) return;
 
         FriendlyByteBuf buf = PacketByteBufs.create();
-        PacketEncoder<T> encoder = (PacketEncoder<T>) packetEncoders.get(packet.getClass());
+        BiConsumer<T, FriendlyByteBuf> encoder = (BiConsumer<T, FriendlyByteBuf>) packetEncoders.get(packet.getClass());
         if (encoder != null) {
-            encoder.encode(packet, buf);
+            encoder.accept(packet, buf);
         }
 
         for (ServerPlayer tracking : PlayerLookup.tracking(entity)) {
@@ -74,9 +74,11 @@ public class FabricNetworkHandler implements NetworkHandler {
 
     @Override
     public <T> void registerServerReceiver(ResourceLocation id, Class<T> packetClass,
+                                            BiConsumer<T, FriendlyByteBuf> encoder,
                                             Function<FriendlyByteBuf, T> decoder,
                                             ServerPacketHandler<T> handler) {
         packetChannels.put(packetClass, id);
+        packetEncoders.put(packetClass, encoder);
         ServerPlayNetworking.registerGlobalReceiver(id, (server, player, netHandler, buf, responseSender) -> {
             T packet = decoder.apply(buf);
             server.execute(() -> handler.handle(player, packet));
@@ -85,21 +87,14 @@ public class FabricNetworkHandler implements NetworkHandler {
 
     @Override
     public <T> void registerClientReceiver(ResourceLocation id, Class<T> packetClass,
+                                            BiConsumer<T, FriendlyByteBuf> encoder,
                                             Function<FriendlyByteBuf, T> decoder,
                                             ClientPacketHandler<T> handler) {
         packetChannels.put(packetClass, id);
+        packetEncoders.put(packetClass, encoder);
         ClientPlayNetworking.registerGlobalReceiver(id, (client, netHandler, buf, responseSender) -> {
             T packet = decoder.apply(buf);
             client.execute(() -> handler.handle(packet));
         });
-    }
-
-    public <T> void registerPacketEncoder(Class<T> packetClass, PacketEncoder<T> encoder) {
-        packetEncoders.put(packetClass, encoder);
-    }
-
-    @FunctionalInterface
-    public interface PacketEncoder<T> {
-        void encode(T packet, FriendlyByteBuf buf);
     }
 }

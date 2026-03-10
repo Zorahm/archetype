@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 import java.util.ServiceLoader;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public interface NetworkHandler {
@@ -23,10 +24,12 @@ public interface NetworkHandler {
     <T> void sendToTracking(Entity entity, T packet);
 
     <T> void registerServerReceiver(ResourceLocation id, Class<T> packetClass,
+                                     BiConsumer<T, FriendlyByteBuf> encoder,
                                      Function<FriendlyByteBuf, T> decoder,
                                      ServerPacketHandler<T> handler);
 
     <T> void registerClientReceiver(ResourceLocation id, Class<T> packetClass,
+                                     BiConsumer<T, FriendlyByteBuf> encoder,
                                      Function<FriendlyByteBuf, T> decoder,
                                      ClientPacketHandler<T> handler);
 

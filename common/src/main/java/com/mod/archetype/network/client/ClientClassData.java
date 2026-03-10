@@ -3,7 +3,7 @@ package com.mod.archetype.network.client;
 import com.mod.archetype.network.SyncClassDataPacket;
 import net.minecraft.resources.ResourceLocation;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 

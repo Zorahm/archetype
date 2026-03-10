@@ -1,0 +1,19 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:book"
+    },
+    "title": {"translate": "advancement.archetype.choose_class.title"},
+    "description": {"translate": "advancement.archetype.choose_class.description"},
+    "frame": "task"
+  },
+  "parent": "archetype:root",
+  "criteria": {
+    "choose_class": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "choose_class"
+      }
+    }
+  }
+}

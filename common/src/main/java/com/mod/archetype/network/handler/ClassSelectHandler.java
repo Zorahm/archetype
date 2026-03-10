@@ -62,7 +62,7 @@ public class ClassSelectHandler {
         // Assign the class
         ClassManager.AssignResult result = ClassManager.getInstance().assignClass(player, classId);
 
-        if (result.success()) {
+        if (result.succeeded()) {
             // Consume item if via item
             if (packet.isViaItem()) {
                 player.getMainHandItem().shrink(1);

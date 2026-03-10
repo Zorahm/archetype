@@ -1,0 +1,89 @@
+{
+  "name": "class.archetype.lin_qi.name",
+  "description": "class.archetype.lin_qi.description",
+  "icon": "archetype:textures/gui/class/lin_qi.png",
+  "color": "6644CC",
+  "category": "UTILITY",
+  "lore": [
+    "class.archetype.lin_qi.lore_1"
+  ],
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.max_health",
+      "operation": "ADDITION",
+      "value": -2.0
+    },
+    {
+      "attribute": "minecraft:generic.attack_speed",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.05
+    },
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.15
+    }
+  ],
+  "passive_abilities": [
+    {
+      "type": "archetype:random_enchant",
+      "params": {},
+      "positive": true,
+      "name": "passive.archetype.lin_qi.random_enchant.name",
+      "description": "passive.archetype.lin_qi.random_enchant.description"
+    },
+    {
+      "type": "archetype:arrow_transmute",
+      "params": {},
+      "positive": true,
+      "name": "passive.archetype.lin_qi.arrow_transform.name",
+      "description": "passive.archetype.lin_qi.arrow_transform.description"
+    },
+    {
+      "type": "archetype:potion_create",
+      "params": {},
+      "positive": true,
+      "name": "passive.archetype.lin_qi.potion_create.name",
+      "description": "passive.archetype.lin_qi.potion_create.description"
+    }
+  ],
+  "active_abilities": [
+    {
+      "type": "archetype:random_projectile",
+      "slot": "ability_1",
+      "cooldown": 40,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {},
+      "name": "ability.archetype.lin_qi.random_creation.name",
+      "description": "ability.archetype.lin_qi.random_creation.description",
+      "icon": "archetype:textures/gui/ability/random_creation.png"
+    },
+    {
+      "type": "archetype:random_teleport",
+      "slot": "ability_2",
+      "cooldown": 100,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "range": 40.0
+      },
+      "name": "ability.archetype.lin_qi.teleport.name",
+      "description": "ability.archetype.lin_qi.teleport.description",
+      "icon": "archetype:textures/gui/ability/teleport.png"
+    },
+    {
+      "type": "archetype:space_rift",
+      "slot": "ability_3",
+      "cooldown": 5,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "real_cooldown": 1200
+      },
+      "name": "ability.archetype.lin_qi.space_rift.name",
+      "description": "ability.archetype.lin_qi.space_rift.description",
+      "icon": "archetype:textures/gui/ability/space_rift.png"
+    }
+  ]
+}

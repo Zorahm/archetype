@@ -1,9 +1,11 @@
 package com.mod.archetype;
 
 import com.mod.archetype.ability.AbilityRegistry;
+import com.mod.archetype.advancement.ClassActionTrigger;
 import com.mod.archetype.condition.ConditionRegistry;
 import com.mod.archetype.network.NetworkInit;
 import com.mod.archetype.platform.NetworkHandler;
+import net.minecraft.advancements.CriteriaTriggers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +22,9 @@ public final class Archetype {
 
         // Register built-in ability types
         AbilityRegistry.getInstance().registerBuiltins();
+
+        // Register advancement trigger
+        CriteriaTriggers.register(ClassActionTrigger.INSTANCE);
 
         // Register network packets
         NetworkHandler network = NetworkHandler.INSTANCE;

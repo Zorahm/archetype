@@ -1,6 +1,7 @@
 package com.mod.archetype.condition;
 
 import com.mod.archetype.Archetype;
+import com.mod.archetype.condition.types.*;
 import com.mod.archetype.core.PlayerClass.ConditionDefinition;
 import net.minecraft.resources.ResourceLocation;
 
@@ -45,7 +46,10 @@ public class ConditionRegistry {
         if ("not".equals(type)) {
             if (definition.children().isEmpty()) {
                 Archetype.LOGGER.error("'not' condition requires exactly one child");
-                return player -> false;
+                return new Condition() {
+                    @Override public boolean test(net.minecraft.world.entity.player.Player player) { return false; }
+                    @Override public ResourceLocation getType() { return new ResourceLocation(Archetype.MOD_ID, "false"); }
+                };
             }
             Condition child = create(definition.children().get(0));
             return new NotCondition(child);
@@ -55,15 +59,28 @@ public class ConditionRegistry {
         ConditionFactory factory = factories.get(typeId);
         if (factory == null) {
             Archetype.LOGGER.error("Unknown condition type: {}", type);
-            return player -> false;
+            return new Condition() {
+                @Override public boolean test(net.minecraft.world.entity.player.Player player) { return false; }
+                @Override public ResourceLocation getType() { return new ResourceLocation(Archetype.MOD_ID, "false"); }
+            };
         }
 
         return factory.create(definition.params() != null ? definition.params() : new com.google.gson.JsonObject());
     }
 
     public void registerBuiltins() {
-        // Built-in condition types will be registered here by future prompts
-        // e.g. register(new ResourceLocation(Archetype.MOD_ID, "time_of_day"), TimeOfDayCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "time_of_day"), TimeOfDayCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "health_below_percent"), HealthBelowPercentCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "health_above_percent"), HealthAbovePercentCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "in_water"), InWaterCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "underwater"), UnderwaterCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "under_open_sky"), UnderOpenSkyCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "in_dimension"), InDimensionCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "in_biome_tag"), InBiomeTagCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "is_sneaking"), IsSneakingCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "is_sprinting"), IsSprintingCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "on_fire"), OnFireCondition::new);
+        register(new ResourceLocation(Archetype.MOD_ID, "has_item"), HasItemCondition::new);
     }
 
     public boolean hasFactory(ResourceLocation type) {

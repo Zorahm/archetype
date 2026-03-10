@@ -1,0 +1,50 @@
+{
+  "name": "class.archetype.vi.name",
+  "description": "class.archetype.vi.description",
+  "icon": "archetype:textures/gui/class/vi.png",
+  "color": "8800AA",
+  "category": "DAMAGE",
+  "lore": [
+    "class.archetype.vi.lore_1"
+  ],
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.max_health",
+      "operation": "ADDITION",
+      "value": -4.0
+    },
+    {
+      "attribute": "minecraft:generic.attack_speed",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.2
+    }
+  ],
+  "passive_abilities": [
+    {
+      "type": "archetype:no_sneak",
+      "params": {},
+      "positive": false,
+      "name": "passive.archetype.vi.no_sneak.name",
+      "description": "passive.archetype.vi.no_sneak.description"
+    }
+  ],
+  "active_abilities": [
+    {
+      "type": "archetype:vi_dash",
+      "slot": "ability_1",
+      "cooldown": 5,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "dash_speed": 3.5,
+        "no_fall_ticks": 30,
+        "damage": 3.0,
+        "charges": 1,
+        "max_charges": 3
+      },
+      "name": "ability.archetype.vi.dash.name",
+      "description": "ability.archetype.vi.dash.description",
+      "icon": "archetype:textures/gui/ability/dash.png"
+    }
+  ]
+}

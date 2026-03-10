@@ -2,7 +2,7 @@ package com.mod.archetype.network;
 
 import net.minecraft.network.FriendlyByteBuf;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class ClassAssignResultPacket {
 

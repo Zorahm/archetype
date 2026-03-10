@@ -11,38 +11,38 @@ public class NetworkInit {
         // Client -> Server
         handler.registerServerReceiver(
                 id("class_select"), ClassSelectPacket.class,
-                ClassSelectPacket::decode, ClassSelectHandler::handle
+                ClassSelectPacket::encode, ClassSelectPacket::decode, ClassSelectHandler::handle
         );
 
         handler.registerServerReceiver(
                 id("ability_use"), AbilityUsePacket.class,
-                AbilityUsePacket::decode, AbilityUseHandler::handle
+                AbilityUsePacket::encode, AbilityUsePacket::decode, AbilityUseHandler::handle
         );
 
         handler.registerServerReceiver(
                 id("ability_release"), AbilityReleasePacket.class,
-                AbilityReleasePacket::decode, AbilityReleaseHandler::handle
+                AbilityReleasePacket::encode, AbilityReleasePacket::decode, AbilityReleaseHandler::handle
         );
 
         // Server -> Client
         handler.registerClientReceiver(
                 id("open_selection"), OpenClassSelectionPacket.class,
-                OpenClassSelectionPacket::decode, OpenSelectionClientHandler::handle
+                OpenClassSelectionPacket::encode, OpenClassSelectionPacket::decode, OpenSelectionClientHandler::handle
         );
 
         handler.registerClientReceiver(
                 id("sync_data"), SyncClassDataPacket.class,
-                SyncClassDataPacket::decode, SyncDataClientHandler::handle
+                SyncClassDataPacket::encode, SyncClassDataPacket::decode, SyncDataClientHandler::handle
         );
 
         handler.registerClientReceiver(
                 id("assign_result"), ClassAssignResultPacket.class,
-                ClassAssignResultPacket::decode, AssignResultClientHandler::handle
+                ClassAssignResultPacket::encode, ClassAssignResultPacket::decode, AssignResultClientHandler::handle
         );
 
         handler.registerClientReceiver(
                 id("player_class_sync"), PlayerClassSyncPacket.class,
-                PlayerClassSyncPacket::decode, PlayerClassSyncClientHandler::handle
+                PlayerClassSyncPacket::encode, PlayerClassSyncPacket::decode, PlayerClassSyncClientHandler::handle
         );
     }
 
