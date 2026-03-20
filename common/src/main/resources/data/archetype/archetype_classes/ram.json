@@ -12,17 +12,12 @@
     {
       "attribute": "minecraft:generic.max_health",
       "operation": "ADDITION",
-      "value": 2.0
+      "value": -6.0
     },
     {
       "attribute": "minecraft:generic.attack_speed",
       "operation": "MULTIPLY_BASE",
       "value": -0.2
-    },
-    {
-      "attribute": "minecraft:generic.attack_damage",
-      "operation": "MULTIPLY_BASE",
-      "value": 0.1
     }
   ],
   "passive_abilities": [
@@ -60,6 +55,17 @@
       "positive": false,
       "name": "passive.archetype.ram.fragile_world.name",
       "description": "passive.archetype.ram.fragile_world.description"
+    },
+    {
+      "type": "archetype:xp_attribute_scaling",
+      "params": {
+        "health_bonus": 2,
+        "health_threshold": 25
+      },
+      "positive": true,
+      "hidden": true,
+      "name": "passive.archetype.ram.thick_skin.name",
+      "description": "passive.archetype.ram.thick_skin.description"
     }
   ],
   "active_abilities": [
@@ -67,16 +73,92 @@
       "type": "archetype:rage_dash",
       "slot": "ability_1",
       "cooldown": 0,
-      "resource_cost": 10,
-      "unlock_level": 1,
-      "params": {
-        "dash_speed": 4.0,
-        "knockback_strength": 1.5
-      },
+      "resource_cost": 0,
+      "unlock_level": 0,
+      "params": {},
       "name": "ability.archetype.ram.rage.name",
       "description": "ability.archetype.ram.rage.description",
       "icon": "archetype:textures/gui/ability/rage.png"
     }
+  ],
+  "extra_ability_sections": [
+    {
+      "parent_slot": "ability_1",
+      "name": "gui.archetype.ram.feather_jump",
+      "unlock_level": 5,
+      "entries": [
+        {
+          "name": "gui.archetype.ram.feather_jump.name",
+          "description": "gui.archetype.ram.feather_jump.desc"
+        }
+      ]
+    }
+  ],
+  "ability_stats": [
+    {
+      "name": "gui.archetype.ram.stat.rage_damage",
+      "base": 1.0,
+      "format": "int",
+      "bonuses": [
+        {"level": 10, "value": 1},
+        {"level": 20, "value": 1},
+        {"level": 30, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.ram.stat.feather_height",
+      "base": 2.0,
+      "format": "int",
+      "bonuses": [
+        {"level": 5, "value": 1},
+        {"level": 10, "value": 1},
+        {"level": 15, "value": 1},
+        {"level": 20, "value": 1},
+        {"level": 50, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.ram.stat.drain",
+      "base": 10.0,
+      "format": "int",
+      "bonuses": [
+        {"level": 5, "value": -1},
+        {"level": 10, "value": -1},
+        {"level": 15, "value": -1},
+        {"level": 20, "value": -1},
+        {"level": 40, "value": -1}
+      ]
+    },
+    {
+      "name": "gui.archetype.ram.stat.cooldown",
+      "base": 10.0,
+      "format": "seconds",
+      "bonuses": [
+        {"level": 10, "value": -1},
+        {"level": 20, "value": -1},
+        {"level": 30, "value": -1},
+        {"level": 40, "value": -1},
+        {"level": 50, "value": -1}
+      ]
+    },
+    {
+      "name": "gui.archetype.ram.stat.activation_cost",
+      "base": 30.0,
+      "format": "int",
+      "bonuses": [
+        {"level": 25, "value": -10}
+      ]
+    }
+  ],
+  "progression": [
+    { "level": 5, "key": "progression.archetype.ram.level_5" },
+    { "level": 10, "key": "progression.archetype.ram.level_10" },
+    { "level": 15, "key": "progression.archetype.ram.level_15" },
+    { "level": 20, "key": "progression.archetype.ram.level_20" },
+    { "level": 25, "key": "progression.archetype.ram.level_25" },
+    { "level": 30, "key": "progression.archetype.ram.level_30" },
+    { "level": 40, "key": "progression.archetype.ram.level_40" },
+    { "level": 50, "key": "progression.archetype.ram.level_50" }
   ],
   "resource": {
     "type": "resource.archetype.rage",

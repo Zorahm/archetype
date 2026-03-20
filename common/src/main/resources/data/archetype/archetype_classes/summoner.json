@@ -1,0 +1,112 @@
+{
+  "name": "class.archetype.summoner.name",
+  "description": "class.archetype.summoner.description",
+  "icon": "archetype:textures/gui/class/summoner.png",
+  "color": "556677",
+  "category": "DAMAGE",
+  "lore": [
+    "class.archetype.summoner.lore_1"
+  ],
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.max_health",
+      "operation": "ADDITION",
+      "value": -2.0
+    },
+    {
+      "attribute": "minecraft:generic.attack_speed",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.05
+    },
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.3
+    }
+  ],
+  "passive_abilities": [
+    {
+      "type": "archetype:villager_rejection",
+      "params": {},
+      "positive": false,
+      "name": "passive.archetype.summoner.villager_rejection.name",
+      "description": "passive.archetype.summoner.villager_rejection.description"
+    },
+    {
+      "type": "archetype:food_restriction",
+      "params": {
+        "allowed_foods": [
+          "minecraft:beef",
+          "minecraft:cooked_beef",
+          "minecraft:porkchop",
+          "minecraft:cooked_porkchop",
+          "minecraft:chicken",
+          "minecraft:cooked_chicken",
+          "minecraft:mutton",
+          "minecraft:cooked_mutton",
+          "minecraft:rabbit",
+          "minecraft:cooked_rabbit",
+          "minecraft:rabbit_stew",
+          "minecraft:rotten_flesh"
+        ]
+      },
+      "positive": false,
+      "name": "passive.archetype.summoner.meat_diet.name",
+      "description": "passive.archetype.summoner.meat_diet.description"
+    }
+  ],
+  "active_abilities": [
+    {
+      "type": "archetype:evoker_fangs",
+      "slot": "ability_1",
+      "cooldown": 60,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "mode": 1,
+        "base_fangs": 3,
+        "max_fangs": 9,
+        "damage": 4
+      },
+      "name": "ability.archetype.summoner.devour_line.name",
+      "description": "ability.archetype.summoner.devour_line.description",
+      "icon": "archetype:textures/gui/ability/devour.png"
+    },
+    {
+      "type": "archetype:evoker_fangs",
+      "slot": "ability_2",
+      "cooldown": 40,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "mode": 2,
+        "base_fangs": 1,
+        "max_fangs": 9,
+        "damage": 4
+      },
+      "name": "ability.archetype.summoner.devour_target.name",
+      "description": "ability.archetype.summoner.devour_target.description",
+      "icon": "archetype:textures/gui/ability/devour.png"
+    },
+    {
+      "type": "archetype:evoker_fangs",
+      "slot": "ability_3",
+      "cooldown": 100,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "mode": 3,
+        "base_fangs": 4,
+        "max_fangs": 12,
+        "damage": 4
+      },
+      "name": "ability.archetype.summoner.devour_around.name",
+      "description": "ability.archetype.summoner.devour_around.description",
+      "icon": "archetype:textures/gui/ability/devour.png"
+    }
+  ],
+  "progression": [
+    { "level": 10, "key": "progression.archetype.summoner.level_10" },
+    { "level": 20, "key": "progression.archetype.summoner.level_20" }
+  ]
+}

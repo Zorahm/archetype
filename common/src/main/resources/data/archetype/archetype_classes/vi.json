@@ -11,10 +11,10 @@
     {
       "attribute": "minecraft:generic.max_health",
       "operation": "ADDITION",
-      "value": -4.0
+      "value": -6.0
     },
     {
-      "attribute": "minecraft:generic.attack_speed",
+      "attribute": "minecraft:generic.attack_damage",
       "operation": "MULTIPLY_BASE",
       "value": -0.2
     }
@@ -26,25 +26,124 @@
       "positive": false,
       "name": "passive.archetype.vi.no_sneak.name",
       "description": "passive.archetype.vi.no_sneak.description"
+    },
+    {
+      "type": "archetype:destroy_holy_items",
+      "params": {},
+      "positive": false,
+      "name": "passive.archetype.ram.enemy_of_angel.name",
+      "description": "passive.archetype.ram.enemy_of_angel.description"
+    },
+    {
+      "type": "archetype:tool_fragility",
+      "params": {},
+      "positive": false,
+      "name": "passive.archetype.ram.fragile_world.name",
+      "description": "passive.archetype.ram.fragile_world.description"
     }
   ],
   "active_abilities": [
     {
       "type": "archetype:vi_dash",
       "slot": "ability_1",
-      "cooldown": 5,
+      "cooldown": 0,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {
-        "dash_speed": 3.5,
-        "no_fall_ticks": 30,
-        "damage": 3.0,
-        "charges": 1,
-        "max_charges": 3
+        "dash_speed": 1.25,
+        "dash_ticks": 5,
+        "no_fall_ticks": 20,
+        "damage": 1.0,
+        "charges": 1
       },
       "name": "ability.archetype.vi.dash.name",
       "description": "ability.archetype.vi.dash.description",
       "icon": "archetype:textures/gui/ability/dash.png"
     }
+  ],
+  "extra_ability_sections": [
+    {
+      "parent_slot": "ability_1",
+      "name": "gui.archetype.vi.elemental_dash",
+      "unlock_level": 5,
+      "entries": [
+        {
+          "name": "gui.archetype.vi.elemental_dash.snow.name",
+          "description": "gui.archetype.vi.elemental_dash.snow.desc"
+        },
+        {
+          "name": "gui.archetype.vi.elemental_dash.fire.name",
+          "description": "gui.archetype.vi.elemental_dash.fire.desc"
+        },
+        {
+          "name": "gui.archetype.vi.elemental_dash.wither.name",
+          "description": "gui.archetype.vi.elemental_dash.wither.desc"
+        }
+      ]
+    }
+  ],
+  "ability_stats": [
+    {
+      "name": "gui.archetype.vi.stat.dash_damage",
+      "base": 1.0,
+      "format": "int",
+      "bonuses": [
+        {"level": 10, "value": 1},
+        {"level": 30, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.vi.stat.charges",
+      "base": 1,
+      "format": "int",
+      "bonuses": [
+        {"level": 20, "value": 1},
+        {"level": 40, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.vi.stat.cooldown",
+      "base": 9,
+      "format": "seconds",
+      "bonuses": [
+        {"level": 15, "value": -1},
+        {"level": 30, "value": -1},
+        {"level": 50, "value": -1}
+      ]
+    },
+    {
+      "name": "gui.archetype.vi.stat.effect_duration",
+      "base": 1,
+      "format": "seconds",
+      "bonuses": [
+        {"level": 10, "value": 1},
+        {"level": 20, "value": 1},
+        {"level": 30, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.vi.stat.effect_level",
+      "base": 1,
+      "format": "int",
+      "bonuses": [
+        {"level": 20, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.vi.stat.fire_dash",
+      "base": 0,
+      "format": "boolean",
+      "bonuses": [
+        {"level": 20, "value": 1}
+      ]
+    }
+  ],
+  "progression": [
+    { "level": 10, "key": "progression.archetype.vi.level_10" },
+    { "level": 15, "key": "progression.archetype.vi.level_15" },
+    { "level": 20, "key": "progression.archetype.vi.level_20" },
+    { "level": 30, "key": "progression.archetype.vi.level_30" },
+    { "level": 40, "key": "progression.archetype.vi.level_40" },
+    { "level": 50, "key": "progression.archetype.vi.level_50" }
   ]
 }

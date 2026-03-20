@@ -44,9 +44,9 @@ public class AbilityUseHandler {
             return;
         }
 
-        // Validation 4: not on cooldown
+        // Validation 4: not on cooldown (skip for abilities that manage their own cooldown/charges)
         ResourceLocation abilityId = new ResourceLocation(ability.getType().getNamespace(), slotName);
-        if (data.getCooldown(abilityId) > 0) return;
+        if (!ability.managesCooldown() && data.getCooldown(abilityId) > 0) return;
 
         // Validation 5: enough resource
         if (!player.isCreative() && ability.getResourceCost() > 0) {
@@ -55,6 +55,9 @@ public class AbilityUseHandler {
 
         // Validation 6: level check
         if (ability.getUnlockLevel() > 0 && data.getClassLevel() < ability.getUnlockLevel()) return;
+
+        // Pass client movement direction to ability
+        ability.setClientMoveDirection(packet.getMoveDirX(), packet.getMoveDirZ());
 
         // Validation 7: ability can activate
         if (!ability.canActivate(player)) return;
@@ -72,8 +75,10 @@ public class AbilityUseHandler {
                 data.setResourceCurrent(data.getResourceCurrent() - ability.getResourceCost());
             }
 
-            // Set cooldown
-            data.setCooldown(abilityId, ability.getCooldownTicks());
+            // Set cooldown (skip for abilities that manage their own cooldown/charges)
+            if (!ability.managesCooldown()) {
+                data.setCooldown(abilityId, ability.getCooldownTicks());
+            }
 
             // Publish event
             ArchetypeEvents.ABILITY_USED.invoker().onUsed(player, ability);

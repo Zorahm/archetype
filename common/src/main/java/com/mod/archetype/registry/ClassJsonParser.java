@@ -91,9 +91,34 @@ public class ClassJsonParser {
             }
         }
 
+        // Level progression milestones
+        List<PlayerClass.LevelMilestone> progression = new ArrayList<>();
+        if (json.has("progression") && json.get("progression").isJsonArray()) {
+            JsonArray progArr = json.getAsJsonArray("progression");
+            for (int i = 0; i < progArr.size(); i++) {
+                JsonObject obj = progArr.get(i).getAsJsonObject();
+                int level = obj.get("level").getAsInt();
+                String key = obj.get("key").getAsString();
+                progression.add(new PlayerClass.LevelMilestone(level, key));
+            }
+        }
+
+        // Extra ability sections
+        List<PlayerClass.ExtraAbilitySection> extraAbilitySections = new ArrayList<>();
+        if (json.has("extra_ability_sections") && json.get("extra_ability_sections").isJsonArray()) {
+            extraAbilitySections = parseExtraAbilitySections(json.getAsJsonArray("extra_ability_sections"), fileId);
+        }
+
+        // Ability stats
+        List<PlayerClass.AbilityStatEntry> abilityStats = new ArrayList<>();
+        if (json.has("ability_stats") && json.get("ability_stats").isJsonArray()) {
+            abilityStats = parseAbilityStats(json.getAsJsonArray("ability_stats"), fileId);
+        }
+
         return new PlayerClass(fileId, name, description, icon, color, category, loreKeys,
                 attributes, conditionalAttributes, passiveAbilities, activeAbilities,
-                resource, sizeModifier, incompatibleWith);
+                resource, sizeModifier, incompatibleWith, progression,
+                extraAbilitySections, abilityStats);
     }
 
     private static List<AttributeModifierEntry> parseAttributes(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
@@ -140,7 +165,8 @@ public class ClassJsonParser {
                 activationCondition = parseCondition(obj.getAsJsonObject("condition"), fileId, "passive_abilities[" + i + "].condition");
             }
 
-            result.add(new PassiveAbilityEntry(type, params, activationCondition, positive, nameKey, descKey));
+            boolean hidden = obj.has("hidden") && obj.get("hidden").getAsBoolean();
+            result.add(new PassiveAbilityEntry(type, params, activationCondition, positive, hidden, nameKey, descKey));
         }
         return result;
     }
@@ -238,6 +264,52 @@ public class ClassJsonParser {
         }
 
         return new ConditionDefinition(type, params);
+    }
+
+    private static List<PlayerClass.ExtraAbilitySection> parseExtraAbilitySections(JsonArray arr, ResourceLocation fileId) {
+        List<PlayerClass.ExtraAbilitySection> result = new ArrayList<>();
+        for (int i = 0; i < arr.size(); i++) {
+            JsonObject obj = arr.get(i).getAsJsonObject();
+            String parentSlot = obj.has("parent_slot") ? obj.get("parent_slot").getAsString() : "ability_1";
+            String nameKey = obj.has("name") ? obj.get("name").getAsString() : "";
+            int unlockLevel = obj.has("unlock_level") ? obj.get("unlock_level").getAsInt() : 0;
+
+            List<PlayerClass.ExtraAbilityEntry> entries = new ArrayList<>();
+            if (obj.has("entries") && obj.get("entries").isJsonArray()) {
+                JsonArray entryArr = obj.getAsJsonArray("entries");
+                for (int j = 0; j < entryArr.size(); j++) {
+                    JsonObject entryObj = entryArr.get(j).getAsJsonObject();
+                    String eName = entryObj.has("name") ? entryObj.get("name").getAsString() : "";
+                    String eDesc = entryObj.has("description") ? entryObj.get("description").getAsString() : "";
+                    entries.add(new PlayerClass.ExtraAbilityEntry(eName, eDesc));
+                }
+            }
+            result.add(new PlayerClass.ExtraAbilitySection(parentSlot, nameKey, unlockLevel, entries));
+        }
+        return result;
+    }
+
+    private static List<PlayerClass.AbilityStatEntry> parseAbilityStats(JsonArray arr, ResourceLocation fileId) {
+        List<PlayerClass.AbilityStatEntry> result = new ArrayList<>();
+        for (int i = 0; i < arr.size(); i++) {
+            JsonObject obj = arr.get(i).getAsJsonObject();
+            String nameKey = obj.has("name") ? obj.get("name").getAsString() : "";
+            float base = obj.has("base") ? obj.get("base").getAsFloat() : 0;
+            String format = obj.has("format") ? obj.get("format").getAsString() : "int";
+
+            List<PlayerClass.LevelBonus> bonuses = new ArrayList<>();
+            if (obj.has("bonuses") && obj.get("bonuses").isJsonArray()) {
+                JsonArray bArr = obj.getAsJsonArray("bonuses");
+                for (int j = 0; j < bArr.size(); j++) {
+                    JsonObject bObj = bArr.get(j).getAsJsonObject();
+                    int level = bObj.get("level").getAsInt();
+                    float value = bObj.get("value").getAsFloat();
+                    bonuses.add(new PlayerClass.LevelBonus(level, value));
+                }
+            }
+            result.add(new PlayerClass.AbilityStatEntry(nameKey, base, bonuses, format));
+        }
+        return result;
     }
 
     // --- Utility methods ---

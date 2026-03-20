@@ -13,6 +13,7 @@ public class ServerConfig {
 
     public float globalCooldownMultiplier = 1.0f;
     public float globalAbilityDamageMultiplier = 1.0f;
+    public int classExpPerVanillaLevel = 50;
     public float classExpFromMobKill = 1.0f;
     public float classExpFromOreBreak = 1.0f;
 

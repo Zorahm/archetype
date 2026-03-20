@@ -11,7 +11,7 @@
     {
       "attribute": "minecraft:generic.max_health",
       "operation": "ADDITION",
-      "value": -2.0
+      "value": -6.0
     },
     {
       "attribute": "minecraft:generic.attack_speed",
@@ -34,7 +34,9 @@
     },
     {
       "type": "archetype:arrow_transmute",
-      "params": {},
+      "params": {
+        "speed_boost_levels": [30, 60]
+      },
       "positive": true,
       "name": "passive.archetype.lin_qi.arrow_transform.name",
       "description": "passive.archetype.lin_qi.arrow_transform.description"
@@ -45,15 +47,31 @@
       "positive": true,
       "name": "passive.archetype.lin_qi.potion_create.name",
       "description": "passive.archetype.lin_qi.potion_create.description"
+    },
+    {
+      "type": "archetype:xp_attribute_scaling",
+      "params": {
+        "target_level": 60,
+        "health_bonus": 6.0,
+        "attack_speed_bonus": 0.05,
+        "attack_damage_bonus": 0.15,
+        "health_threshold": 60,
+        "attack_speed_threshold": 60,
+        "attack_damage_threshold": 60
+      },
+      "positive": true,
+      "hidden": true,
+      "name": "passive.archetype.lin_qi.growth.name",
+      "description": "passive.archetype.lin_qi.growth.description"
     }
   ],
   "active_abilities": [
     {
       "type": "archetype:random_projectile",
       "slot": "ability_1",
-      "cooldown": 40,
+      "cooldown": 80,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {},
       "name": "ability.archetype.lin_qi.random_creation.name",
       "description": "ability.archetype.lin_qi.random_creation.description",
@@ -62,28 +80,23 @@
     {
       "type": "archetype:random_teleport",
       "slot": "ability_2",
-      "cooldown": 100,
+      "cooldown": 180,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {
         "range": 40.0
       },
       "name": "ability.archetype.lin_qi.teleport.name",
       "description": "ability.archetype.lin_qi.teleport.description",
       "icon": "archetype:textures/gui/ability/teleport.png"
-    },
-    {
-      "type": "archetype:space_rift",
-      "slot": "ability_3",
-      "cooldown": 5,
-      "resource_cost": 0,
-      "unlock_level": 1,
-      "params": {
-        "real_cooldown": 1200
-      },
-      "name": "ability.archetype.lin_qi.space_rift.name",
-      "description": "ability.archetype.lin_qi.space_rift.description",
-      "icon": "archetype:textures/gui/ability/space_rift.png"
     }
+  ],
+  "progression": [
+    { "level": 10, "key": "progression.archetype.lin_qi.level_10" },
+    { "level": 20, "key": "progression.archetype.lin_qi.level_20" },
+    { "level": 30, "key": "progression.archetype.lin_qi.level_30" },
+    { "level": 40, "key": "progression.archetype.lin_qi.level_40" },
+    { "level": 50, "key": "progression.archetype.lin_qi.level_50" },
+    { "level": 60, "key": "progression.archetype.lin_qi.level_60" }
   ]
 }

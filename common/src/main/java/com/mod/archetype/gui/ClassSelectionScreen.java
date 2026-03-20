@@ -6,10 +6,10 @@ import com.mod.archetype.network.client.ClientClassData;
 import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +30,10 @@ public class ClassSelectionScreen extends Screen {
 
     private int gridCols, gridRows, cardSize, gridStartX, gridStartY, cardSpacing;
 
+    // Layout
+    private static final int LORE_PANEL_HEIGHT = 48;
+    private static final int TITLE_HEIGHT = 28;
+
     public ClassSelectionScreen(int mode) {
         super(Component.translatable(mode == 0 ? "gui.archetype.selection.title" : "gui.archetype.rebirth.title"));
         this.mode = mode;
@@ -43,26 +47,15 @@ public class ClassSelectionScreen extends Screen {
         recalculateLayout();
         cardScales = new float[filteredClasses.size()];
         Arrays.fill(cardScales, 1.0f);
-
-        // Random button
-        addRenderableWidget(Button.builder(
-                        Component.translatable("gui.archetype.random"),
-                        btn -> {
-                            if (!filteredClasses.isEmpty()) {
-                                PlayerClass randomClass = filteredClasses.get(new Random().nextInt(filteredClasses.size()));
-                                Minecraft.getInstance().setScreen(new ClassDetailScreen(randomClass, mode));
-                            }
-                        })
-                .bounds(width / 2 - 50, height - 30, 100, 20)
-                .build());
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        // Dark vignette background
+        renderDimBackground(graphics);
 
-        // Title
-        graphics.drawCenteredString(font, title, width / 2, 10, 0xFFFFFF);
+        // Title area
+        renderTitle(graphics);
 
         // Cards
         hoveredIndex = -1;
@@ -71,9 +64,9 @@ public class ClassSelectionScreen extends Screen {
             int row = i / gridCols;
             int col = i % gridCols;
             int x = gridStartX + col * (cardSize + cardSpacing);
-            int y = gridStartY + row * (cardSize + cardSpacing + 12) - scrollOffset;
+            int y = gridStartY + row * (cardSize + cardSpacing + 14) - scrollOffset;
 
-            if (y + cardSize < 25 || y > height - 50) continue;
+            if (y + cardSize < TITLE_HEIGHT || y > height - LORE_PANEL_HEIGHT - 10) continue;
 
             PlayerClass cls = filteredClasses.get(i);
             boolean hovered = mouseX >= x && mouseX <= x + cardSize && mouseY >= y && mouseY <= y + cardSize;
@@ -82,28 +75,52 @@ public class ClassSelectionScreen extends Screen {
                 hoveredClass = cls;
             }
 
-            // Animate scale
-            float targetScale = hovered ? 1.1f : 1.0f;
+            float targetScale = hovered ? 1.08f : 1.0f;
             if (i < cardScales.length) {
-                cardScales[i] = Mth.lerp(0.3f, cardScales[i], targetScale);
+                cardScales[i] = Mth.lerp(0.25f, cardScales[i], targetScale);
             }
 
             boolean isCurrent = mode == 1 && ClientClassData.getInstance().hasClass()
                     && cls.getId().equals(ClientClassData.getInstance().getClassId());
-            renderCard(graphics, cls, x, y, cardSize, i < cardScales.length ? cardScales[i] : 1.0f, hovered, isCurrent);
+            boolean isSelected = i == selectedIndex;
+            renderCard(graphics, cls, x, y, cardSize, i < cardScales.length ? cardScales[i] : 1.0f, hovered, isCurrent, isSelected);
         }
 
-        // Lore block
-        if (hoveredClass != null) {
-            renderLoreBlock(graphics, hoveredClass);
-        }
+        // Bottom lore panel
+        renderLorePanel(graphics, mouseX, mouseY);
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderCard(GuiGraphics g, PlayerClass cls, int x, int y, int size, float scale, boolean hovered, boolean isCurrent) {
+    private void renderDimBackground(GuiGraphics g) {
+        g.fill(0, 0, width, height, 0xFF000000);
+    }
+
+    private void renderTitle(GuiGraphics g) {
+        // Title text
+        int titleY = 8;
+        g.drawCenteredString(font, title, width / 2, titleY, 0xDDDDDD);
+
+        // Decorative lines on sides of title
+        int tw = font.width(title);
+        int lineY = titleY + font.lineHeight / 2;
+        int pad = 8;
+        int lineLen = 60;
+        // Left line
+        g.fill(width / 2 - tw / 2 - pad - lineLen, lineY, width / 2 - tw / 2 - pad, lineY + 1, 0x25FFFFFF);
+        // Right line
+        g.fill(width / 2 + tw / 2 + pad, lineY, width / 2 + tw / 2 + pad + lineLen, lineY + 1, 0x25FFFFFF);
+
+        // Subtle separator under title
+        g.fill(width / 4, TITLE_HEIGHT - 2, width * 3 / 4, TITLE_HEIGHT - 1, 0x12FFFFFF);
+    }
+
+    private void renderCard(GuiGraphics g, PlayerClass cls, int x, int y, int size, float scale,
+                            boolean hovered, boolean isCurrent, boolean isSelected) {
+        int classColor = cls.getColor();
         var pose = g.pose();
-        if (scale != 1.0f) {
+        boolean transformed = scale != 1.0f;
+        if (transformed) {
             float cx = x + size / 2f;
             float cy = y + size / 2f;
             pose.pushPose();
@@ -112,37 +129,135 @@ public class ClassSelectionScreen extends Screen {
             pose.translate(-cx, -cy, 0);
         }
 
-        // Background
-        int bgColor = hovered ? 0xC0333333 : 0x80000000;
-        g.fill(x, y, x + size, y + size, bgColor);
+        // Card background — gradient from dark to slightly lighter
+        int bgTop = hovered ? 0xFF2C2C38 : 0xFF1E1E28;
+        int bgBot = hovered ? 0xFF262632 : 0xFF181822;
+        g.fill(x, y, x + size, y + size / 2, bgTop);
+        g.fill(x, y + size / 2, x + size, y + size, bgBot);
 
-        // Border
-        int borderColor = isCurrent ? 0xFFFFD700 : (0xFF000000 | cls.getColor());
-        g.renderOutline(x, y, size, size, borderColor);
+        // Bottom color accent strip
+        int accentAlpha = hovered ? 0xFF : 0x90;
+        g.fill(x, y + size - 3, x + size, y + size, (accentAlpha << 24) | classColor);
+
+        // Border (2px thick)
+        int borderAlpha = hovered ? 0xFF : (isSelected ? 0xCC : 0x80);
+        int borderColor = (borderAlpha << 24) | classColor;
+        // Top
+        g.fill(x, y, x + size, y + 2, borderColor);
+        // Bottom
+        g.fill(x, y + size - 2, x + size, y + size, borderColor);
+        // Left
+        g.fill(x, y, x + 2, y + size, borderColor);
+        // Right
+        g.fill(x + size - 2, y, x + size, y + size, borderColor);
+
+        // Current class indicator (for rebirth mode)
+        if (isCurrent) {
+            // Small diamond/marker in top-right corner
+            g.fill(x + size - 8, y + 2, x + size - 2, y + 8, 0xFF000000 | classColor);
+        }
+
+        // Keyboard selection indicator
+        if (isSelected && !hovered) {
+            // Pulsing outer glow (simplified as brighter outline)
+            g.fill(x - 1, y - 1, x + size + 1, y, 0x80000000 | classColor);
+            g.fill(x - 1, y + size, x + size + 1, y + size + 1, 0x80000000 | classColor);
+            g.fill(x - 1, y, x, y + size, 0x80000000 | classColor);
+            g.fill(x + size, y, x + size + 1, y + size, 0x80000000 | classColor);
+        }
 
         // Name below card
         Component name = Component.translatable(cls.getNameKey());
-        g.drawCenteredString(font, name, x + size / 2, y + size + 2, 0xFF000000 | cls.getColor());
+        int nameColor = hovered ? (0xFF000000 | classColor) : 0xFFBBBBBB;
+        g.drawCenteredString(font, name, x + size / 2, y + size + 3, nameColor);
 
-        if (scale != 1.0f) {
+        if (transformed) {
             pose.popPose();
         }
     }
 
-    private void renderLoreBlock(GuiGraphics g, PlayerClass cls) {
-        int loreY = height - 55;
-        List<String> loreKeys = cls.getLoreKeys();
-        if (!loreKeys.isEmpty()) {
-            Component lore = Component.translatable(loreKeys.get(0)).withStyle(s -> s.withItalic(true).withColor(0xAAAAAA));
-            g.drawCenteredString(font, lore, width / 2, loreY, 0xAAAAAA);
+    private void renderLorePanel(GuiGraphics g, int mouseX, int mouseY) {
+        int panelY = height - LORE_PANEL_HEIGHT;
+
+        // Panel background
+        g.fill(0, panelY, width, height, 0xFF181824);
+        // Top border
+        g.fill(0, panelY, width, panelY + 1, 0x20FFFFFF);
+
+        if (hoveredClass != null) {
+            int classColor = hoveredClass.getColor();
+
+            // Class name on the left
+            Component name = Component.translatable(hoveredClass.getNameKey());
+            g.drawString(font, name, 12, panelY + 6, 0xFF000000 | classColor, false);
+
+            // Lore text (word-wrapped, right of name or below on narrow screens)
+            List<String> loreKeys = hoveredClass.getLoreKeys();
+            if (!loreKeys.isEmpty()) {
+                Component lore = Component.translatable(loreKeys.get(0))
+                        .withStyle(s -> s.withItalic(true).withColor(0x888888));
+                int loreX = 12;
+                int loreY = panelY + 18;
+                int loreWidth = width - 24;
+                List<FormattedCharSequence> lines = font.split(lore, loreWidth);
+                for (int i = 0; i < Math.min(lines.size(), 2); i++) {
+                    g.drawString(font, lines.get(i), loreX, loreY, 0x888888, false);
+                    loreY += font.lineHeight + 1;
+                }
+            }
+
+            // "Click to view" hint on the right
+            Component hint = Component.translatable("gui.archetype.click_to_view")
+                    .withStyle(Style.EMPTY.withColor(0x555555));
+            // Fall back if key doesn't exist — just show nothing extra
+            int hintW = font.width(hint);
+            g.drawString(font, hint, width - hintW - 12, panelY + 6, 0x555555, false);
+        } else {
+            // No hover — show general hint
+            Component hint = Component.translatable("gui.archetype.hover_hint")
+                    .withStyle(Style.EMPTY.withColor(0x555555));
+            g.drawCenteredString(font, hint, width / 2, panelY + (LORE_PANEL_HEIGHT - font.lineHeight) / 2, 0x555555);
         }
+
+        // Random button area (bottom-right, custom rendered)
+        renderRandomButton(g, mouseX, mouseY);
+    }
+
+    private void renderRandomButton(GuiGraphics g, int mouseX, int mouseY) {
+        Component text = Component.translatable("gui.archetype.random");
+        int bw = font.width(text) + 16;
+        int bh = 16;
+        int bx = width - bw - 8;
+        int by = height - bh - 6;
+        boolean hovered = mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh;
+
+        g.fill(bx, by, bx + bw, by + bh, hovered ? 0x40FFFFFF : 0x18FFFFFF);
+        g.fill(bx, by, bx + bw, by + 1, hovered ? 0x35FFFFFF : 0x12FFFFFF);
+        g.drawCenteredString(font, text, bx + bw / 2, by + (bh - font.lineHeight) / 2, hovered ? 0xFFFFFF : 0xAAAAAA);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && hoveredIndex >= 0 && hoveredIndex < filteredClasses.size()) {
-            Minecraft.getInstance().setScreen(new ClassDetailScreen(filteredClasses.get(hoveredIndex), mode));
-            return true;
+        if (button == 0) {
+            // Random button
+            Component text = Component.translatable("gui.archetype.random");
+            int bw = font.width(text) + 16;
+            int bh = 16;
+            int bx = width - bw - 8;
+            int by = height - bh - 6;
+            if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh) {
+                if (!filteredClasses.isEmpty()) {
+                    PlayerClass randomClass = filteredClasses.get(new Random().nextInt(filteredClasses.size()));
+                    Minecraft.getInstance().setScreen(new ClassDetailScreen(randomClass, mode));
+                }
+                return true;
+            }
+
+            // Card click
+            if (hoveredIndex >= 0 && hoveredIndex < filteredClasses.size()) {
+                Minecraft.getInstance().setScreen(new ClassDetailScreen(filteredClasses.get(hoveredIndex), mode));
+                return true;
+            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -152,7 +267,6 @@ public class ClassSelectionScreen extends Screen {
         if (keyCode == 256 && mode == 0) {
             return true; // ESC blocked on first selection
         }
-        // Arrow key navigation
         if (keyCode == 265) { // UP
             selectedIndex = Math.max(0, selectedIndex - gridCols);
             return true;
@@ -206,9 +320,12 @@ public class ClassSelectionScreen extends Screen {
             cardSize = 40;
         }
         gridRows = (int) Math.ceil((double) count / gridCols);
-        cardSpacing = 8;
+        cardSpacing = 10;
         int gridWidth = gridCols * (cardSize + cardSpacing) - cardSpacing;
         gridStartX = (width - gridWidth) / 2;
-        gridStartY = 30;
+        // Center cards vertically between title and lore panel
+        int availableH = height - TITLE_HEIGHT - LORE_PANEL_HEIGHT - 10;
+        int gridHeight = gridRows * (cardSize + cardSpacing + 14) - cardSpacing;
+        gridStartY = TITLE_HEIGHT + Math.max(4, (availableH - gridHeight) / 2);
     }
 }

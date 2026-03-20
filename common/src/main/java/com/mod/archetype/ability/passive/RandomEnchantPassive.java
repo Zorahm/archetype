@@ -13,10 +13,18 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 public class RandomEnchantPassive extends AbstractPassiveAbility {
     private final Random random = new Random();
     private int tickCounter = 0;
+
+    private static final Set<Enchantment> BLACKLISTED = Set.of(
+            Enchantments.MENDING,
+            Enchantments.SILK_TOUCH,
+            Enchantments.BLOCK_FORTUNE,
+            Enchantments.AQUA_AFFINITY
+    );
 
     public RandomEnchantPassive(PassiveAbilityEntry entry) { super(entry); }
 
@@ -25,16 +33,16 @@ public class RandomEnchantPassive extends AbstractPassiveAbility {
         tickCounter++;
         if (tickCounter % 20 != 0) return;
 
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
+        // Only enchant items held in main hand or offhand
+        ItemStack[] handItems = { player.getMainHandItem(), player.getOffhandItem() };
+        for (ItemStack stack : handItems) {
             if (stack.isEmpty()) continue;
             if (!stack.isEnchantable() && !stack.isEnchanted()) continue;
             if (stack.getOrCreateTag().getBoolean("archetype_enchanted")) continue;
 
-            // Find valid enchantments for this item
             List<Enchantment> valid = new ArrayList<>();
             for (Enchantment ench : BuiltInRegistries.ENCHANTMENT) {
-                if (ench.canEnchant(stack)) {
+                if (ench.canEnchant(stack) && !BLACKLISTED.contains(ench)) {
                     valid.add(ench);
                 }
             }
@@ -43,13 +51,21 @@ public class RandomEnchantPassive extends AbstractPassiveAbility {
                 continue;
             }
 
-            // Apply random enchantment at level 1
             Enchantment chosen = valid.get(random.nextInt(valid.size()));
             stack.enchant(chosen, 1);
 
             // 15% chance curse of vanishing
             if (random.nextFloat() < 0.15f) {
                 stack.enchant(Enchantments.VANISHING_CURSE, 1);
+            }
+
+            // Damage tool by 10% of max durability
+            if (stack.isDamageableItem()) {
+                int dmg = Math.max(1, stack.getMaxDamage() / 10);
+                stack.setDamageValue(stack.getDamageValue() + dmg);
+                if (stack.getDamageValue() >= stack.getMaxDamage()) {
+                    stack.shrink(1);
+                }
             }
 
             stack.getOrCreateTag().putBoolean("archetype_enchanted", true);

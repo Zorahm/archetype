@@ -17,6 +17,18 @@ public interface ActiveAbility {
 
     default void onRelease(ServerPlayer player, int chargeLevel) {}
 
+    default void setClientMoveDirection(float dirX, float dirZ) {}
+
+    /**
+     * If true, this ability manages its own cooldown/charge system.
+     * The handler will skip standard cooldown checks and won't set cooldowns after activation.
+     */
+    default boolean managesCooldown() { return false; }
+
+    default int getCharges(ServerPlayer player) { return -1; }
+
+    default int getMaxCharges(ServerPlayer player) { return -1; }
+
     ResourceLocation getType();
 
     String getSlot();

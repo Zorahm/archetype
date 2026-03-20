@@ -29,6 +29,9 @@ public final class PlayerClass {
     @Nullable
     private final Float sizeModifier;
     private final List<ResourceLocation> incompatibleWith;
+    private final List<LevelMilestone> progression;
+    private final List<ExtraAbilitySection> extraAbilitySections;
+    private final List<AbilityStatEntry> abilityStats;
 
     public PlayerClass(ResourceLocation id, String nameKey, String descriptionKey,
                        ResourceLocation icon, int color, ClassCategory category,
@@ -39,7 +42,10 @@ public final class PlayerClass {
                        List<ActiveAbilityEntry> activeAbilities,
                        @Nullable ResourceDefinition resource,
                        @Nullable Float sizeModifier,
-                       List<ResourceLocation> incompatibleWith) {
+                       List<ResourceLocation> incompatibleWith,
+                       List<LevelMilestone> progression,
+                       List<ExtraAbilitySection> extraAbilitySections,
+                       List<AbilityStatEntry> abilityStats) {
         this.id = id;
         this.nameKey = nameKey;
         this.descriptionKey = descriptionKey;
@@ -54,6 +60,9 @@ public final class PlayerClass {
         this.resource = resource;
         this.sizeModifier = sizeModifier;
         this.incompatibleWith = List.copyOf(incompatibleWith);
+        this.progression = List.copyOf(progression);
+        this.extraAbilitySections = List.copyOf(extraAbilitySections);
+        this.abilityStats = List.copyOf(abilityStats);
     }
 
     public ResourceLocation getId() { return id; }
@@ -70,6 +79,9 @@ public final class PlayerClass {
     @Nullable public ResourceDefinition getResource() { return resource; }
     @Nullable public Float getSizeModifier() { return sizeModifier; }
     public List<ResourceLocation> getIncompatibleWith() { return incompatibleWith; }
+    public List<LevelMilestone> getProgression() { return progression; }
+    public List<ExtraAbilitySection> getExtraAbilitySections() { return extraAbilitySections; }
+    public List<AbilityStatEntry> getAbilityStats() { return abilityStats; }
 
     // --- Nested records ---
 
@@ -89,6 +101,7 @@ public final class PlayerClass {
             JsonObject params,
             @Nullable ConditionDefinition activationCondition,
             boolean positive,
+            boolean hidden,
             String nameKey,
             String descriptionKey
     ) {}
@@ -114,6 +127,47 @@ public final class PlayerClass {
             int color,
             ResourceLocation icon
     ) {}
+
+    public record LevelMilestone(int level, String descriptionKey) {}
+
+    public record ExtraAbilitySection(
+            String parentSlot,
+            String nameKey,
+            int unlockLevel,
+            List<ExtraAbilityEntry> entries) {}
+
+    public record ExtraAbilityEntry(
+            String nameKey,
+            String descriptionKey) {}
+
+    public record AbilityStatEntry(
+            String nameKey,
+            float baseValue,
+            List<LevelBonus> bonuses,
+            String format) {
+
+        public float computeValue(int classLevel) {
+            float value = baseValue;
+            for (LevelBonus bonus : bonuses) {
+                if (classLevel >= bonus.level()) {
+                    value += bonus.value();
+                }
+            }
+            return value;
+        }
+
+        public String formatValue(int classLevel) {
+            float value = computeValue(classLevel);
+            return switch (format) {
+                case "seconds" -> String.format("%.0fs", value);
+                case "float" -> String.format("%.1f", value);
+                case "boolean" -> value > 0 ? "\u2714" : "\u2718";
+                default -> String.format("%.0f", value);
+            };
+        }
+    }
+
+    public record LevelBonus(int level, float value) {}
 
     public record ConditionDefinition(
             String type,

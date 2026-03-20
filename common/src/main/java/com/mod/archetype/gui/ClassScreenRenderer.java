@@ -46,7 +46,7 @@ public class ClassScreenRenderer {
 
     public static void renderProgressBar(GuiGraphics g, int x, int y, int width, int height,
                                           float progress, int color) {
-        g.fill(x, y, x + width, y + height, 0x40000000);
+        g.fill(x, y, x + width, y + height, 0x25FFFFFF);
         int fillWidth = (int) (width * Math.max(0, Math.min(1, progress)));
         g.fill(x, y, x + fillWidth, y + height, 0xFF000000 | color);
     }

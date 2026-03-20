@@ -18,12 +18,23 @@ public class SyncClassDataPacket {
     private final float resourceMax;
     private final Map<ResourceLocation, CooldownEntry> cooldowns;
     private final Map<ResourceLocation, Boolean> toggleStates;
+    private final Map<ResourceLocation, ChargeEntry> charges;
 
     public SyncClassDataPacket(boolean hasClass, @Nullable ResourceLocation classId,
                                 int level, int experience,
                                 float resourceCurrent, float resourceMax,
                                 Map<ResourceLocation, CooldownEntry> cooldowns,
                                 Map<ResourceLocation, Boolean> toggleStates) {
+        this(hasClass, classId, level, experience, resourceCurrent, resourceMax,
+                cooldowns, toggleStates, Map.of());
+    }
+
+    public SyncClassDataPacket(boolean hasClass, @Nullable ResourceLocation classId,
+                                int level, int experience,
+                                float resourceCurrent, float resourceMax,
+                                Map<ResourceLocation, CooldownEntry> cooldowns,
+                                Map<ResourceLocation, Boolean> toggleStates,
+                                Map<ResourceLocation, ChargeEntry> charges) {
         this.hasClass = hasClass;
         this.classId = classId;
         this.level = level;
@@ -32,6 +43,7 @@ public class SyncClassDataPacket {
         this.resourceMax = resourceMax;
         this.cooldowns = cooldowns;
         this.toggleStates = toggleStates;
+        this.charges = charges;
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -54,6 +66,13 @@ public class SyncClassDataPacket {
             toggleStates.forEach((id, state) -> {
                 buf.writeResourceLocation(id);
                 buf.writeBoolean(state);
+            });
+
+            buf.writeVarInt(charges.size());
+            charges.forEach((id, entry) -> {
+                buf.writeResourceLocation(id);
+                buf.writeVarInt(entry.current());
+                buf.writeVarInt(entry.max());
             });
         }
     }
@@ -86,8 +105,19 @@ public class SyncClassDataPacket {
             toggleStates.put(buf.readResourceLocation(), buf.readBoolean());
         }
 
+        Map<ResourceLocation, ChargeEntry> charges = new HashMap<>();
+        if (buf.isReadable()) {
+            int chargeCount = buf.readVarInt();
+            for (int i = 0; i < chargeCount; i++) {
+                ResourceLocation id = buf.readResourceLocation();
+                int current = buf.readVarInt();
+                int max = buf.readVarInt();
+                charges.put(id, new ChargeEntry(current, max));
+            }
+        }
+
         return new SyncClassDataPacket(true, classId, level, experience,
-                resourceCurrent, resourceMax, cooldowns, toggleStates);
+                resourceCurrent, resourceMax, cooldowns, toggleStates, charges);
     }
 
     public boolean hasClass() { return hasClass; }
@@ -98,6 +128,8 @@ public class SyncClassDataPacket {
     public float getResourceMax() { return resourceMax; }
     public Map<ResourceLocation, CooldownEntry> getCooldowns() { return cooldowns; }
     public Map<ResourceLocation, Boolean> getToggleStates() { return toggleStates; }
+    public Map<ResourceLocation, ChargeEntry> getCharges() { return charges; }
 
     public record CooldownEntry(int remaining, int max) {}
+    public record ChargeEntry(int current, int max) {}
 }

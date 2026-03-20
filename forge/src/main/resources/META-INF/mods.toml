@@ -6,6 +6,7 @@ license = "All Rights Reserved"
 modId = "archetype"
 version = "${version}"
 displayName = "Archetype"
+logoFile = "icon.png"
 authors = "ZorahM"
 description = '''
 Class system for Minecraft. Pick a class, gain unique abilities and passives.

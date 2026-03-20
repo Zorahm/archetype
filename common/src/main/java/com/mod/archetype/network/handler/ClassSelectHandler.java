@@ -1,6 +1,7 @@
 package com.mod.archetype.network.handler;
 
 import com.mod.archetype.Archetype;
+import com.mod.archetype.advancement.ClassActionTrigger;
 import com.mod.archetype.core.ArchetypeEvents;
 import com.mod.archetype.core.ClassManager;
 import com.mod.archetype.core.PlayerClass;
@@ -59,6 +60,9 @@ public class ClassSelectHandler {
             }
         }
 
+        // Remember previous class for rebirth detection
+        ResourceLocation previousClassId = data.hasClass() ? data.getCurrentClassId() : null;
+
         // Assign the class
         ClassManager.AssignResult result = ClassManager.getInstance().assignClass(player, classId);
 
@@ -66,6 +70,14 @@ public class ClassSelectHandler {
             // Consume item if via item
             if (packet.isViaItem()) {
                 player.getMainHandItem().shrink(1);
+
+                // Trigger rebirth advancement
+                ClassActionTrigger.INSTANCE.trigger(player, "rebirth", data.getClassLevel());
+
+                // Same class rebirth: "Зачем?" achievement
+                if (classId.equals(previousClassId)) {
+                    ClassActionTrigger.INSTANCE.trigger(player, "same_class_rebirth", data.getClassLevel());
+                }
             }
 
             // Send success to the player

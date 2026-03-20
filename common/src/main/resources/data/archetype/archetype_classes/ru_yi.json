@@ -2,58 +2,101 @@
   "name": "class.archetype.ru_yi.name",
   "description": "class.archetype.ru_yi.description",
   "icon": "archetype:textures/gui/class/ru_yi.png",
-  "color": "228833",
-  "category": "UTILITY",
+  "color": "440066",
+  "category": "DAMAGE",
   "lore": [
     "class.archetype.ru_yi.lore_1"
   ],
-  "attributes": [],
-  "passive_abilities": [],
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.max_health",
+      "operation": "ADDITION",
+      "value": -4.0
+    },
+    {
+      "attribute": "minecraft:generic.attack_speed",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.3
+    },
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.2
+    }
+  ],
+  "passive_abilities": [
+    {
+      "type": "archetype:water_vulnerability",
+      "params": {
+        "damage_per_second": 2.0,
+        "rain_damage": false
+      },
+      "positive": false,
+      "name": "passive.archetype.ru_yi.water_damage.name",
+      "description": "passive.archetype.ru_yi.water_damage.description"
+    },
+    {
+      "type": "archetype:water_food_damage",
+      "params": {
+        "damage": 2.0,
+        "safe_foods": [
+          "minecraft:bread",
+          "minecraft:cookie",
+          "minecraft:cake",
+          "minecraft:golden_carrot",
+          "minecraft:golden_apple",
+          "minecraft:enchanted_golden_apple"
+        ]
+      },
+      "positive": false,
+      "name": "passive.archetype.ru_yi.water_food.name",
+      "description": "passive.archetype.ru_yi.water_food.description"
+    },
+    {
+      "type": "archetype:potion_block",
+      "params": {
+        "damage": 10.0
+      },
+      "positive": false,
+      "name": "passive.archetype.ru_yi.potion_block.name",
+      "description": "passive.archetype.ru_yi.potion_block.description"
+    }
+  ],
   "active_abilities": [
     {
-      "type": "archetype:evoker_fangs",
+      "type": "archetype:chase_teleport",
       "slot": "ability_1",
-      "cooldown": 60,
-      "resource_cost": 0,
-      "unlock_level": 1,
-      "params": {
-        "mode": 1,
-        "base_fangs": 3,
-        "max_fangs": 9
-      },
-      "name": "ability.archetype.ru_yi.devour_line.name",
-      "description": "ability.archetype.ru_yi.devour_line.description",
-      "icon": "archetype:textures/gui/ability/devour.png"
-    },
-    {
-      "type": "archetype:evoker_fangs",
-      "slot": "ability_2",
-      "cooldown": 40,
-      "resource_cost": 0,
-      "unlock_level": 1,
-      "params": {
-        "mode": 2,
-        "base_fangs": 1,
-        "max_fangs": 9
-      },
-      "name": "ability.archetype.ru_yi.devour_target.name",
-      "description": "ability.archetype.ru_yi.devour_target.description",
-      "icon": "archetype:textures/gui/ability/devour.png"
-    },
-    {
-      "type": "archetype:evoker_fangs",
-      "slot": "ability_3",
       "cooldown": 100,
       "resource_cost": 0,
       "unlock_level": 1,
       "params": {
-        "mode": 3,
-        "base_fangs": 4,
-        "max_fangs": 12
+        "base_damage": 3.0,
+        "max_damage": 10.0,
+        "damage_growth_per_5_levels": 0.5
       },
-      "name": "ability.archetype.ru_yi.devour_around.name",
-      "description": "ability.archetype.ru_yi.devour_around.description",
-      "icon": "archetype:textures/gui/ability/devour.png"
+      "name": "ability.archetype.ru_yi.chase.name",
+      "description": "ability.archetype.ru_yi.chase.description",
+      "icon": "archetype:textures/gui/ability/chase.png"
+    },
+    {
+      "type": "archetype:antigravity_throw",
+      "slot": "ability_2",
+      "cooldown": 200,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "levitation_duration": 40,
+        "levitation_amplifier": 2,
+        "base_fall_damage_multiplier": 1.2,
+        "max_fall_damage_multiplier": 3.0,
+        "fall_damage_growth_per_5_levels": 0.1
+      },
+      "name": "ability.archetype.ru_yi.antigravity.name",
+      "description": "ability.archetype.ru_yi.antigravity.description",
+      "icon": "archetype:textures/gui/ability/antigravity.png"
     }
+  ],
+  "progression": [
+    { "level": 20, "key": "progression.archetype.ru_yi.level_20" }
   ]
 }

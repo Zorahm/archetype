@@ -223,6 +223,7 @@ public class ArchetypeCommand {
         float newValue = isAdd ? data.getResourceCurrent() + amount : amount;
         newValue = Math.max(0, Math.min(newValue, maxResource));
         data.setResourceCurrent(newValue);
+        ClassManager.getInstance().syncToClient(player);
 
         float finalValue = newValue;
         ctx.getSource().sendSuccess(
@@ -246,6 +247,7 @@ public class ArchetypeCommand {
         }
         newLevel = Math.max(1, Math.min(newLevel, maxLevel));
         data.setClassLevel(newLevel);
+        ClassManager.getInstance().syncToClient(player);
 
         int finalLevel = newLevel;
         ctx.getSource().sendSuccess(

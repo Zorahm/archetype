@@ -5,104 +5,143 @@ import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.BaseFireBlock;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class RageDashAbility extends AbstractActiveAbility {
 
-    private final float dashSpeed;
-    private int dashTicksRemaining;
-    private final Set<Integer> hitEntities = new HashSet<>();
+    // Base values
+    private static final float BASE_DRAIN_PER_SECOND = 10.0f;
+    private static final float ACTIVATION_COST = 30.0f;
+    private static final float CANCEL_COST = 0.0f;
+    private static final int BASE_COOLDOWN_TICKS = 200; // 10 seconds
+    private static final float BASE_COLLISION_DAMAGE = 1.0f;
+    private static final double BASE_SHOCKWAVE_RADIUS = 1.0;
+    private static final double BASE_FEATHER_RADIUS = 2.0;
+    private static final double BASE_FEATHER_JUMP = 0.5; // ~1 block
+    private static final int HEARTBEAT_INTERVAL = 10;
 
-    // Current dash mode
-    private enum DashMode { NORMAL, FEATHER_JUMP, ICE, OBSIDIAN_DOME, NETHER_STAR }
-    private DashMode currentMode = DashMode.NORMAL;
-    private boolean hasJumped = false; // for feather mode
+    private boolean featherMode = false;
+    private boolean hasJumped = false;
+    private int drainTickCounter = 0;
+    private int soundTickCounter = 0;
 
-    // Tracks regen block expiry time per player (game time when block expires)
-    private static final Map<UUID, Long> REGEN_BLOCK_MAP = new ConcurrentHashMap<>();
+    // Cached scaled values for current activation
+    private float currentDrain;
+    private float currentDamage;
+    private double currentRadius;
+    private int currentCooldown;
 
     public RageDashAbility(ActiveAbilityEntry entry) {
         super(entry);
-        this.dashSpeed = getFloat("dash_speed", 4.0f);
+    }
+
+    // --- Level Progression (classLevel = XP level) ---
+
+    private float computeDrainPerSecond(int classLevel) {
+        // -1 at XP 5, 10, 15, 20, 40
+        int reduction = (classLevel >= 5 ? 1 : 0) + (classLevel >= 10 ? 1 : 0)
+                + (classLevel >= 15 ? 1 : 0) + (classLevel >= 20 ? 1 : 0)
+                + (classLevel >= 40 ? 1 : 0);
+        return BASE_DRAIN_PER_SECOND - reduction;
+    }
+
+    private float computeDamage(int classLevel) {
+        // +1 at XP 10, 20, 30
+        int bonus = (classLevel >= 10 ? 1 : 0) + (classLevel >= 20 ? 1 : 0)
+                + (classLevel >= 30 ? 1 : 0);
+        return BASE_COLLISION_DAMAGE + bonus;
+    }
+
+    private double computeRadius(int classLevel) {
+        // +1 at XP 15, 30
+        int bonus = (classLevel >= 15 ? 1 : 0) + (classLevel >= 30 ? 1 : 0);
+        return BASE_SHOCKWAVE_RADIUS + bonus;
+    }
+
+    private double computeFeatherJump(int classLevel) {
+        // +1 block at XP 5, 10, 15, 20, 50
+        int bonus = (classLevel >= 5 ? 1 : 0) + (classLevel >= 10 ? 1 : 0)
+                + (classLevel >= 15 ? 1 : 0) + (classLevel >= 20 ? 1 : 0)
+                + (classLevel >= 50 ? 1 : 0);
+        double blocks = 2.0 + bonus;
+        return 0.4 * Math.sqrt(blocks);
+    }
+
+    private int computeCooldown(int classLevel) {
+        // -1s at XP 10, 20, 30, 40, 50
+        int reduction = (classLevel >= 10 ? 1 : 0) + (classLevel >= 20 ? 1 : 0)
+                + (classLevel >= 30 ? 1 : 0) + (classLevel >= 40 ? 1 : 0)
+                + (classLevel >= 50 ? 1 : 0);
+        return BASE_COOLDOWN_TICKS - (reduction * 20);
     }
 
     @Override
     public ActivationResult activate(ServerPlayer player) {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
-
-        // Need some rage to activate
         float currentRage = data.getResourceCurrent();
-        if (currentRage < 10) return ActivationResult.NOT_ENOUGH_RESOURCE;
 
-        // Determine mode from offhand
-        ItemStack offhand = player.getOffhandItem();
-        if (offhand.is(Items.FEATHER)) {
-            currentMode = DashMode.FEATHER_JUMP;
-            offhand.shrink(1);
-        } else if (offhand.is(Items.BLUE_ICE)) {
-            currentMode = DashMode.ICE;
-            offhand.shrink(1);
-        } else if (offhand.is(Items.OBSIDIAN)) {
-            currentMode = DashMode.OBSIDIAN_DOME;
-            offhand.shrink(1);
-        } else if (offhand.is(Items.NETHER_STAR)) {
-            currentMode = DashMode.NETHER_STAR;
-            offhand.shrink(1);
-        } else {
-            currentMode = DashMode.NORMAL;
-        }
-
-        // Calculate duration: rage / (max/10) seconds
-        float maxRage = 100f; // from resource definition
-        float drainPerSecond = maxRage / 10f; // 10 per second
-        float durationSeconds = currentRage / drainPerSecond;
-        dashTicksRemaining = (int)(durationSeconds * 20);
-
-        // Consume all rage
-        data.setResourceCurrent(0);
-
-        hitEntities.clear();
-        hasJumped = false;
-        active = true;
-
-        if (currentMode == DashMode.OBSIDIAN_DOME) {
-            // Create dome immediately
-            createObsidianDome(player);
-            active = false;
-            // Block rage regen for 1 minute
-            REGEN_BLOCK_MAP.put(player.getUUID(), player.level().getGameTime() + 1200);
+        // Cancel rage if already active (free)
+        if (active) {
+            stopRage(player);
             return ActivationResult.SUCCESS;
         }
 
-        if (currentMode == DashMode.FEATHER_JUMP) {
-            // Jump up
-            player.setDeltaMovement(player.getDeltaMovement().add(0, 1.8, 0));
+        int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+
+        // Activation cost: 30, reduced to 20 at XP 25
+        float activationCost = classLevel >= 25 ? 20.0f : ACTIVATION_COST;
+        if (currentRage < activationCost) return ActivationResult.NOT_ENOUGH_RESOURCE;
+
+        // Deduct activation cost
+        data.setResourceCurrent(currentRage - activationCost);
+
+        // Cache progression values
+        currentDrain = computeDrainPerSecond(classLevel);
+        currentDamage = computeDamage(classLevel);
+        currentCooldown = computeCooldown(classLevel);
+
+        // Radius: feather mode uses BASE_FEATHER_RADIUS, normal mode uses BASE_SHOCKWAVE_RADIUS
+        currentRadius = featherMode
+                ? BASE_FEATHER_RADIUS + (classLevel >= 15 ? 1 : 0) + (classLevel >= 30 ? 1 : 0)
+                : computeRadius(classLevel);
+
+        // Check offhand for feather mode
+        if (player.getOffhandItem().is(Items.FEATHER)) {
+            featherMode = true;
+            player.getOffhandItem().shrink(1);
+        } else {
+            featherMode = false;
+        }
+
+        hasJumped = false;
+        drainTickCounter = 0;
+        soundTickCounter = 0;
+        active = true;
+
+        if (featherMode) {
+            double jumpVelocity = computeFeatherJump(classLevel);
+            player.setDeltaMovement(player.getDeltaMovement().add(0, jumpVelocity, 0));
             player.hurtMarked = true;
             hasJumped = true;
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.RAVAGER_STEP, SoundSource.PLAYERS, 1.0f, 1.0f);
         } else {
-            // Forward dash
-            Vec3 look = player.getLookAngle();
-            player.setDeltaMovement(look.scale(dashSpeed));
-            player.hurtMarked = true;
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 100, 0, true, false, false));
+            applyForwardMovement(player);
         }
 
         return ActivationResult.SUCCESS;
@@ -110,109 +149,136 @@ public class RageDashAbility extends AbstractActiveAbility {
 
     @Override
     public void tickActive(ServerPlayer player) {
-        if (dashTicksRemaining <= 0) {
-            active = false;
-            hitEntities.clear();
+        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
+
+        // Heartbeat sound every 10 ticks
+        soundTickCounter++;
+        if (soundTickCounter >= HEARTBEAT_INTERVAL) {
+            soundTickCounter = 0;
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.WARDEN_HEARTBEAT, SoundSource.PLAYERS, 1.0f, 1.1f);
+        }
+
+        if (featherMode) {
+            tickFeatherMode(player);
             return;
         }
-        dashTicksRemaining--;
-        player.fallDistance = 0;
 
-        if (currentMode == DashMode.FEATHER_JUMP) {
-            // Wait for landing
-            if (hasJumped && player.onGround()) {
-                // Shockwave on landing
-                AABB area = player.getBoundingBox().inflate(5.0);
-                List<Entity> entities = player.level().getEntities(player, area, e -> e instanceof LivingEntity && e.isAlive());
-                for (Entity entity : entities) {
-                    if (entity.distanceTo(player) <= 5.0) {
-                        entity.hurt(player.damageSources().playerAttack(player), 7f);
-                        if (entity instanceof LivingEntity living) {
-                            Vec3 knockDir = entity.position().subtract(player.position()).normalize();
-                            living.knockback(1.5, -knockDir.x, -knockDir.z);
-                        }
-                    }
-                }
-                active = false;
-                hitEntities.clear();
+        // Normal rage mode: drain resource every second (20 ticks)
+        drainTickCounter++;
+        if (drainTickCounter >= 20) {
+            drainTickCounter = 0;
+            float current = data.getResourceCurrent();
+            if (current < currentDrain) {
+                stopRage(player);
                 return;
             }
-            return;
+            data.setResourceCurrent(current - currentDrain);
         }
 
-        // Fire trail (for NORMAL, NETHER_STAR modes - not ICE)
-        if (currentMode != DashMode.ICE) {
-            BlockPos below = player.blockPosition();
-            if (player.level().getBlockState(below).isAir()
-                    && BaseFireBlock.canBePlacedAt(player.level(), below, player.getDirection())) {
-                player.level().setBlockAndUpdate(below, BaseFireBlock.getState(player.level(), below));
-            }
+        // Keep player moving forward
+        applyForwardMovement(player);
+        player.fallDistance = 0;
+
+        // Flame particle trail
+        if (player.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.FLAME,
+                    player.getX(), player.getY(), player.getZ(),
+                    1, 0.2, 0, 0.2, 0.1);
         }
 
-        // Hit entities
-        float damage;
-        switch (currentMode) {
-            case NETHER_STAR -> damage = 40f;
-            case ICE -> damage = 3f;
-            default -> damage = 5f;
-        }
-
+        // Check collision with entities
         AABB hitbox = player.getBoundingBox().inflate(0.6);
-        List<Entity> entities = player.level().getEntities(player, hitbox, e -> e instanceof LivingEntity && e.isAlive());
-        for (Entity entity : entities) {
-            if (hitEntities.contains(entity.getId())) continue;
-            hitEntities.add(entity.getId());
+        List<Entity> entities = player.level().getEntities(player, hitbox,
+                e -> e instanceof LivingEntity && e.isAlive());
 
-            entity.hurt(player.damageSources().playerAttack(player), damage);
-
-            if (currentMode == DashMode.ICE && entity instanceof LivingEntity living) {
-                // Freeze: slowness 127 for 1 second (no knockback)
-                living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 126));
-            } else if (entity instanceof LivingEntity living) {
-                // Knockback (not for ICE mode)
-                float kb = getFloat("knockback_strength", 1.5f);
-                Vec3 knockDir = player.getLookAngle().normalize();
-                living.knockback(kb, -knockDir.x, -knockDir.z);
+        if (!entities.isEmpty()) {
+            // Hit enemies — deal damage
+            for (Entity entity : entities) {
+                entity.hurt(player.damageSources().playerAttack(player), currentDamage);
             }
+
+            // Knockback in shockwave radius
+            AABB explosionArea = player.getBoundingBox().inflate(currentRadius);
+            List<Entity> nearbyEntities = player.level().getEntities(player, explosionArea,
+                    e -> e instanceof LivingEntity && e.isAlive());
+            for (Entity entity : nearbyEntities) {
+                if (entity instanceof LivingEntity living) {
+                    Vec3 knockDir = entity.position().subtract(player.position()).normalize();
+                    living.knockback(1.5, -knockDir.x, -knockDir.z);
+                }
+            }
+
+            stopRage(player);
         }
     }
 
-    private void createObsidianDome(ServerPlayer player) {
-        BlockPos center = player.blockPosition();
-        int radius = 3;
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -1; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    double dist = Math.sqrt(x * x + y * y + z * z);
-                    if (dist >= radius - 0.5 && dist <= radius + 0.5) {
-                        BlockPos pos = center.offset(x, y, z);
-                        if (player.level().getBlockState(pos).isAir()) {
-                            player.level().setBlockAndUpdate(pos, Blocks.OBSIDIAN.defaultBlockState());
-                        }
+    private void tickFeatherMode(ServerPlayer player) {
+        player.fallDistance = 0;
+
+        if (hasJumped && player.onGround()) {
+            // Shockwave on landing
+            AABB area = player.getBoundingBox().inflate(currentRadius);
+            List<Entity> entities = player.level().getEntities(player, area,
+                    e -> e instanceof LivingEntity && e.isAlive());
+            for (Entity entity : entities) {
+                if (entity.distanceTo(player) <= currentRadius) {
+                    entity.hurt(player.damageSources().playerAttack(player), currentDamage);
+                    if (entity instanceof LivingEntity living) {
+                        Vec3 knockDir = entity.position().subtract(player.position()).normalize();
+                        living.knockback(1.5, -knockDir.x, -knockDir.z);
                     }
                 }
             }
+            stopRage(player);
         }
+    }
+
+    private void applyForwardMovement(ServerPlayer player) {
+        Vec3 look = player.getLookAngle();
+        Vec3 horizontalDir = new Vec3(look.x, 0, look.z).normalize();
+        double speed = 0.35;
+        Vec3 currentMotion = player.getDeltaMovement();
+        player.setDeltaMovement(horizontalDir.x * speed, currentMotion.y, horizontalDir.z * speed);
+        player.hurtMarked = true;
+    }
+
+    private void stopRage(ServerPlayer player) {
+        active = false;
+        drainTickCounter = 0;
+        soundTickCounter = 0;
+
+        // Remove speed effect
+        player.removeEffect(MobEffects.MOVEMENT_SPEED);
+
+        // Explosion sound
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 3.0f, 1.1f);
+
+        // Explosion particle at end
+        if (player.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION,
+                    player.getX(), player.getY() + 1, player.getZ(),
+                    1, 0, 0, 0, 1);
+        }
+
+        // Set cooldown (scaled by XP level)
+        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
+        ResourceLocation abilityId = new ResourceLocation("archetype", entry.slot());
+        data.setCooldown(abilityId, currentCooldown);
+    }
+
+    @Override
+    public boolean managesCooldown() {
+        return true;
     }
 
     @Override
     public void forceDeactivate(ServerPlayer player) {
         active = false;
-        hitEntities.clear();
-        dashTicksRemaining = 0;
-    }
-
-    /**
-     * Checks if the player's rage regen is currently blocked (by obsidian dome).
-     */
-    public static boolean isRegenBlocked(ServerPlayer player) {
-        Long blockedUntil = REGEN_BLOCK_MAP.get(player.getUUID());
-        if (blockedUntil == null) return false;
-        if (player.level().getGameTime() >= blockedUntil) {
-            REGEN_BLOCK_MAP.remove(player.getUUID());
-            return false;
-        }
-        return true;
+        drainTickCounter = 0;
+        soundTickCounter = 0;
+        player.removeEffect(MobEffects.MOVEMENT_SPEED);
     }
 
     @Override

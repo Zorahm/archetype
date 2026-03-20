@@ -8,10 +8,13 @@ import com.mod.archetype.network.ClassSelectPacket;
 import com.mod.archetype.platform.NetworkHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+
+import java.util.List;
 
 public class ClassDetailScreen extends Screen {
 
@@ -21,6 +24,15 @@ public class ClassDetailScreen extends Screen {
     private float contentHeight = 0;
     private boolean showConfirmation = false;
     private float barAnimProgress = 0;
+    private int selectBtnX, selectBtnY, selectBtnWidth, selectBtnHeight;
+
+    // Layout constants
+    private static final int PANEL_PADDING = 16;
+    private static final int SECTION_GAP = 14;
+    private static final int ITEM_GAP = 4;
+    private static final int CARD_PADDING = 8;
+    private static final int CARD_RADIUS_SIM = 2;
+    private static final int SCROLLBAR_WIDTH = 3;
 
     public ClassDetailScreen(PlayerClass playerClass, int mode) {
         super(Component.translatable(playerClass.getNameKey()));
@@ -30,95 +42,166 @@ public class ClassDetailScreen extends Screen {
 
     @Override
     protected void init() {
-        // Back button
-        addRenderableWidget(Button.builder(
-                        Component.translatable("gui.archetype.back"),
-                        btn -> Minecraft.getInstance().setScreen(new ClassSelectionScreen(mode)))
-                .bounds(5, 5, 60, 20)
-                .build());
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g);
+        // Dark vignette background
+        renderDimBackground(g);
+
         barAnimProgress = Math.min(1.0f, barAnimProgress + partialTick * 0.02f);
 
-        int contentX = width / 6;
-        int contentWidth = width * 2 / 3;
-        int viewTop = 30;
-        int viewBottom = height - 10;
+        int classColor = playerClass.getColor();
+        int panelWidth = Math.min(340, width - 40);
+        int panelX = (width - panelWidth) / 2;
+        int viewTop = 16;
+        int viewBottom = height - 16;
+        int innerWidth = panelWidth - PANEL_PADDING * 2;
 
-        g.enableScissor(contentX, viewTop, contentX + contentWidth, viewBottom);
+        // Main panel background
+        renderPanel(g, panelX, viewTop, panelWidth, viewBottom - viewTop, classColor);
 
-        int y = viewTop - (int) scrollOffset;
+        // Content area with scissor
+        int contentX = panelX + PANEL_PADDING;
+        int scissorTop = viewTop + PANEL_PADDING;
+        int scissorBottom = viewBottom - PANEL_PADDING;
+        g.enableScissor(contentX, scissorTop, contentX + innerWidth, scissorBottom);
+
+        int y = scissorTop - (int) scrollOffset;
 
         // Header
-        y = renderHeader(g, contentX, y, contentWidth);
-        y += 15;
+        y = renderHeader(g, contentX, y, innerWidth, classColor);
+        y += SECTION_GAP;
+
+        // Separator line in class color
+        renderColoredSeparator(g, contentX, y, innerWidth, classColor);
+        y += SECTION_GAP;
 
         // Attributes
         if (!playerClass.getAttributes().isEmpty()) {
-            ClassScreenRenderer.renderSectionHeader(g, font, "gui.archetype.attributes", contentX, y, contentWidth);
-            y += 16;
-            y = renderAttributes(g, contentX, y, contentWidth);
-            y += 10;
+            y = renderSectionTitle(g, "gui.archetype.attributes", contentX, y, innerWidth, classColor);
+            y += 6;
+            y = renderAttributes(g, contentX, y, innerWidth);
+            y += SECTION_GAP;
         }
 
         // Active abilities
         if (!playerClass.getActiveAbilities().isEmpty()) {
-            ClassScreenRenderer.renderSectionHeader(g, font, "gui.archetype.abilities", contentX, y, contentWidth);
-            y += 16;
-            y = renderActiveAbilities(g, contentX, y, contentWidth);
-            y += 10;
+            y = renderSectionTitle(g, "gui.archetype.abilities", contentX, y, innerWidth, classColor);
+            y += 6;
+            y = renderActiveAbilities(g, contentX, y, innerWidth, classColor);
+            y += SECTION_GAP;
         }
 
         // Passive abilities
         if (!playerClass.getPassiveAbilities().isEmpty()) {
-            ClassScreenRenderer.renderSectionHeader(g, font, "gui.archetype.passives", contentX, y, contentWidth);
-            y += 16;
-            y = renderPassives(g, contentX, y, contentWidth);
-            y += 10;
+            y = renderSectionTitle(g, "gui.archetype.passives", contentX, y, innerWidth, classColor);
+            y += 6;
+            y = renderPassives(g, contentX, y, innerWidth);
+            y += SECTION_GAP;
         }
 
         // Resource
         if (playerClass.getResource() != null) {
-            ClassScreenRenderer.renderSectionHeader(g, font, "gui.archetype.resource", contentX, y, contentWidth);
-            y += 16;
-            y = renderResource(g, contentX, y, contentWidth);
-            y += 10;
+            y = renderSectionTitle(g, "gui.archetype.resource", contentX, y, innerWidth, classColor);
+            y += 6;
+            y = renderResource(g, contentX, y, innerWidth);
+            y += SECTION_GAP;
         }
 
         // Select button
-        y = renderSelectButton(g, contentX, y, contentWidth, mouseX, mouseY);
+        y = renderSelectButton(g, contentX, y, innerWidth, mouseX, mouseY, classColor);
 
-        contentHeight = y + scrollOffset - viewTop + 20;
+        contentHeight = y + scrollOffset - scissorTop + PANEL_PADDING;
 
         g.disableScissor();
 
+        // Scrollbar
+        float viewHeight = scissorBottom - scissorTop;
+        if (contentHeight > viewHeight) {
+            renderScrollbar(g, panelX + panelWidth - SCROLLBAR_WIDTH - 4, scissorTop, viewHeight, classColor);
+        }
+
+        // Back button (rendered outside scissor)
+        renderBackButton(g, panelX + PANEL_PADDING, viewBottom - 4, mouseX, mouseY);
+
+        // Render widgets (vanilla buttons)
         super.render(g, mouseX, mouseY, partialTick);
 
         if (showConfirmation) {
-            renderConfirmation(g, mouseX, mouseY);
+            renderConfirmation(g, mouseX, mouseY, classColor);
         }
     }
 
-    private int renderHeader(GuiGraphics g, int x, int y, int width) {
-        // Class name (scaled)
+    private void renderDimBackground(GuiGraphics g) {
+        g.fill(0, 0, width, height, 0xFF000000);
+    }
+
+    private void renderPanel(GuiGraphics g, int x, int y, int w, int h, int classColor) {
+        // Main panel fill
+        g.fill(x, y, x + w, y + h, 0xFF161622);
+
+        // Thin class-colored border
+        int borderColor = 0xCC000000 | classColor;
+        // Top
+        g.fill(x, y, x + w, y + 1, borderColor);
+        // Bottom
+        g.fill(x, y + h - 1, x + w, y + h, borderColor);
+        // Left
+        g.fill(x, y, x + 1, y + h, borderColor);
+        // Right
+        g.fill(x + w - 1, y, x + w, y + h, borderColor);
+
+        // Top accent line (brighter, 2px)
+        int accentColor = 0xFF000000 | classColor;
+        g.fill(x + 1, y, x + w - 1, y + 2, accentColor);
+    }
+
+    private void renderColoredSeparator(GuiGraphics g, int x, int y, int width, int classColor) {
+        // Gradient-like separator: fade from center
+        int mid = x + width / 2;
+        int halfW = width / 2;
+        // Center section — brighter
+        int coreHalf = halfW / 3;
+        g.fill(mid - coreHalf, y, mid + coreHalf, y + 1, 0x60000000 | classColor);
+        // Sides — dimmer
+        g.fill(x, y, mid - coreHalf, y + 1, 0x20000000 | classColor);
+        g.fill(mid + coreHalf, y, x + width, y + 1, 0x20000000 | classColor);
+    }
+
+    private int renderSectionTitle(GuiGraphics g, String titleKey, int x, int y, int width, int classColor) {
+        Component title = Component.translatable(titleKey).withStyle(Style.EMPTY.withColor(0xA0A0A0));
+        g.drawString(font, title, x, y, 0xA0A0A0, false);
+        int textWidth = font.width(title);
+        // Line after text
+        g.fill(x + textWidth + 6, y + font.lineHeight / 2, x + width, y + font.lineHeight / 2 + 1, 0x20FFFFFF);
+        return y + font.lineHeight + 2;
+    }
+
+    private int renderHeader(GuiGraphics g, int x, int y, int width, int classColor) {
+        // Class name (scaled, centered)
         var pose = g.pose();
         pose.pushPose();
-        pose.translate(x + width / 2f, y, 0);
-        pose.scale(1.5f, 1.5f, 1);
+        float scale = 1.8f;
         Component name = Component.translatable(playerClass.getNameKey());
-        g.drawCenteredString(font, name, 0, 0, 0xFF000000 | playerClass.getColor());
+        int nameWidth = (int) (font.width(name) * scale);
+        float nameX = x + (width - nameWidth) / 2f;
+        pose.translate(nameX, y, 0);
+        pose.scale(scale, scale, 1);
+        g.drawString(font, name, 0, 0, 0xFF000000 | classColor, false);
         pose.popPose();
-        y += 20;
+        y += (int) (font.lineHeight * scale) + 6;
 
-        // Lore
+        // Lore — with word wrapping
         if (!playerClass.getLoreKeys().isEmpty()) {
             Component lore = Component.translatable(playerClass.getLoreKeys().get(0))
-                    .withStyle(s -> s.withItalic(true).withColor(0xAAAAAA));
-            g.drawCenteredString(font, lore, x + width / 2, y, 0xAAAAAA);
-            y += 12;
+                    .withStyle(s -> s.withItalic(true).withColor(0x808080));
+            List<FormattedCharSequence> loreLines = font.split(lore, width);
+            for (FormattedCharSequence line : loreLines) {
+                int lineWidth = font.width(line);
+                g.drawString(font, line, x + (width - lineWidth) / 2, y, 0x808080, false);
+                y += font.lineHeight + 1;
+            }
         }
         return y;
     }
@@ -137,7 +220,7 @@ public class ClassDetailScreen extends Screen {
         return y;
     }
 
-    private int renderActiveAbilities(GuiGraphics g, int x, int y, int contentWidth) {
+    private int renderActiveAbilities(GuiGraphics g, int x, int y, int contentWidth, int classColor) {
         String[] slotKeys = {"R", "V", "G"};
         for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
             int slotIndex = switch (ability.slot()) {
@@ -148,42 +231,122 @@ public class ClassDetailScreen extends Screen {
             };
             String key = slotIndex < slotKeys.length ? slotKeys[slotIndex] : "?";
 
-            // Key indicator
-            g.drawString(font, "[" + key + "]", x, y, 0xFFCC88, false);
+            // Card background
+            int cardTop = y - CARD_PADDING / 2;
+            // Pre-calculate description height for card sizing
+            Component desc = Component.translatable(ability.descriptionKey());
+            List<FormattedCharSequence> descLines = font.split(desc, contentWidth - 38);
+            int descHeight = descLines.size() * (font.lineHeight + 1);
+            int cardBottom = y + 12 + descHeight + CARD_PADDING / 2;
+            g.fill(x, cardTop, x + contentWidth - 12, cardBottom, 0x20FFFFFF);
+
+            // Key badge
+            int badgeColor = 0xC0000000 | classColor;
+            String badge = "[" + key + "]";
+            g.fill(x + 2, y - 1, x + 2 + font.width(badge) + 4, y + font.lineHeight + 1, badgeColor);
+            g.drawString(font, badge, x + 4, y, 0xFFFFFF, false);
 
             // Name
             Component aName = Component.translatable(ability.nameKey());
             g.drawString(font, aName, x + 30, y, 0xFFFFFF, false);
 
-            // Cooldown
-            String cdText = (ability.cooldownTicks() / 20) + "s";
-            g.drawString(font, cdText, x + contentWidth - font.width(cdText), y, 0x888888, false);
             y += 12;
 
-            // Description
-            Component desc = Component.translatable(ability.descriptionKey());
-            g.drawString(font, desc, x + 30, y, 0x999999, false);
-            y += 14;
+            // Description — WORD WRAPPED
+            for (FormattedCharSequence line : descLines) {
+                g.drawString(font, line, x + 30, y, 0x999999, false);
+                y += font.lineHeight + 1;
+            }
+            y += ITEM_GAP + 2;
+
+            // Extra ability sections for this slot
+            for (PlayerClass.ExtraAbilitySection section : playerClass.getExtraAbilitySections()) {
+                if (section.parentSlot().equals(ability.slot())) {
+                    y = renderExtraAbilitySection(g, x, y, contentWidth, section, classColor);
+                }
+            }
+        }
+        return y;
+    }
+
+    private int renderExtraAbilitySection(GuiGraphics g, int x, int y, int contentWidth,
+                                           PlayerClass.ExtraAbilitySection section, int classColor) {
+        boolean locked = section.unlockLevel() > 0;
+
+        // Section title centered with decorative lines
+        Component sectionName = Component.translatable(section.nameKey());
+        int nameWidth = font.width(sectionName);
+        int centerX = x + contentWidth / 2;
+        int textStartX = centerX - nameWidth / 2 - 6;
+        int textEndX = centerX + nameWidth / 2 + 6;
+
+        g.fill(x + 8, y + font.lineHeight / 2, textStartX, y + font.lineHeight / 2 + 1, 0x30000000 | classColor);
+        g.drawString(font, sectionName, centerX - nameWidth / 2, y, 0xFF000000 | classColor, false);
+        g.fill(textEndX, y + font.lineHeight / 2, x + contentWidth - 8, y + font.lineHeight / 2 + 1, 0x30000000 | classColor);
+        y += font.lineHeight + 6;
+
+        // In detail screen (pre-select), always show entries, but note unlock level if any
+        if (locked) {
+            Component lockNote = Component.translatable("gui.archetype.locked", section.unlockLevel());
+            g.drawString(font, lockNote, x + 8, y, 0x888888, false);
+            y += font.lineHeight + 4;
+        }
+
+        for (PlayerClass.ExtraAbilityEntry entry : section.entries()) {
+            Component entryName = Component.translatable(entry.nameKey());
+            Component entryDesc = Component.translatable(entry.descriptionKey());
+
+            List<FormattedCharSequence> dLines = font.split(entryDesc, contentWidth - 28);
+            int totalH = font.lineHeight + dLines.size() * (font.lineHeight + 1) + 4;
+            g.fill(x + 4, y - 2, x + contentWidth - 12, y + totalH, 0x10000000 | classColor);
+            g.fill(x + 4, y - 2, x + 6, y + totalH, 0x40000000 | classColor);
+
+            g.drawString(font, entryName, x + 10, y, 0xDDDDDD, false);
+            y += font.lineHeight + 1;
+
+            for (FormattedCharSequence dLine : dLines) {
+                g.drawString(font, dLine, x + 10, y, 0x888888, false);
+                y += font.lineHeight + 1;
+            }
+            y += 4;
         }
         return y;
     }
 
     private int renderPassives(GuiGraphics g, int x, int y, int contentWidth) {
-        // Sort: positives first
         var sorted = playerClass.getPassiveAbilities().stream()
+                .filter(p -> !p.hidden())
                 .sorted((a, b) -> Boolean.compare(b.positive(), a.positive()))
                 .toList();
         for (PassiveAbilityEntry passive : sorted) {
-            String marker = passive.positive() ? "\u2714" : "\u2718";
-            int color = passive.positive() ? 0xFF44CC44 : 0xFFCC4444;
-            g.drawString(font, marker, x, y, color, false);
+            boolean positive = passive.positive();
+            int color = positive ? 0xFF44CC44 : 0xFFCC4444;
+            int bgColor = positive ? 0x18008800 : 0x18880000;
+            String marker = positive ? "\u2714" : "\u2718";
+
+            // Pre-calculate description height
+            Component pDesc = Component.translatable(passive.descriptionKey());
+            List<FormattedCharSequence> descLines = font.split(pDesc, contentWidth - 24);
+            int descHeight = descLines.size() * (font.lineHeight + 1);
+
+            // Card background
+            int cardTop = y - CARD_PADDING / 2;
+            int cardBottom = y + 12 + descHeight + CARD_PADDING / 2;
+            g.fill(x, cardTop, x + contentWidth - 8, cardBottom, bgColor);
+            // Left accent stripe
+            g.fill(x, cardTop, x + 2, cardBottom, 0x80000000 | (color & 0x00FFFFFF));
+
+            g.drawString(font, marker, x + 6, y, color, false);
             Component pName = Component.translatable(passive.nameKey());
-            g.drawString(font, pName, x + 14, y, color, false);
+            g.drawString(font, pName, x + 18, y, color, false);
             y += 12;
 
-            Component pDesc = Component.translatable(passive.descriptionKey());
-            g.drawString(font, pDesc, x + 14, y, 0x999999, false);
-            y += 14;
+            // Description — WORD WRAPPED
+            for (FormattedCharSequence line : descLines) {
+                g.drawString(font, line, x + 18, y, 0x999999, false);
+                y += font.lineHeight + 1;
+            }
+            y += ITEM_GAP + 2;
         }
         return y;
     }
@@ -192,34 +355,71 @@ public class ClassDetailScreen extends Screen {
         var res = playerClass.getResource();
         Component resName = Component.translatable(res.typeKey());
         g.drawString(font, resName, x, y, 0xFF000000 | res.color(), false);
-        y += 12;
-        ClassScreenRenderer.renderProgressBar(g, x, y, Math.min(200, contentWidth), 8, 1.0f, res.color());
-        g.drawString(font, res.maxValue() + "/" + res.maxValue(), x + Math.min(200, contentWidth) + 4, y, 0xCCCCCC, false);
+        y += 14;
+        int barW = Math.min(200, contentWidth - 50);
+        ClassScreenRenderer.renderProgressBar(g, x, y, barW, 8, 1.0f, res.color());
+        g.drawString(font, res.maxValue() + "/" + res.maxValue(), x + barW + 6, y, 0xCCCCCC, false);
         y += 14;
         return y;
     }
 
-    private int renderSelectButton(GuiGraphics g, int x, int y, int contentWidth, int mouseX, int mouseY) {
-        int btnWidth = 160;
-        int btnHeight = 24;
+    private int renderSelectButton(GuiGraphics g, int x, int y, int contentWidth, int mouseX, int mouseY, int classColor) {
+        int btnWidth = Math.min(180, contentWidth);
+        int btnHeight = 26;
         int btnX = x + (contentWidth - btnWidth) / 2;
-        int btnY = y + 10;
+        int btnY = y + 8;
+
+        this.selectBtnX = btnX;
+        this.selectBtnY = btnY;
+        this.selectBtnWidth = btnWidth;
+        this.selectBtnHeight = btnHeight;
 
         boolean hovered = mouseX >= btnX && mouseX <= btnX + btnWidth && mouseY >= btnY && mouseY <= btnY + btnHeight;
-        int bgColor = hovered ? 0xC0446644 : 0xC0224422;
+        int baseColor = classColor;
+        int bgColor = hovered ? (0xE0000000 | baseColor) : (0x60000000 | baseColor);
         g.fill(btnX, btnY, btnX + btnWidth, btnY + btnHeight, bgColor);
-        g.renderOutline(btnX, btnY, btnWidth, btnHeight, 0xFF44CC44);
+
+        // Border
+        int borderAlpha = hovered ? 0xFF : 0xCC;
+        int borderColor = (borderAlpha << 24) | baseColor;
+        g.fill(btnX, btnY, btnX + btnWidth, btnY + 1, borderColor);
+        g.fill(btnX, btnY + btnHeight - 1, btnX + btnWidth, btnY + btnHeight, borderColor);
+        g.fill(btnX, btnY, btnX + 1, btnY + btnHeight, borderColor);
+        g.fill(btnX + btnWidth - 1, btnY, btnX + btnWidth, btnY + btnHeight, borderColor);
 
         Component text = Component.translatable("gui.archetype.select_class");
-        g.drawCenteredString(font, text, btnX + btnWidth / 2, btnY + (btnHeight - font.lineHeight) / 2, 0xFF44CC44);
+        g.drawCenteredString(font, text, btnX + btnWidth / 2, btnY + (btnHeight - font.lineHeight) / 2, 0xFFFFFF);
 
         return btnY + btnHeight;
+    }
+
+    private void renderScrollbar(GuiGraphics g, int x, int top, float viewHeight, int classColor) {
+        float maxScroll = Math.max(1, contentHeight - viewHeight);
+        float thumbRatio = viewHeight / contentHeight;
+        int thumbHeight = Math.max(10, (int) (viewHeight * thumbRatio));
+        int thumbY = top + (int) ((viewHeight - thumbHeight) * (scrollOffset / maxScroll));
+
+        // Track
+        g.fill(x, (int) top, x + SCROLLBAR_WIDTH, (int) (top + viewHeight), 0x15FFFFFF);
+        // Thumb
+        g.fill(x, thumbY, x + SCROLLBAR_WIDTH, thumbY + thumbHeight, 0x80000000 | classColor);
+    }
+
+    private void renderBackButton(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+        Component back = Component.translatable("gui.archetype.back");
+        int bw = font.width(back) + 12;
+        int bh = 16;
+        int bx = x;
+        int by = y - bh;
+        boolean hovered = mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh;
+
+        g.fill(bx, by, bx + bw, by + bh, hovered ? 0x40FFFFFF : 0x20FFFFFF);
+        g.drawString(font, back, bx + 6, by + (bh - font.lineHeight) / 2, hovered ? 0xFFFFFF : 0xAAAAAA, false);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (showConfirmation) {
-            // Yes button
             int yesX = width / 2 - 80;
             int yesY = height / 2 + 10;
             if (mouseX >= yesX && mouseX <= yesX + 60 && mouseY >= yesY && mouseY <= yesY + 20) {
@@ -227,7 +427,6 @@ public class ClassDetailScreen extends Screen {
                 onClose();
                 return true;
             }
-            // No button
             int noX = width / 2 + 20;
             if (mouseX >= noX && mouseX <= noX + 60 && mouseY >= yesY && mouseY <= yesY + 20) {
                 showConfirmation = false;
@@ -236,13 +435,23 @@ public class ClassDetailScreen extends Screen {
             return true;
         }
 
-        // Select button click detection
-        int contentX = width / 6;
-        int contentWidth = width * 2 / 3;
-        int btnWidth = 160;
-        int btnX = contentX + (contentWidth - btnWidth) / 2;
-        // Approximate button Y (rough check)
-        if (mouseX >= btnX && mouseX <= btnX + btnWidth && button == 0) {
+        // Back button check
+        int panelWidth = Math.min(340, width - 40);
+        int panelX = (width - panelWidth) / 2;
+        int viewBottom = height - 16;
+        int bx = panelX + PANEL_PADDING;
+        Component back = Component.translatable("gui.archetype.back");
+        int bw = font.width(back) + 12;
+        int bh = 16;
+        int by = viewBottom - 4 - bh;
+        if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh && button == 0) {
+            Minecraft.getInstance().setScreen(new ClassSelectionScreen(mode));
+            return true;
+        }
+
+        // Select button click detection — only the button area
+        if (mouseX >= selectBtnX && mouseX <= selectBtnX + selectBtnWidth
+                && mouseY >= selectBtnY && mouseY <= selectBtnY + selectBtnHeight && button == 0) {
             if (mode == 0) {
                 NetworkHandler.INSTANCE.sendToServer(new ClassSelectPacket(playerClass.getId(), false));
                 onClose();
@@ -257,27 +466,44 @@ public class ClassDetailScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        scrollOffset -= (float) (delta * 15);
-        scrollOffset = Mth.clamp(scrollOffset, 0, Math.max(0, contentHeight - (height - 40)));
+        scrollOffset -= (float) (delta * 20);
+        scrollOffset = Mth.clamp(scrollOffset, 0, Math.max(0, contentHeight - (height - 64)));
         return true;
     }
 
-    private void renderConfirmation(GuiGraphics g, int mouseX, int mouseY) {
-        g.fill(0, 0, width, height, 0x80000000);
+    private void renderConfirmation(GuiGraphics g, int mouseX, int mouseY, int classColor) {
+        // Full-screen darken
+        g.fill(0, 0, width, height, 0xE0000000);
+
+        // Dialog box
+        int dw = 240;
+        int dh = 80;
+        int dx = (width - dw) / 2;
+        int dy = (height - dh) / 2;
+        g.fill(dx, dy, dx + dw, dy + dh, 0xFF0C0C14);
+        // Border
+        int bc = 0xCC000000 | classColor;
+        g.fill(dx, dy, dx + dw, dy + 1, bc);
+        g.fill(dx, dy + dh - 1, dx + dw, dy + dh, bc);
+        g.fill(dx, dy, dx + 1, dy + dh, bc);
+        g.fill(dx + dw - 1, dy, dx + dw, dy + dh, bc);
+
         Component message = Component.translatable("gui.archetype.confirm_rebirth");
-        g.drawCenteredString(font, message, width / 2, height / 2 - 15, 0xFFFFFF);
+        g.drawCenteredString(font, message, width / 2, dy + 16, 0xFFFFFF);
 
         // Yes button
         int yesX = width / 2 - 80;
         int yesY = height / 2 + 10;
         boolean yesHover = mouseX >= yesX && mouseX <= yesX + 60 && mouseY >= yesY && mouseY <= yesY + 20;
-        g.fill(yesX, yesY, yesX + 60, yesY + 20, yesHover ? 0xC0446644 : 0xC0333333);
+        g.fill(yesX, yesY, yesX + 60, yesY + 20, yesHover ? 0xFF3A5A3A : 0xFF1A1A1A);
+        g.fill(yesX, yesY, yesX + 60, yesY + 1, 0xCC44CC44);
         g.drawCenteredString(font, Component.translatable("gui.yes"), yesX + 30, yesY + 6, 0x44CC44);
 
         // No button
         int noX = width / 2 + 20;
         boolean noHover = mouseX >= noX && mouseX <= noX + 60 && mouseY >= yesY && mouseY <= yesY + 20;
-        g.fill(noX, yesY, noX + 60, yesY + 20, noHover ? 0xC0664444 : 0xC0333333);
+        g.fill(noX, yesY, noX + 60, yesY + 20, noHover ? 0xFF5A3A3A : 0xFF1A1A1A);
+        g.fill(noX, yesY, noX + 60, yesY + 1, 0xCCCC4444);
         g.drawCenteredString(font, Component.translatable("gui.no"), noX + 30, yesY + 6, 0xCC4444);
     }
 

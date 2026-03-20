@@ -10,7 +10,6 @@ import com.mod.archetype.condition.ConditionRegistry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.NetworkHandler;
 import com.mod.archetype.platform.PlayerDataAccess;
-import com.mod.archetype.ability.active.RageDashAbility;
 import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +18,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
 
+import com.mod.archetype.config.ConfigManager;
 import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +30,7 @@ public class ClassManager {
     private static final ClassManager INSTANCE = new ClassManager();
 
     private final Map<UUID, ActiveClassInstance> activeInstances = new ConcurrentHashMap<>();
+    private final Map<UUID, ItemStack> playerUsingItem = new ConcurrentHashMap<>();
 
     public static ClassManager getInstance() {
         return INSTANCE;
@@ -205,14 +207,66 @@ public class ClassManager {
             passive.tick(player);
         }
 
+        // Detect when player finishes eating/drinking
+        trackItemUseFinished(player, instance);
+
         // Every 10 ticks: update resource drain/regen
         if (tick % 10 == 0) {
             updateResource(player, instance, data);
         }
 
+        // Class level = player XP level (1:1)
+        int xpLevel = player.experienceLevel;
+        int oldLevel = data.getClassLevel();
+        if (xpLevel != oldLevel) {
+            data.setClassLevel(xpLevel);
+            if (xpLevel > oldLevel) {
+                ArchetypeEvents.CLASS_LEVEL_UP.invoker().onLevelUp(player, xpLevel);
+                ClassActionTrigger.INSTANCE.trigger(player, "level_up", xpLevel);
+            }
+        }
+
         // Every 20 ticks: sync to client
         if (tick % 20 == 0) {
             syncToClient(player);
+        }
+    }
+
+    public void grantClassExperience(ServerPlayer player, int amount) {
+        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
+        if (!data.hasClass()) return;
+
+        int maxLevel = ConfigManager.server().maxClassLevel;
+        int[] expTable = new int[maxLevel + 1];
+        for (int i = 1; i <= maxLevel; i++) {
+            expTable[i] = (int) (100 * Math.pow(i, 1.5));
+        }
+
+        int oldLevel = data.getClassLevel();
+        data.addExperience(amount, maxLevel, expTable);
+        int newLevel = data.getClassLevel();
+
+        if (newLevel > oldLevel) {
+            ArchetypeEvents.CLASS_LEVEL_UP.invoker().onLevelUp(player, newLevel);
+            ClassActionTrigger.INSTANCE.trigger(player, "level_up", newLevel);
+        }
+
+        syncToClient(player);
+    }
+
+    private void trackItemUseFinished(ServerPlayer player, ActiveClassInstance instance) {
+        UUID uuid = player.getUUID();
+        if (player.isUsingItem()) {
+            ItemStack using = player.getUseItem().copy();
+            UseAnim anim = using.getUseAnimation();
+            if (anim == UseAnim.EAT || anim == UseAnim.DRINK) {
+                playerUsingItem.put(uuid, using);
+            }
+        } else {
+            ItemStack wasUsing = playerUsingItem.remove(uuid);
+            if (wasUsing != null && !wasUsing.isEmpty()) {
+                onPlayerEat(player, wasUsing);
+            }
         }
     }
 
@@ -254,6 +308,11 @@ public class ClassManager {
     }
 
     public void onPlayerJoin(ServerPlayer player) {
+        // Sync class definitions to client (needed for non-host players in multiplayer)
+        NetworkHandler.INSTANCE.sendToPlayer(player,
+                new com.mod.archetype.network.SyncClassDefinitionsPacket(
+                        ClassRegistry.getInstance().getRawJsonData()));
+
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         if (data.hasClass()) {
             PlayerClass classDef = ClassRegistry.getInstance().get(data.getCurrentClassId()).orElse(null);
@@ -278,6 +337,7 @@ public class ClassManager {
 
     public void onPlayerLeave(ServerPlayer player) {
         activeInstances.remove(player.getUUID());
+        playerUsingItem.remove(player.getUUID());
     }
 
     public void onPlayerAttack(ServerPlayer player, Entity target, DamageSource source) {
@@ -287,6 +347,16 @@ public class ClassManager {
         for (PassiveAbility passive : instance.getActivePassives()) {
             passive.onPlayerAttack(player, target, source);
         }
+    }
+
+    public boolean shouldCancelDamage(ServerPlayer player, DamageSource source) {
+        ActiveClassInstance instance = activeInstances.get(player.getUUID());
+        if (instance == null) return false;
+
+        for (PassiveAbility passive : instance.getActivePassives()) {
+            if (passive.shouldCancelDamage(player, source)) return true;
+        }
+        return false;
     }
 
     public void onPlayerHurt(ServerPlayer player, DamageSource source, float amount) {
@@ -304,6 +374,25 @@ public class ClassManager {
 
         for (PassiveAbility passive : instance.getActivePassives()) {
             passive.onPlayerEat(player, food);
+        }
+    }
+
+    public boolean shouldCancelItemUse(ServerPlayer player, ItemStack item) {
+        ActiveClassInstance instance = activeInstances.get(player.getUUID());
+        if (instance == null) return false;
+
+        for (PassiveAbility passive : instance.getActivePassives()) {
+            if (passive.shouldCancelItemUse(player, item)) return true;
+        }
+        return false;
+    }
+
+    public void onBlockBreak(ServerPlayer player, net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        ActiveClassInstance instance = activeInstances.get(player.getUUID());
+        if (instance == null) return;
+
+        for (PassiveAbility passive : instance.getActivePassives()) {
+            passive.onBlockBreak(player, pos, state);
         }
     }
 
@@ -452,9 +541,7 @@ public class ClassManager {
         float current = data.getResourceCurrent();
         float drain = resource.drainPerSecond() * 0.5f; // 10 ticks = 0.5 sec
 
-        // Check if regen is blocked (e.g. by Ram's obsidian dome)
-        float regen = RageDashAbility.isRegenBlocked(player)
-                ? 0 : resource.regenPerSecond() * 0.5f;
+        float regen = resource.regenPerSecond() * 0.5f;
 
         current = current - drain + regen;
         current = Math.max(0, Math.min(resource.maxValue(), current));
@@ -485,7 +572,7 @@ public class ClassManager {
         activeInstances.put(player.getUUID(), new ActiveClassInstance(classDef, passives, actives));
     }
 
-    private void syncToClient(ServerPlayer player) {
+    public void syncToClient(ServerPlayer player) {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         if (!data.hasClass()) {
             NetworkHandler.INSTANCE.sendToPlayer(player,
@@ -506,12 +593,30 @@ public class ClassManager {
                     new com.mod.archetype.network.SyncClassDataPacket.CooldownEntry(entry.getValue(), entry.getValue()));
         }
 
+        // Build charge entries from abilities that manage their own charges
+        Map<ResourceLocation, com.mod.archetype.network.SyncClassDataPacket.ChargeEntry> chargeEntries = new HashMap<>();
+        ActiveClassInstance inst = activeInstances.get(player.getUUID());
+        if (inst != null) {
+            for (var abilityEntry : inst.getActiveAbilities().entrySet()) {
+                ActiveAbility ability = abilityEntry.getValue();
+                if (ability.managesCooldown()) {
+                    int charges = ability.getCharges(player);
+                    int maxCharges = ability.getMaxCharges(player);
+                    if (charges >= 0 && maxCharges >= 0) {
+                        ResourceLocation abilityId = new ResourceLocation(ability.getType().getNamespace(), abilityEntry.getKey());
+                        chargeEntries.put(abilityId, new com.mod.archetype.network.SyncClassDataPacket.ChargeEntry(charges, maxCharges));
+                    }
+                }
+            }
+        }
+
         NetworkHandler.INSTANCE.sendToPlayer(player,
                 new com.mod.archetype.network.SyncClassDataPacket(
                         true, data.getCurrentClassId(),
                         data.getClassLevel(), data.getClassExperience(),
                         data.getResourceCurrent(), resourceMax,
-                        cooldownEntries, new HashMap<>(data.getToggleStates())));
+                        cooldownEntries, new HashMap<>(data.getToggleStates()),
+                        chargeEntries));
     }
 
     private static UUID generateModifierUUID(ResourceLocation attribute) {

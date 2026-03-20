@@ -20,6 +20,8 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -50,6 +52,10 @@ public class ForgeEventTranslator {
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            if (ClassManager.getInstance().shouldCancelDamage(serverPlayer, event.getSource())) {
+                event.setCanceled(true);
+                return;
+            }
             ClassManager.getInstance().onPlayerHurt(serverPlayer, event.getSource(), event.getAmount());
         }
     }
@@ -66,6 +72,22 @@ public class ForgeEventTranslator {
         if (event.getEntity() instanceof ServerPlayer player && event.getTarget() != null) {
             ClassManager.getInstance().onPlayerAttack(player, event.getTarget(),
                     player.damageSources().playerAttack(player));
+        }
+    }
+
+    @SubscribeEvent
+    public static void onItemUse(PlayerInteractEvent.RightClickItem event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            if (ClassManager.getInstance().shouldCancelItemUse(serverPlayer, event.getItemStack())) {
+                event.setCanceled(true);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event.getPlayer() instanceof ServerPlayer serverPlayer) {
+            ClassManager.getInstance().onBlockBreak(serverPlayer, event.getPos(), event.getState());
         }
     }
 

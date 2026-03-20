@@ -35,23 +35,35 @@ public class PotionCreatePassive extends AbstractPassiveAbility {
 
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (stack.isEmpty() || !stack.is(Items.POTION)) continue;
+            if (stack.isEmpty()) continue;
             if (PotionUtils.getPotion(stack) != Potions.WATER) continue;
 
-            // Convert 1 water bottle to random potion
-            Potion potion = POTIONS.get(random.nextInt(POTIONS.size()));
-
-            if (stack.getCount() > 1) {
-                stack.shrink(1);
-                ItemStack newPotion = new ItemStack(Items.POTION, 1);
-                PotionUtils.setPotion(newPotion, potion);
-                if (!player.getInventory().add(newPotion)) {
-                    player.drop(newPotion, false);
-                }
-            } else {
-                PotionUtils.setPotion(stack, potion);
+            // Handle regular, splash, and lingering water potions
+            if (stack.is(Items.POTION)) {
+                convertPotion(player, stack, Items.POTION);
+                return;
+            } else if (stack.is(Items.SPLASH_POTION)) {
+                convertPotion(player, stack, Items.SPLASH_POTION);
+                return;
+            } else if (stack.is(Items.LINGERING_POTION)) {
+                convertPotion(player, stack, Items.LINGERING_POTION);
+                return;
             }
-            return; // Only convert one per tick
+        }
+    }
+
+    private void convertPotion(ServerPlayer player, ItemStack stack, net.minecraft.world.item.Item potionItem) {
+        Potion potion = POTIONS.get(random.nextInt(POTIONS.size()));
+
+        if (stack.getCount() > 1) {
+            stack.shrink(1);
+            ItemStack newPotion = new ItemStack(potionItem, 1);
+            PotionUtils.setPotion(newPotion, potion);
+            if (!player.getInventory().add(newPotion)) {
+                player.drop(newPotion, false);
+            }
+        } else {
+            PotionUtils.setPotion(stack, potion);
         }
     }
 

@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public class AbilityHudOverlay {
 
@@ -113,15 +114,37 @@ public class AbilityHudOverlay {
             return;
         }
 
-        // Cooldown overlay
-        var cooldownInfo = data.getCooldown(ability.type());
-        int remaining = cooldownInfo != null ? cooldownInfo.remaining() : 0;
-        if (remaining > 0) {
-            float progress = (float) remaining / ability.cooldownTicks();
-            int overlayHeight = (int) (SLOT_SIZE * progress);
-            g.fill(x, y + SLOT_SIZE - overlayHeight, x + SLOT_SIZE, y + SLOT_SIZE, 0x80000000);
-            String cdText = String.valueOf((int) Math.ceil(remaining / 20.0));
-            g.drawCenteredString(font, cdText, x + SLOT_SIZE / 2, y + SLOT_SIZE / 2 - 4, 0xFFFFFF);
+        // Ability ID key matches server-side format: namespace:slot
+        ResourceLocation abilityId = new ResourceLocation(ability.type().getNamespace(), ability.slot());
+        var chargeInfo = data.getCharge(abilityId);
+
+        if (chargeInfo != null) {
+            // Charge-based ability: show charge count and recharge overlay when 0
+            if (chargeInfo.current() == 0) {
+                // No charges — show full cooldown overlay (like ender pearl recharge)
+                g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x80000000);
+                g.drawCenteredString(font, "0", x + SLOT_SIZE / 2, y + SLOT_SIZE / 2 - 4, 0xFF5555);
+            } else {
+                // Has charges — show charge count in bottom-right
+                String chargeText = String.valueOf(chargeInfo.current());
+                int textWidth = font.width(chargeText);
+                g.drawString(font, chargeText, x + SLOT_SIZE - textWidth - 1, y + SLOT_SIZE - 9, 0x55FF55, true);
+            }
+        } else {
+            // Standard cooldown overlay
+            var cooldownInfo = data.getCooldown(abilityId);
+            int remaining = cooldownInfo != null ? cooldownInfo.remaining() : 0;
+            if (remaining > 0) {
+                int maxTicks = cooldownInfo.maxTicks();
+                float smoothRemaining = remaining - partialTick;
+                float progress = maxTicks > 0
+                        ? Math.min(1.0f, Math.max(0.0f, smoothRemaining / maxTicks))
+                        : 0f;
+                int overlayHeight = Math.min(SLOT_SIZE, (int) (SLOT_SIZE * progress));
+                g.fill(x, y + SLOT_SIZE - overlayHeight, x + SLOT_SIZE, y + SLOT_SIZE, 0x80000000);
+                String cdText = String.valueOf((int) Math.ceil(remaining / 20.0));
+                g.drawCenteredString(font, cdText, x + SLOT_SIZE / 2, y + SLOT_SIZE / 2 - 4, 0xFFFFFF);
+            }
         }
     }
 

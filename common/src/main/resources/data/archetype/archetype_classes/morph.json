@@ -1,0 +1,148 @@
+{
+  "name": "class.archetype.morph.name",
+  "description": "class.archetype.morph.description",
+  "icon": "archetype:textures/gui/class/morph.png",
+  "color": "888888",
+  "category": "UTILITY",
+  "lore": [
+    "class.archetype.morph.lore_1"
+  ],
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.max_health",
+      "operation": "ADDITION",
+      "value": -8.0
+    },
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "operation": "MULTIPLY_BASE",
+      "value": 0.1
+    }
+  ],
+  "passive_abilities": [
+    {
+      "type": "archetype:formless_debuff",
+      "params": {
+        "effects": [
+          {"effect": "minecraft:weakness", "amplifier": 0},
+          {"effect": "minecraft:slowness", "amplifier": 0}
+        ]
+      },
+      "positive": false,
+      "name": "passive.archetype.morph.formless.name",
+      "description": "passive.archetype.morph.formless.description"
+    }
+  ],
+  "active_abilities": [
+    {
+      "type": "archetype:form_shift",
+      "slot": "ability_1",
+      "cooldown": 20,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {
+        "consumes_item": true,
+        "global_damage_growth_per_5_levels": 1,
+        "global_max_bonus_damage": 5,
+        "global_radius_growth_per_5_levels": 1,
+        "global_max_bonus_radius": 3,
+        "forms": [
+          {
+            "item": "minecraft:gunpowder",
+            "form_id": "creeper",
+            "on_hit_type": "explosion",
+            "on_hit_damage": 1,
+            "on_hit_radius": 1,
+            "attack_damage_modifier": -0.3,
+            "progression": [
+              {"level": 5, "on_hit_damage": 2},
+              {"level": 10, "on_hit_radius": 2},
+              {"level": 15, "on_hit_damage": 3}
+            ]
+          },
+          {
+            "item": "minecraft:snow_block",
+            "form_id": "snowman",
+            "on_hit_type": "effect",
+            "on_hit_effect": "minecraft:slowness",
+            "on_hit_effect_duration": 20,
+            "on_hit_effect_amplifier": 0,
+            "max_health_modifier": -2,
+            "attack_speed_modifier": -0.3,
+            "progression": [
+              {"level_interval": 5, "on_hit_effect_duration_growth": 20, "max_duration": 100},
+              {"level_interval": 10, "on_hit_effect_amplifier_growth": 1, "max_amplifier": 2}
+            ]
+          },
+          {
+            "item": "minecraft:wither_rose",
+            "form_id": "wither_skeleton",
+            "on_hit_type": "effect",
+            "on_hit_effect": "minecraft:wither",
+            "on_hit_effect_duration": 20,
+            "on_hit_effect_amplifier": 0,
+            "attack_damage_modifier": 0.05,
+            "max_health_modifier": -4,
+            "progression": [
+              {"level_interval": 5, "on_hit_effect_duration_growth": 20, "max_duration": 60},
+              {"level_interval": 10, "on_hit_effect_amplifier_growth": 1, "max_amplifier": 1}
+            ]
+          },
+          {
+            "item": "minecraft:blaze_powder",
+            "form_id": "blaze",
+            "on_hit_type": "fire",
+            "on_hit_fire_duration": 20,
+            "max_health_modifier": 2,
+            "fire_damage_multiplier": 2.0,
+            "fall_damage_multiplier": 2.0,
+            "progression": [
+              {"level_interval": 5, "on_hit_fire_duration_growth": 20, "max_duration": 60},
+              {"level_interval": 10, "on_hit_fire_amplifier_growth": 1, "max_amplifier": 1}
+            ]
+          },
+          {
+            "item": "minecraft:rotten_flesh",
+            "form_id": "zombie",
+            "on_hit_type": "none",
+            "day_effects": {
+              "sun_damage": true,
+              "effects": [
+                {"effect": "minecraft:hunger", "amplifier": 0}
+              ]
+            },
+            "night_bonuses": {
+              "attack_speed_modifier": 0.1,
+              "max_health_modifier": 2
+            },
+            "progression": [
+              {"level": 5, "day_max_health_modifier": 2},
+              {"level": 10, "remove_hunger_debuff": true},
+              {"level": 15, "day_attack_speed_modifier": 0.05},
+              {"level": 20, "remove_sun_damage": true}
+            ]
+          }
+        ]
+      },
+      "name": "ability.archetype.morph.form_shift.name",
+      "description": "ability.archetype.morph.form_shift.description",
+      "icon": "archetype:textures/gui/ability/form_shift.png"
+    },
+    {
+      "type": "archetype:form_cancel",
+      "slot": "ability_2",
+      "cooldown": 10,
+      "resource_cost": 0,
+      "unlock_level": 1,
+      "params": {},
+      "name": "ability.archetype.morph.form_cancel.name",
+      "description": "ability.archetype.morph.form_cancel.description",
+      "icon": "archetype:textures/gui/ability/form_cancel.png"
+    }
+  ],
+  "progression": [
+    { "level": 10, "key": "progression.archetype.morph.level_10" },
+    { "level": 15, "key": "progression.archetype.morph.level_15" },
+    { "level": 20, "key": "progression.archetype.morph.level_20" }
+  ]
+}

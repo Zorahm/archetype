@@ -28,6 +28,11 @@ import com.mod.archetype.ability.passive.ToolFragilityPassive;
 import com.mod.archetype.ability.passive.RandomEnchantPassive;
 import com.mod.archetype.ability.passive.ArrowTransmutePassive;
 import com.mod.archetype.ability.passive.PotionCreatePassive;
+import com.mod.archetype.ability.passive.VillagerRejectionPassive;
+import com.mod.archetype.ability.passive.WaterFoodDamagePassive;
+import com.mod.archetype.ability.passive.PotionBlockPassive;
+import com.mod.archetype.ability.passive.FormlessDebuffPassive;
+import com.mod.archetype.ability.active.AntigravityThrowAbility;
 import com.mod.archetype.ability.active.AreaAttackAbility;
 import com.mod.archetype.ability.active.BloodDrainAbility;
 import com.mod.archetype.ability.active.ChargedAbility;
@@ -44,8 +49,11 @@ import com.mod.archetype.ability.active.ViDashAbility;
 import com.mod.archetype.ability.active.RageDashAbility;
 import com.mod.archetype.ability.active.RandomProjectileAbility;
 import com.mod.archetype.ability.active.RandomTeleportAbility;
-import com.mod.archetype.ability.active.SpaceRiftAbility;
+import com.mod.archetype.ability.passive.XpAttributeScalingPassive;
 import com.mod.archetype.ability.active.EvokerFangsAbility;
+import com.mod.archetype.ability.active.ChaseTeleportAbility;
+import com.mod.archetype.ability.active.FormShiftAbility;
+import com.mod.archetype.ability.active.FormCancelAbility;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import net.minecraft.resources.ResourceLocation;
@@ -127,6 +135,10 @@ public class AbilityRegistry {
         registerPassive(new ResourceLocation(Archetype.MOD_ID, "random_enchant"), RandomEnchantPassive::new);
         registerPassive(new ResourceLocation(Archetype.MOD_ID, "arrow_transmute"), ArrowTransmutePassive::new);
         registerPassive(new ResourceLocation(Archetype.MOD_ID, "potion_create"), PotionCreatePassive::new);
+        registerPassive(new ResourceLocation(Archetype.MOD_ID, "villager_rejection"), VillagerRejectionPassive::new);
+        registerPassive(new ResourceLocation(Archetype.MOD_ID, "water_food_damage"), WaterFoodDamagePassive::new);
+        registerPassive(new ResourceLocation(Archetype.MOD_ID, "potion_block"), PotionBlockPassive::new);
+        registerPassive(new ResourceLocation(Archetype.MOD_ID, "formless_debuff"), FormlessDebuffPassive::new);
 
         // Active abilities
         registerActive(new ResourceLocation(Archetype.MOD_ID, "timed_buff"), TimedBuffAbility::new);
@@ -145,7 +157,11 @@ public class AbilityRegistry {
         registerActive(new ResourceLocation(Archetype.MOD_ID, "rage_dash"), RageDashAbility::new);
         registerActive(new ResourceLocation(Archetype.MOD_ID, "random_projectile"), RandomProjectileAbility::new);
         registerActive(new ResourceLocation(Archetype.MOD_ID, "random_teleport"), RandomTeleportAbility::new);
-        registerActive(new ResourceLocation(Archetype.MOD_ID, "space_rift"), SpaceRiftAbility::new);
+        registerPassive(new ResourceLocation(Archetype.MOD_ID, "xp_attribute_scaling"), XpAttributeScalingPassive::new);
         registerActive(new ResourceLocation(Archetype.MOD_ID, "evoker_fangs"), EvokerFangsAbility::new);
+        registerActive(new ResourceLocation(Archetype.MOD_ID, "chase_teleport"), ChaseTeleportAbility::new);
+        registerActive(new ResourceLocation(Archetype.MOD_ID, "antigravity_throw"), AntigravityThrowAbility::new);
+        registerActive(new ResourceLocation(Archetype.MOD_ID, "form_shift"), FormShiftAbility::new);
+        registerActive(new ResourceLocation(Archetype.MOD_ID, "form_cancel"), FormCancelAbility::new);
     }
 }

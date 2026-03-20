@@ -7,6 +7,8 @@ import com.mod.archetype.network.client.ClientClassData;
 import com.mod.archetype.platform.NetworkHandler;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 public class ArchetypeKeybinds {
@@ -65,7 +67,26 @@ public class ArchetypeKeybinds {
     }
 
     private static void sendAbilityUse(String slot) {
-        NetworkHandler.INSTANCE.sendToServer(new AbilityUsePacket(slot));
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        float dirX = 0, dirZ = 0;
+        if (player != null) {
+            float forward = player.input.forwardImpulse;
+            float strafe = player.input.leftImpulse;
+            if (forward != 0 || strafe != 0) {
+                float yRot = player.getYRot() * Mth.DEG_TO_RAD;
+                float sin = Mth.sin(yRot);
+                float cos = Mth.cos(yRot);
+                double dx = strafe * cos - forward * sin;
+                double dz = forward * cos + strafe * sin;
+                double len = Math.sqrt(dx * dx + dz * dz);
+                if (len > 0.001) {
+                    dirX = (float) (dx / len);
+                    dirZ = (float) (dz / len);
+                }
+            }
+        }
+        NetworkHandler.INSTANCE.sendToServer(new AbilityUsePacket(slot, dirX, dirZ));
     }
 
     public static void startCharging(String slot) {

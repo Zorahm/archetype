@@ -17,7 +17,7 @@ public class PlayerClassData {
     @Nullable
     private ResourceLocation currentClassId;
     private long classAssignedTime;
-    private int classLevel = 1;
+    private int classLevel = 0;
     private int classExperience;
     private float resourceCurrent;
     private Map<ResourceLocation, Integer> cooldowns = new HashMap<>();
@@ -205,7 +205,6 @@ public class PlayerClassData {
         }
         classAssignedTime = tag.getLong("AssignedTime");
         classLevel = tag.getInt("Level");
-        if (classLevel < 1) classLevel = 1;
         classExperience = tag.getInt("Experience");
         resourceCurrent = tag.getFloat("Resource");
         lastClassChangeTime = tag.getLong("LastChangeTime");
@@ -295,7 +294,7 @@ public class PlayerClassData {
     public void reset() {
         currentClassId = null;
         classAssignedTime = 0;
-        classLevel = 1;
+        classLevel = 0;
         classExperience = 0;
         resourceCurrent = 0;
         cooldowns.clear();

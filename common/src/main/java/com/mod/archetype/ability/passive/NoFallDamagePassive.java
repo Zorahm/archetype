@@ -20,15 +20,7 @@ public class NoFallDamagePassive extends AbstractPassiveAbility {
     }
 
     @Override
-    public void onPlayerHurt(ServerPlayer player, DamageSource source, float amount) {
-        // Fall damage cancellation is checked via shouldCancelDamage
-    }
-
-    /**
-     * Returns true if this passive should cancel the given damage source.
-     * Intended to be checked by the damage event handler.
-     */
-    public boolean shouldCancelDamage(DamageSource source) {
+    public boolean shouldCancelDamage(ServerPlayer player, DamageSource source) {
         return source.is(DamageTypes.FALL);
     }
 

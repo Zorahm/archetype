@@ -20,6 +20,7 @@ public class ClientClassData {
     private float resourceMax;
     private Map<ResourceLocation, CooldownInfo> cooldowns = new HashMap<>();
     private Map<ResourceLocation, Boolean> toggleStates = new HashMap<>();
+    private Map<ResourceLocation, ChargeInfo> charges = new HashMap<>();
 
     public static ClientClassData getInstance() {
         return INSTANCE;
@@ -39,6 +40,10 @@ public class ClientClassData {
 
         this.toggleStates.clear();
         this.toggleStates.putAll(packet.getToggleStates());
+
+        this.charges.clear();
+        packet.getCharges().forEach((id, entry) ->
+                charges.put(id, new ChargeInfo(entry.current(), entry.max())));
     }
 
     public void clear() {
@@ -50,6 +55,7 @@ public class ClientClassData {
         resourceMax = 0;
         cooldowns.clear();
         toggleStates.clear();
+        charges.clear();
     }
 
     public boolean hasClass() { return hasClass; }
@@ -60,6 +66,7 @@ public class ClientClassData {
     public float getResourceMax() { return resourceMax; }
     public Map<ResourceLocation, CooldownInfo> getCooldowns() { return cooldowns; }
     public Map<ResourceLocation, Boolean> getToggleStates() { return toggleStates; }
+    public Map<ResourceLocation, ChargeInfo> getCharges() { return charges; }
 
     @Nullable
     public CooldownInfo getCooldown(ResourceLocation abilityId) {
@@ -69,6 +76,13 @@ public class ClientClassData {
     public boolean isToggleActive(ResourceLocation abilityId) {
         return toggleStates.getOrDefault(abilityId, false);
     }
+
+    @Nullable
+    public ChargeInfo getCharge(ResourceLocation abilityId) {
+        return charges.get(abilityId);
+    }
+
+    public record ChargeInfo(int current, int max) {}
 
     public record CooldownInfo(int remaining, int maxTicks) {
         public float getProgress() {

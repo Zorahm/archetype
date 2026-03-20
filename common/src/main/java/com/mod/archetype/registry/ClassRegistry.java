@@ -19,6 +19,7 @@ public class ClassRegistry extends SimpleJsonResourceReloadListener {
     private static final ClassRegistry INSTANCE = new ClassRegistry();
 
     private Map<ResourceLocation, PlayerClass> classes = Map.of();
+    private Map<ResourceLocation, String> rawJsonData = Map.of();
 
     private ClassRegistry() {
         super(GSON, "archetype_classes");
@@ -31,6 +32,7 @@ public class ClassRegistry extends SimpleJsonResourceReloadListener {
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> map, ResourceManager manager, ProfilerFiller profiler) {
         Map<ResourceLocation, PlayerClass> newClasses = new HashMap<>();
+        Map<ResourceLocation, String> newRawJson = new HashMap<>();
         int errorCount = 0;
 
         for (Map.Entry<ResourceLocation, JsonElement> entry : map.entrySet()) {
@@ -39,6 +41,7 @@ public class ClassRegistry extends SimpleJsonResourceReloadListener {
                 JsonObject json = entry.getValue().getAsJsonObject();
                 PlayerClass playerClass = ClassJsonParser.parse(fileId, json);
                 newClasses.put(fileId, playerClass);
+                newRawJson.put(fileId, GSON.toJson(json));
             } catch (ClassParseException e) {
                 Archetype.LOGGER.error(e.getMessage());
                 errorCount++;
@@ -49,7 +52,28 @@ public class ClassRegistry extends SimpleJsonResourceReloadListener {
         }
 
         this.classes = Collections.unmodifiableMap(newClasses);
+        this.rawJsonData = Collections.unmodifiableMap(newRawJson);
         Archetype.LOGGER.info("Loaded {} archetype classes ({} failed)", newClasses.size(), errorCount);
+    }
+
+    public Map<ResourceLocation, String> getRawJsonData() {
+        return rawJsonData;
+    }
+
+    public void loadFromJsonStrings(Map<ResourceLocation, String> jsonMap) {
+        Map<ResourceLocation, PlayerClass> newClasses = new HashMap<>();
+        for (var entry : jsonMap.entrySet()) {
+            try {
+                JsonObject json = GSON.fromJson(entry.getValue(), JsonObject.class);
+                PlayerClass playerClass = ClassJsonParser.parse(entry.getKey(), json);
+                newClasses.put(entry.getKey(), playerClass);
+            } catch (Exception e) {
+                Archetype.LOGGER.error("Failed to parse synced class '{}': {}", entry.getKey(), e.getMessage());
+            }
+        }
+        this.classes = Collections.unmodifiableMap(newClasses);
+        this.rawJsonData = Collections.unmodifiableMap(jsonMap);
+        Archetype.LOGGER.info("Synced {} archetype classes from server", newClasses.size());
     }
 
     public Optional<PlayerClass> get(ResourceLocation id) {

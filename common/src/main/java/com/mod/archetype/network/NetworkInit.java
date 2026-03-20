@@ -44,6 +44,11 @@ public class NetworkInit {
                 id("player_class_sync"), PlayerClassSyncPacket.class,
                 PlayerClassSyncPacket::encode, PlayerClassSyncPacket::decode, PlayerClassSyncClientHandler::handle
         );
+
+        handler.registerClientReceiver(
+                id("sync_class_defs"), SyncClassDefinitionsPacket.class,
+                SyncClassDefinitionsPacket::encode, SyncClassDefinitionsPacket::decode, SyncClassDefinitionsClientHandler::handle
+        );
     }
 
     private static ResourceLocation id(String path) {

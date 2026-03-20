@@ -9,6 +9,8 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -18,6 +20,8 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -65,9 +69,12 @@ public class FabricEventTranslator {
         // Hurt event
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             if (entity instanceof ServerPlayer serverPlayer) {
+                if (ClassManager.getInstance().shouldCancelDamage(serverPlayer, source)) {
+                    return false;
+                }
                 ClassManager.getInstance().onPlayerHurt(serverPlayer, source, amount);
             }
-            return true; // always allow, we just notify
+            return true;
         });
 
         // Attack event
@@ -77,6 +84,24 @@ public class FabricEventTranslator {
                         serverPlayer.damageSources().playerAttack(serverPlayer));
             }
             return InteractionResult.PASS;
+        });
+
+        // Item use event (cancel shield etc.)
+        UseItemCallback.EVENT.register((player, world, hand) -> {
+            if (player instanceof ServerPlayer serverPlayer) {
+                ItemStack item = player.getItemInHand(hand);
+                if (ClassManager.getInstance().shouldCancelItemUse(serverPlayer, item)) {
+                    return InteractionResultHolder.fail(item);
+                }
+            }
+            return InteractionResultHolder.pass(ItemStack.EMPTY);
+        });
+
+        // Block break event
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+            if (player instanceof ServerPlayer serverPlayer) {
+                ClassManager.getInstance().onBlockBreak(serverPlayer, pos, state);
+            }
         });
 
         // Command registration
