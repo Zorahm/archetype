@@ -109,6 +109,9 @@ public class ClassManager {
         // Trigger advancements
         ClassActionTrigger.INSTANCE.trigger(player, "choose_class", data.getClassLevel());
 
+        // Execute on_assign commands
+        executeCommands(player, classDef, "on_assign");
+
         Archetype.LOGGER.info("Player {} assigned class {}", player.getName().getString(), classId);
         return AssignResult.success();
     }
@@ -149,6 +152,11 @@ public class ClassManager {
         data.setResourceCurrent(0);
         data.getActiveConditionalSets().clear();
 
+        // Execute on_remove commands (before clearing class id)
+        if (classDef != null) {
+            executeCommands(player, classDef, "on_remove");
+        }
+
         ResourceLocation oldClassId = data.getCurrentClassId();
         data.setCurrentClassId(null);
 
@@ -186,6 +194,18 @@ public class ClassManager {
         instance.incrementTickCounter();
         int tick = instance.getTickCounter();
 
+        // Class level = player XP level (1:1) — updated first so tickActive reads current level
+        int xpLevel = player.experienceLevel;
+        int oldLevel = data.getClassLevel();
+        if (xpLevel != oldLevel) {
+            data.setClassLevel(xpLevel);
+            if (xpLevel > oldLevel) {
+                ArchetypeEvents.CLASS_LEVEL_UP.invoker().onLevelUp(player, xpLevel);
+                ClassActionTrigger.INSTANCE.trigger(player, "level_up", xpLevel);
+                executeCommands(player, instance.getClassDefinition(), "on_level_up", xpLevel);
+            }
+        }
+
         // Every tick: decrease cooldowns
         data.getCooldowns().replaceAll((k, v) -> Math.max(0, v - 1));
         data.getCooldowns().values().removeIf(v -> v <= 0);
@@ -215,16 +235,8 @@ public class ClassManager {
             updateResource(player, instance, data);
         }
 
-        // Class level = player XP level (1:1)
-        int xpLevel = player.experienceLevel;
-        int oldLevel = data.getClassLevel();
-        if (xpLevel != oldLevel) {
-            data.setClassLevel(xpLevel);
-            if (xpLevel > oldLevel) {
-                ArchetypeEvents.CLASS_LEVEL_UP.invoker().onLevelUp(player, xpLevel);
-                ClassActionTrigger.INSTANCE.trigger(player, "level_up", xpLevel);
-            }
-        }
+        // on_tick commands
+        executeTickCommands(player, instance.getClassDefinition(), tick);
 
         // Every 20 ticks: sync to client
         if (tick % 20 == 0) {
@@ -280,6 +292,9 @@ public class ClassManager {
         if (classDef != null && classDef.getResource() != null) {
             data.setResourceCurrent(classDef.getResource().startValue());
         }
+        if (classDef != null) {
+            executeCommands(player, classDef, "on_death");
+        }
         // Cooldowns are preserved across death
     }
 
@@ -303,6 +318,9 @@ public class ClassManager {
 
         // Rebuild instance (passives need to be re-created)
         rebuildInstance(player, data);
+
+        // Execute on_respawn commands
+        executeCommands(player, classDef, "on_respawn");
 
         syncToClient(player);
     }
@@ -625,6 +643,43 @@ public class ClassManager {
 
     private static UUID generateConditionalModifierUUID(ResourceLocation attribute, int condIndex) {
         return UUID.nameUUIDFromBytes(("archetype:cond_" + condIndex + "_" + attribute).getBytes());
+    }
+
+    // --- Command triggers ---
+
+    private void executeCommands(ServerPlayer player, PlayerClass classDef, String trigger) {
+        for (PlayerClass.CommandTrigger cmd : classDef.getCommands()) {
+            if (!cmd.trigger().equals(trigger)) continue;
+            runCommand(player, cmd.command(), -1);
+        }
+    }
+
+    private void executeCommands(ServerPlayer player, PlayerClass classDef, String trigger, int level) {
+        for (PlayerClass.CommandTrigger cmd : classDef.getCommands()) {
+            if (!cmd.trigger().equals(trigger)) continue;
+            runCommand(player, cmd.command(), level);
+        }
+    }
+
+    private void executeTickCommands(ServerPlayer player, PlayerClass classDef, int tick) {
+        for (PlayerClass.CommandTrigger cmd : classDef.getCommands()) {
+            if (!"on_tick".equals(cmd.trigger())) continue;
+            if (tick % cmd.interval() != 0) continue;
+            runCommand(player, cmd.command(), -1);
+        }
+    }
+
+    private void runCommand(ServerPlayer player, String rawCommand, int level) {
+        String command = rawCommand
+                .replace("{player}", player.getName().getString())
+                .replace("{level}", level >= 0 ? String.valueOf(level) : String.valueOf(player.experienceLevel));
+        try {
+            // Run with the player as @s, but with OP-level permissions
+            var source = player.createCommandSourceStack().withPermission(4).withSuppressedOutput();
+            player.getServer().getCommands().performPrefixedCommand(source, command);
+        } catch (Exception e) {
+            Archetype.LOGGER.error("Command trigger failed for class {}: '{}' — {}", player.getName().getString(), command, e.getMessage());
+        }
     }
 
     // --- Result ---

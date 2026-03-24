@@ -82,18 +82,20 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         double cy = targetPos.getY();
         double cz = targetPos.getZ() + 0.5;
 
-        if (count == 1) {
-            BlockPos ground = findGround(player, targetPos);
-            if (ground != null) {
-                EvokerFangs fangs = new EvokerFangs(player.level(), cx, ground.getY(), cz, 0, 0, player);
-                player.level().addFreshEntity(fangs);
-            }
-            return;
+        // Always spawn one fang at center
+        BlockPos centerGround = findGround(player, targetPos);
+        if (centerGround != null) {
+            EvokerFangs centerFangs = new EvokerFangs(player.level(), cx, centerGround.getY(), cz, 0, 0, player);
+            player.level().addFreshEntity(centerFangs);
         }
 
-        double angleStep = 2 * Math.PI / count;
+        if (count <= 1) return;
+
+        // Remaining fangs in a circle around center
+        int circleCount = count - 1;
+        double angleStep = 2 * Math.PI / circleCount;
         double radius = 1.5;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < circleCount; i++) {
             double angle = angleStep * i;
             double x = cx + Math.cos(angle) * radius;
             double z = cz + Math.sin(angle) * radius;
@@ -101,7 +103,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             BlockPos ground = findGround(player, blockPos);
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(), z,
-                        (float) angle, i, player);
+                        (float) angle, i + 1, player);
                 player.level().addFreshEntity(fangs);
             }
         }

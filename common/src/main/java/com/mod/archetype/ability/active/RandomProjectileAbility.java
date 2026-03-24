@@ -35,10 +35,11 @@ public class RandomProjectileAbility extends AbstractActiveAbility {
     public boolean managesCooldown() { return true; }
 
     private double getArrowDamage(int classLevel) {
-        double dmg = 1.0;
-        if (classLevel >= 20) dmg += 1.0;
-        if (classLevel >= 40) dmg += 1.0;
-        if (classLevel >= 60) dmg += 1.0;
+        // Arrow damage = baseDamage * velocity (shoot speed 2.0), so use 0.5 per point to get 1 HP per point
+        double dmg = 0.5;
+        if (classLevel >= 20) dmg += 0.5;
+        if (classLevel >= 40) dmg += 0.5;
+        if (classLevel >= 60) dmg += 0.5;
         return dmg;
     }
 

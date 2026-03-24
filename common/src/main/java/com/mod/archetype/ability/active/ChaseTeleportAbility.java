@@ -13,21 +13,37 @@ import net.minecraft.world.phys.Vec3;
 public class ChaseTeleportAbility extends AbstractActiveAbility {
 
     private final float baseDamage;
-    private final float maxDamage;
-    private final float damageGrowthPer5Levels;
+    private final float baseSelfDamage;
 
     public ChaseTeleportAbility(ActiveAbilityEntry entry) {
         super(entry);
-        this.baseDamage = getFloat("base_damage", 3.0f);
-        this.maxDamage = getFloat("max_damage", 10.0f);
-        this.damageGrowthPer5Levels = getFloat("damage_growth_per_5_levels", 0.5f);
+        this.baseDamage = getFloat("base_damage", 1.0f);
+        this.baseSelfDamage = getFloat("self_damage", 3.0f);
     }
 
-    private float getEffectiveDamage(ServerPlayer player) {
-        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
-        int level = data.getClassLevel();
-        float bonus = (level / 5) * damageGrowthPer5Levels;
-        return Math.min(baseDamage + bonus, maxDamage);
+    private float getEffectiveDamage(int level) {
+        float dmg = baseDamage;
+        if (level >= 20) dmg += 1.0f;
+        if (level >= 40) dmg += 1.0f;
+        return dmg;
+    }
+
+    private float getEffectiveSelfDamage(int level) {
+        float dmg = baseSelfDamage;
+        if (level >= 20) dmg -= 1.0f;
+        if (level >= 40) dmg -= 1.0f;
+        if (level >= 60) dmg -= 1.0f;
+        return Math.max(0, dmg);
+    }
+
+    @Override
+    public int getCooldownTicks(ServerPlayer player) {
+        int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+        int cd = entry.cooldownTicks();
+        if (level >= 20) cd -= 20;
+        if (level >= 40) cd -= 20;
+        if (level >= 60) cd -= 20;
+        return Math.max(20, cd);
     }
 
     @Override
@@ -52,8 +68,13 @@ public class ChaseTeleportAbility extends AbstractActiveAbility {
 
         player.teleportTo(teleX, teleY, teleZ);
 
-        float damage = getEffectiveDamage(player);
-        target.hurt(player.damageSources().playerAttack(player), damage);
+        int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+        target.hurt(player.damageSources().playerAttack(player), getEffectiveDamage(level));
+
+        float selfDamage = getEffectiveSelfDamage(level);
+        if (selfDamage > 0) {
+            player.hurt(player.damageSources().magic(), selfDamage);
+        }
 
         return ActivationResult.SUCCESS;
     }

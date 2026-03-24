@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mod.archetype.Archetype;
 import com.mod.archetype.core.PlayerClass;
+import com.mod.archetype.platform.PlatformHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -20,6 +21,10 @@ public class ClassRegistry extends SimpleJsonResourceReloadListener {
 
     private Map<ResourceLocation, PlayerClass> classes = Map.of();
     private Map<ResourceLocation, String> rawJsonData = Map.of();
+
+    // Datapacks and config are stored separately so reload() can re-merge without a full datapack reload
+    private Map<ResourceLocation, PlayerClass> datpackClasses = Map.of();
+    private Map<ResourceLocation, String> datpackRawJson = Map.of();
 
     private ClassRegistry() {
         super(GSON, "archetype_classes");
@@ -51,9 +56,11 @@ public class ClassRegistry extends SimpleJsonResourceReloadListener {
             }
         }
 
-        this.classes = Collections.unmodifiableMap(newClasses);
-        this.rawJsonData = Collections.unmodifiableMap(newRawJson);
-        Archetype.LOGGER.info("Loaded {} archetype classes ({} failed)", newClasses.size(), errorCount);
+        this.datpackClasses = Collections.unmodifiableMap(newClasses);
+        this.datpackRawJson = Collections.unmodifiableMap(newRawJson);
+        Archetype.LOGGER.info("Loaded {} archetype classes from datapacks ({} failed)", newClasses.size(), errorCount);
+
+        mergeWithConfig();
     }
 
     public Map<ResourceLocation, String> getRawJsonData() {
@@ -97,8 +104,23 @@ public class ClassRegistry extends SimpleJsonResourceReloadListener {
     }
 
     public void reload(ResourceManager manager) {
-        // Force a manual reload by delegating to the resource manager
-        // The actual reload happens through the datapack reload system
-        Archetype.LOGGER.info("Class registry reload requested");
+        Archetype.LOGGER.info("Reloading config classes...");
+        mergeWithConfig();
+        Archetype.LOGGER.info("Config reload done. Total classes: {}", classes.size());
+    }
+
+    private void mergeWithConfig() {
+        ConfigClassLoader.LoadResult cfg = ConfigClassLoader.load(PlatformHelper.INSTANCE.getConfigDir());
+
+        Map<ResourceLocation, PlayerClass> merged = new HashMap<>(datpackClasses);
+        merged.putAll(cfg.classes()); // config wins on conflict
+
+        Map<ResourceLocation, String> mergedRaw = new HashMap<>(datpackRawJson);
+        mergedRaw.putAll(cfg.rawJson());
+
+        this.classes = Collections.unmodifiableMap(merged);
+        this.rawJsonData = Collections.unmodifiableMap(mergedRaw);
+        Archetype.LOGGER.info("Total archetype classes: {} ({} from config, {} from datapacks)",
+            merged.size(), cfg.classes().size(), datpackClasses.size());
     }
 }

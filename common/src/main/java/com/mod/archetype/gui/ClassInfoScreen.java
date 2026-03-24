@@ -166,9 +166,8 @@ public class ClassInfoScreen extends Screen {
             for (AttributeModifierEntry attr : playerClass.getAttributes()) {
                 double baseValue = getBaseValue(attr.attribute().toString());
                 double scalingBonus = getXpScalingBonus(attr.attribute(), level);
-                if (Math.abs(attr.value() + scalingBonus) < 0.001) continue;
-                String attrName = attr.attribute().getPath().replace("generic.", "").replace("_", " ");
-                attrName = attrName.substring(0, 1).toUpperCase() + attrName.substring(1);
+                if (Math.abs(attr.value()) < 0.001) continue;
+                String attrName = Component.translatable("gui.archetype.attr." + attr.attribute().getPath().replace("generic.", "")).getString();
                 double value = baseValue + attr.value() + scalingBonus;
                 int barWidth = Math.min(80, leftWidth / 3);
                 ClassScreenRenderer.renderAttributeBar(g, font, attrName, value, baseValue, leftX, ly, barWidth);
@@ -436,11 +435,13 @@ public class ClassInfoScreen extends Screen {
         int level = data.getLevel();
         int xp = data.getExperience();
         int neededXp = PlayerClassData.experienceForLevel(level + 1, 100);
-        int maxLevel = 20;
+
+        List<PlayerClass.LevelMilestone> progression = playerClass.getProgression();
+        int maxLevel = progression.isEmpty() ? 0 : progression.get(progression.size() - 1).level();
 
         List<Component> lines = new ArrayList<>();
 
-        // Header: Level X / 20
+        // Header: Level X / maxLevel
         lines.add(Component.translatable("gui.archetype.level", level)
                 .append(Component.literal(" / " + maxLevel).withStyle(Style.EMPTY.withColor(0x666666))));
 
@@ -472,10 +473,9 @@ public class ClassInfoScreen extends Screen {
         }
 
         // Progression: show only the next milestone
-        List<PlayerClass.LevelMilestone> milestones = playerClass.getProgression();
-        if (!milestones.isEmpty()) {
+        if (!progression.isEmpty()) {
             PlayerClass.LevelMilestone nextMilestone = null;
-            for (PlayerClass.LevelMilestone milestone : milestones) {
+            for (PlayerClass.LevelMilestone milestone : progression) {
                 if (milestone.level() > level) {
                     nextMilestone = milestone;
                     break;
@@ -493,16 +493,28 @@ public class ClassInfoScreen extends Screen {
             }
         }
 
-        // Compute tooltip dimensions
-        int maxW = 0;
+        // Cap tooltip width and wrap lines
+        int maxRawW = 0;
         for (Component line : lines) {
-            maxW = Math.max(maxW, font.width(line));
+            maxRawW = Math.max(maxRawW, font.width(line));
         }
-        int tipW = maxW + 12;
+        int contentW = Math.min(maxRawW, 200);
+        int tipW = contentW + 12;
+
+        // Split lines for wrapping
+        List<FormattedCharSequence> rendered = new ArrayList<>();
+        for (Component line : lines) {
+            if (line.getString().isEmpty()) {
+                rendered.add(null); // spacer
+            } else {
+                rendered.addAll(font.split(line, contentW));
+            }
+        }
+
         int lineH = font.lineHeight + 2;
         int tipH = 8;
-        for (Component line : lines) {
-            tipH += line.getString().isEmpty() ? 4 : lineH;
+        for (FormattedCharSequence seq : rendered) {
+            tipH += seq == null ? 4 : lineH;
         }
 
         int tipX = mouseX + 12;
@@ -525,12 +537,12 @@ public class ClassInfoScreen extends Screen {
 
         // Text
         int textY = tipY + 4;
-        for (Component line : lines) {
-            if (line.getString().isEmpty()) {
+        for (FormattedCharSequence seq : rendered) {
+            if (seq == null) {
                 textY += 4;
                 continue;
             }
-            g.drawString(font, line, tipX + 6, textY, 0xFFFFFF, false);
+            g.drawString(font, seq, tipX + 6, textY, 0xFFFFFF, false);
             textY += lineH;
         }
     }

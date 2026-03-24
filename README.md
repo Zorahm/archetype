@@ -1,40 +1,106 @@
-# Archetype
+<div align="center">
 
-Система классов для Minecraft. Forge + Fabric | MC 1.20.1 | Architectury
+# ⚔ Archetype
+
+### Система классов для Minecraft
+
+![MC](https://img.shields.io/badge/Minecraft-1.20.1-62b447?style=flat-square&logo=minecraft&logoColor=white)
+![Forge](https://img.shields.io/badge/Forge-multiloader-e07a33?style=flat-square)
+![Fabric](https://img.shields.io/badge/Fabric-multiloader-c9b88a?style=flat-square)
+![Java](https://img.shields.io/badge/Java-17-f89820?style=flat-square&logo=openjdk&logoColor=white)
+![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
+
+*Каждый бонус компенсирован штрафом. Нет идеального класса — только твой выбор.*
+
+</div>
+
+---
 
 ## Что это
 
-Мод добавляет классы игрокам: Вампир, Голем, Фантом, Берсерк, Маг и другие. Каждый класс даёт уникальные активные и пассивные способности, меняет характеристики, накладывает ограничения. Классы определяются через JSON — без написания Java-кода. Серверы добавляют свои классы через датапаки.
+Archetype добавляет систему классов, которая меняет правила игры для каждого игрока. Классы переписывают характеристики, дают уникальные активные и пассивные способности, накладывают ограничения.
 
-Главный принцип: **баланс через компромисс**. Вампир силён ночью, но горит днём. Голем неубиваем, но тонет. Фантом проходит сквозь стены, но хрупок.
+**Главный принцип — баланс через компромисс:**
+
+| Класс | Сила | Слабость |
+|-------|------|----------|
+| 🧛 Ви | Высокий урон, крит-механика | Уязвим без накопленного ресурса |
+| 🗿 Рам | Огонь, ярость, живучесть | Ограниченная мобильность |
+| 🌀 Линь Ци | Хаотичная магия | Нестабильные эффекты |
+| ☯ Жу И | Ресурсный баланс | Зависимость от состояния |
+
+Классы задаются JSON-файлами — серверы добавляют свои через датапаки без единой строки Java.
+
+---
 
 ## Архитектура
 
-Мультилоадерный проект на [Architectury](https://github.com/architectury/architectury-api):
+Мультилоадерный проект на [Architectury](https://github.com/architectury/architectury-api) — один общий модуль, два платформенных слоя:
 
 ```
 archetype/
-├── common/    95% кода — ядро, способности, сеть, GUI
-├── forge/     Forge-специфичное: Capabilities, SimpleChannel, события
-└── fabric/    Fabric-специфичное: Data Attachments, Networking API, события
+├── common/     95% кода — ядро, способности, сеть, GUI, команды
+├── forge/      Forge: Capabilities, SimpleChannel, события
+└── fabric/     Fabric: Data Attachments, Networking API, события
 ```
 
-### Модули (common)
+Платформо-зависимый код изолирован через ServiceLoader (`NetworkHandler`, `PlayerDataAccess`, `PlatformHelper`).
+
+### Модули
 
 | Модуль | Назначение |
 |--------|-----------|
-| `core/` | ClassManager, PlayerClass, жизненный цикл классов |
-| `ability/` | Интерфейсы и фабрики пассивных/активных способностей |
-| `condition/` | Система условий с комбинаторами (and/or/not) |
-| `data/` | PlayerClassData — хранение и сериализация данных игрока |
-| `network/` | 7 пакетов, серверная валидация, клиентская синхронизация |
-| `platform/` | Абстракции платформы (ServiceLoader) |
-| `registry/` | Загрузка классов из JSON-датапаков |
-| `command/` | Команды `/archetype` |
-| `gui/` | Экран выбора класса, досье, HUD |
+| `core/` | `ClassManager` — жизненный цикл. `PlayerClass` — определение класса |
+| `ability/` | 25 пассивных + 14 активных типов. Фабрики, интерфейсы, реестр |
+| `condition/` | 12 типов условий + комбинаторы `and` / `or` / `not` |
+| `data/` | `PlayerClassData` — состояние игрока, NBT-сериализация |
+| `network/` | 8 пакетов, серверная валидация, клиентская синхронизация |
+| `registry/` | `ClassRegistry` — JSON-датапаки через `SimpleJsonResourceReloadListener` |
+| `gui/` | Экран выбора, досье, HUD-оверлей |
+| `command/` | `/archetype set/remove/get/list/select/reload/ability/resource/level` |
+| `item/` | Свиток Перерождения — смена класса в руках |
 | `config/` | Серверный и клиентский конфиг |
-| `item/` | Свиток Перерождения |
-| `advancement/` | Достижения |
+| `advancement/` | Достижения за классы и способности |
+
+---
+
+## Формат класса (JSON)
+
+Новый класс — один файл в `data/<namespace>/archetype_classes/`:
+
+```json
+{
+  "id": "archetype:my_class",
+  "color": "#8B0000",
+  "icon": "archetype:textures/gui/icons/my_class.png",
+  "attributes": [
+    { "attribute": "generic.max_health", "amount": 4.0, "operation": "addition" }
+  ],
+  "passives": [
+    { "type": "archetype:regen", "params": { "amount": 0.5, "interval": 20 } }
+  ],
+  "actives": [
+    { "type": "archetype:dash", "cooldown": 100, "params": { "power": 1.5 } }
+  ]
+}
+```
+
+---
+
+## API для моддинга
+
+```java
+// Регистрация новых типов способностей
+ArchetypeAPI.registerAbilityType(id, factory);
+ArchetypeAPI.registerPassiveType(id, factory);
+ArchetypeAPI.registerConditionType(id, factory);
+
+// Управление классами игрока
+ArchetypeAPI.getPlayerClass(player);
+ArchetypeAPI.assignClass(serverPlayer, classId);
+```
+
+---
 
 ## Сборка
 
@@ -42,29 +108,12 @@ archetype/
 ./gradlew build
 ```
 
-Артефакты: `forge/build/libs/`, `fabric/build/libs/`
+Артефакты: `forge/build/libs/` · `fabric/build/libs/`
 
-## Зависимости
+**Зависимости:** Minecraft 1.20.1 · Architectury API · Fabric API (только для Fabric-сборки) · Java 17
 
-| | Forge | Fabric |
-|---|---|---|
-| Architectury API | обязательно | обязательно |
-| Fabric API | — | обязательно |
-| Minecraft | 1.20.1 | 1.20.1 |
-| Java | 17 | 17 |
-
-## Расширяемость
-
-**Контент-мейкерам** — новые классы через JSON-датапаки без кода.
-
-**Мододелам** — API для регистрации типов способностей и условий:
-
-```java
-ArchetypeAPI.registerAbilityType(id, factory);
-ArchetypeAPI.registerConditionType(id, factory);
-ArchetypeAPI.getPlayerClass(player);
-```
+---
 
 ## Лицензия
 
-All Rights Reserved
+All Rights Reserved © ZorahM

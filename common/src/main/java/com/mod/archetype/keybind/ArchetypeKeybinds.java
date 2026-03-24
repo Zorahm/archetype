@@ -24,8 +24,38 @@ public class ArchetypeKeybinds {
     public static final int DEFAULT_ABILITY_3 = GLFW.GLFW_KEY_G;
     public static final int DEFAULT_CLASS_INFO = GLFW.GLFW_KEY_J;
 
+    private static KeyMapping ability1Key;
+    private static KeyMapping ability2Key;
+    private static KeyMapping ability3Key;
+    private static KeyMapping classInfoKey;
+
     private static String chargingSlot = null;
     private static int chargeTicks = 0;
+
+    public static void setKeyMappings(KeyMapping a1, KeyMapping a2, KeyMapping a3, KeyMapping ci) {
+        ability1Key = a1;
+        ability2Key = a2;
+        ability3Key = a3;
+        classInfoKey = ci;
+    }
+
+    /** Full translated key name for a slot (0=ability_1, 1=ability_2, 2=ability_3). */
+    public static String getSlotKeyDisplay(int slot) {
+        KeyMapping key = switch (slot) {
+            case 0 -> ability1Key;
+            case 1 -> ability2Key;
+            case 2 -> ability3Key;
+            default -> null;
+        };
+        if (key == null) return "?";
+        return key.getTranslatedKeyMessage().getString();
+    }
+
+    /** Abbreviated key name for compact HUD display (max 3 chars). */
+    public static String getSlotKeyDisplayShort(int slot) {
+        String name = getSlotKeyDisplay(slot);
+        return name.length() > 3 ? name.substring(0, 3) : name;
+    }
 
     public static void tickKeybinds(KeyMapping ability1, KeyMapping ability2, KeyMapping ability3, KeyMapping classInfo) {
         ClientClassData data = ClientClassData.getInstance();

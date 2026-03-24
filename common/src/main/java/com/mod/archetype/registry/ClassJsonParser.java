@@ -115,10 +115,16 @@ public class ClassJsonParser {
             abilityStats = parseAbilityStats(json.getAsJsonArray("ability_stats"), fileId);
         }
 
+        // Command triggers
+        List<PlayerClass.CommandTrigger> commands = new ArrayList<>();
+        if (json.has("commands") && json.get("commands").isJsonArray()) {
+            commands = parseCommands(json.getAsJsonArray("commands"), fileId);
+        }
+
         return new PlayerClass(fileId, name, description, icon, color, category, loreKeys,
                 attributes, conditionalAttributes, passiveAbilities, activeAbilities,
                 resource, sizeModifier, incompatibleWith, progression,
-                extraAbilitySections, abilityStats);
+                extraAbilitySections, abilityStats, commands);
     }
 
     private static List<AttributeModifierEntry> parseAttributes(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
@@ -308,6 +314,28 @@ public class ClassJsonParser {
                 }
             }
             result.add(new PlayerClass.AbilityStatEntry(nameKey, base, bonuses, format));
+        }
+        return result;
+    }
+
+    private static final java.util.Set<String> VALID_TRIGGERS = java.util.Set.of(
+            "on_assign", "on_remove", "on_tick", "on_death", "on_respawn", "on_level_up");
+
+    private static List<PlayerClass.CommandTrigger> parseCommands(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
+        List<PlayerClass.CommandTrigger> result = new ArrayList<>();
+        for (int i = 0; i < arr.size(); i++) {
+            JsonObject obj = arr.get(i).getAsJsonObject();
+            String trigger = requireString(obj, "trigger", fileId, "commands[" + i + "]");
+            if (!VALID_TRIGGERS.contains(trigger)) {
+                throw new ClassParseException(fileId, "commands[" + i + "].trigger",
+                        "Invalid trigger '" + trigger + "'. Valid: " + VALID_TRIGGERS);
+            }
+            String command = requireString(obj, "command", fileId, "commands[" + i + "]");
+            int interval = obj.has("interval") ? obj.get("interval").getAsInt() : 20;
+            if (interval <= 0) {
+                throw new ClassParseException(fileId, "commands[" + i + "].interval", "Interval must be > 0");
+            }
+            result.add(new PlayerClass.CommandTrigger(trigger, command, interval));
         }
         return result;
     }

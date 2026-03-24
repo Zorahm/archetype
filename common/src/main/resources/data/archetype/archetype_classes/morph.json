@@ -39,7 +39,7 @@
       "slot": "ability_1",
       "cooldown": 20,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {
         "consumes_item": true,
         "global_damage_growth_per_5_levels": 1,
@@ -133,11 +133,40 @@
       "slot": "ability_2",
       "cooldown": 10,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {},
       "name": "ability.archetype.morph.form_cancel.name",
       "description": "ability.archetype.morph.form_cancel.description",
       "icon": "archetype:textures/gui/ability/form_cancel.png"
+    }
+  ],
+  "extra_ability_sections": [
+    {
+      "parent_slot": "ability_1",
+      "name": "gui.archetype.morph.forms",
+      "unlock_level": 0,
+      "entries": [
+        {
+          "name": "gui.archetype.morph.form.zombie.name",
+          "description": "gui.archetype.morph.form.zombie.desc"
+        },
+        {
+          "name": "gui.archetype.morph.form.creeper.name",
+          "description": "gui.archetype.morph.form.creeper.desc"
+        },
+        {
+          "name": "gui.archetype.morph.form.snowman.name",
+          "description": "gui.archetype.morph.form.snowman.desc"
+        },
+        {
+          "name": "gui.archetype.morph.form.blaze.name",
+          "description": "gui.archetype.morph.form.blaze.desc"
+        },
+        {
+          "name": "gui.archetype.morph.form.wither_skeleton.name",
+          "description": "gui.archetype.morph.form.wither_skeleton.desc"
+        }
+      ]
     }
   ],
   "progression": [

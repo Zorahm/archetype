@@ -39,7 +39,7 @@ public class AbilityReleaseHandler {
 
         // Set cooldown and deduct resource
         ResourceLocation abilityId = new ResourceLocation(ability.getType().getNamespace(), slotName);
-        data.setCooldown(abilityId, ability.getCooldownTicks());
+        data.setCooldown(abilityId, ability.getCooldownTicks(player));
 
         if (!player.isCreative() && ability.getResourceCost() > 0) {
             data.setResourceCurrent(data.getResourceCurrent() - ability.getResourceCost());

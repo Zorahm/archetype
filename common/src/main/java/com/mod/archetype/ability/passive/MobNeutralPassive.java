@@ -16,18 +16,20 @@ import java.util.List;
 public class MobNeutralPassive extends AbstractPassiveAbility {
 
     private final List<String> mobTypes;
+    private final boolean blacklist;
     private final float radius;
 
     public MobNeutralPassive(PassiveAbilityEntry entry) {
         super(entry);
         this.mobTypes = getStringList("mob_types");
+        this.blacklist = "blacklist".equalsIgnoreCase(getString("mode", "whitelist"));
         this.radius = getFloat("radius", 16.0f);
     }
 
     @Override
     public void tick(ServerPlayer player) {
         if (player.level().isClientSide()) return;
-        if (player.tickCount % 10 != 0) return; // Check every half second
+        if (player.tickCount % 10 != 0) return;
 
         List<EntityType<?>> targetTypes = new ArrayList<>();
         for (String typeStr : mobTypes) {
@@ -37,8 +39,9 @@ public class MobNeutralPassive extends AbstractPassiveAbility {
 
         AABB searchBox = player.getBoundingBox().inflate(radius);
         List<Mob> nearbyMobs = player.level().getEntitiesOfClass(Mob.class, searchBox, mob -> {
-            EntityType<?> mobType = mob.getType();
-            return targetTypes.isEmpty() || targetTypes.contains(mobType);
+            if (targetTypes.isEmpty()) return !blacklist; // empty blacklist = none neutral; empty whitelist = all neutral
+            boolean listed = targetTypes.contains(mob.getType());
+            return blacklist ? !listed : listed;
         });
 
         for (Mob mob : nearbyMobs) {

@@ -2,6 +2,7 @@ package com.mod.archetype.gui;
 
 import com.mod.archetype.config.ConfigManager;
 import com.mod.archetype.core.PlayerClass;
+import com.mod.archetype.keybind.ArchetypeKeybinds;
 import com.mod.archetype.network.client.ClientClassData;
 import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.client.Minecraft;
@@ -87,7 +88,6 @@ public class AbilityHudOverlay {
     private static void renderAbilitySlot(GuiGraphics g, int x, int y, int slotIndex,
                                             ClientClassData data, PlayerClass playerClass, float partialTick) {
         Font font = Minecraft.getInstance().font;
-        String[] slotKeys = {"R", "V", "G"};
 
         // Background
         g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x80000000);
@@ -97,15 +97,15 @@ public class AbilityHudOverlay {
 
         var ability = playerClass.getActiveAbilities().get(slotIndex);
 
-        // Key label from actual slot assignment
+        // Key label from player's actual keybind settings
         int keyIdx = switch (ability.slot()) {
             case "ability_1" -> 0;
             case "ability_2" -> 1;
             case "ability_3" -> 2;
             default -> -1;
         };
-        if (keyIdx >= 0 && keyIdx < slotKeys.length) {
-            g.drawString(font, slotKeys[keyIdx], x + 2, y + 1, 0xCCCCCC, true);
+        if (keyIdx >= 0) {
+            g.drawString(font, ArchetypeKeybinds.getSlotKeyDisplayShort(keyIdx), x + 2, y + 1, 0xCCCCCC, true);
         }
 
         // Check level lock

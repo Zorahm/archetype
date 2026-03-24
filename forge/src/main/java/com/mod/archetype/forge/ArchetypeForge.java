@@ -56,5 +56,6 @@ public class ArchetypeForge {
         event.register(ABILITY_2_KEY);
         event.register(ABILITY_3_KEY);
         event.register(CLASS_INFO_KEY);
+        ArchetypeKeybinds.setKeyMappings(ABILITY_1_KEY, ABILITY_2_KEY, ABILITY_3_KEY, CLASS_INFO_KEY);
     }
 }

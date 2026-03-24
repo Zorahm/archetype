@@ -35,6 +35,10 @@ public interface ActiveAbility {
 
     int getCooldownTicks();
 
+    default int getCooldownTicks(ServerPlayer player) {
+        return getCooldownTicks();
+    }
+
     int getResourceCost();
 
     int getUnlockLevel();

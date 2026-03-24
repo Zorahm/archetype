@@ -2,7 +2,7 @@
   "name": "class.archetype.ru_yi.name",
   "description": "class.archetype.ru_yi.description",
   "icon": "archetype:textures/gui/class/ru_yi.png",
-  "color": "440066",
+  "color": "8833CC",
   "category": "DAMAGE",
   "lore": [
     "class.archetype.ru_yi.lore_1"
@@ -85,11 +85,11 @@
       "slot": "ability_2",
       "cooldown": 340,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {
         "levitation_duration": 40,
         "levitation_amplifier": 2,
-        "base_damage": 0.0,
+        "base_damage": 2.0,
         "self_slowness_amplifier": 2
       },
       "name": "ability.archetype.ru_yi.antigravity.name",
@@ -114,7 +114,7 @@
       {"level": 60, "value": -1}
     ]},
     {"name": "gui.archetype.ru_yi.stat.header_antigravity", "base": 0, "format": "header", "bonuses": []},
-    {"name": "gui.archetype.ru_yi.stat.antigravity_damage", "base": 0, "format": "int", "bonuses": [
+    {"name": "gui.archetype.ru_yi.stat.antigravity_damage", "base": 2, "format": "int", "bonuses": [
       {"level": 10, "value": 1},
       {"level": 30, "value": 1},
       {"level": 60, "value": 1}

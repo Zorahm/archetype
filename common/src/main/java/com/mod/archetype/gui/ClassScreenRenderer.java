@@ -35,11 +35,14 @@ public class ClassScreenRenderer {
         // Fill based on ratio to base
         double ratio = baseValue != 0 ? value / baseValue : 1.0;
         int fillWidth = (int) Math.min(barWidth, barWidth * (ratio / 2.0));
-        int barColor = value > baseValue ? 0xFF44CC44 : (value < baseValue ? 0xFFCC4444 : 0xFFCCCCCC);
+        // Use threshold to avoid showing ±0.0 due to floating point: any diff < 0.05 rounds to 0.0 with %.1f
+        double diffVal = value - baseValue;
+        boolean diffNegligible = Math.abs(diffVal) < 0.05;
+        int barColor = diffNegligible ? 0xFFCCCCCC : (diffVal > 0 ? 0xFF44CC44 : 0xFFCC4444);
         g.fill(barX, y + 2, barX + fillWidth, y + 2 + barHeight, barColor);
 
-        // Value text
-        String diff = value > baseValue ? "+" + formatValue(value - baseValue) : (value < baseValue ? formatValue(value - baseValue) : "");
+        // Value text — skip diff when it would display as ±0.0
+        String diff = diffNegligible ? "" : (diffVal > 0 ? "+" + formatValue(diffVal) : formatValue(diffVal));
         String text = formatValue(value) + (diff.isEmpty() ? "" : " (" + diff + ")");
         g.drawString(font, text, barX + barWidth + 4, y, barColor, false);
     }

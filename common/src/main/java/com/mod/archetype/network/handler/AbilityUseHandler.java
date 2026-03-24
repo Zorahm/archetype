@@ -77,7 +77,7 @@ public class AbilityUseHandler {
 
             // Set cooldown (skip for abilities that manage their own cooldown/charges)
             if (!ability.managesCooldown()) {
-                data.setCooldown(abilityId, ability.getCooldownTicks());
+                data.setCooldown(abilityId, ability.getCooldownTicks(player));
             }
 
             // Publish event

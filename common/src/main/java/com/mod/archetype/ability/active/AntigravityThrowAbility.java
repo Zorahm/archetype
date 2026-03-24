@@ -3,7 +3,6 @@ package com.mod.archetype.ability.active;
 import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
-import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,11 +15,11 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
 
     private final int levitationDuration;
     private final int levitationAmplifier;
-    private final float baseFallDamageMultiplier;
-    private final float maxFallDamageMultiplier;
-    private final float fallDamageGrowthPer5Levels;
+    private final float baseDamage;
+    private final int baseSelfSlownessAmplifier;
 
     private LivingEntity currentTarget;
+    private ServerPlayer ownerRef;
     private int phase; // 0=idle, 1=levitating, 2=slamming
     private int ticksRemaining;
 
@@ -28,16 +27,37 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
         super(entry);
         this.levitationDuration = getInt("levitation_duration", 40);
         this.levitationAmplifier = getInt("levitation_amplifier", 2);
-        this.baseFallDamageMultiplier = getFloat("base_fall_damage_multiplier", 1.2f);
-        this.maxFallDamageMultiplier = getFloat("max_fall_damage_multiplier", 3.0f);
-        this.fallDamageGrowthPer5Levels = getFloat("fall_damage_growth_per_5_levels", 0.1f);
+        this.baseDamage = getFloat("base_damage", 1.0f);
+        this.baseSelfSlownessAmplifier = getInt("self_slowness_amplifier", 2);
     }
 
-    private float getEffectiveFallDamageMultiplier(ServerPlayer player) {
-        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
-        int level = data.getClassLevel();
-        float bonus = (level / 5) * fallDamageGrowthPer5Levels;
-        return Math.min(baseFallDamageMultiplier + bonus, maxFallDamageMultiplier);
+    private float getEffectiveDamage(int level) {
+        float dmg = baseDamage;
+        if (level >= 10) dmg += 1.0f;
+        if (level >= 30) dmg += 1.0f;
+        if (level >= 60) dmg += 1.0f;
+        return dmg;
+    }
+
+    private int getEffectiveSelfSlownessAmplifier(int level) {
+        int amp = baseSelfSlownessAmplifier;
+        if (level >= 10) amp -= 1;
+        if (level >= 30) amp -= 1;
+        if (level >= 50) amp -= 1;
+        return amp;
+    }
+
+    @Override
+    public int getCooldownTicks(ServerPlayer player) {
+        int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+        int cd = entry.cooldownTicks();
+        if (level >= 10) cd -= 20;
+        if (level >= 20) cd -= 20;
+        if (level >= 30) cd -= 20;
+        if (level >= 40) cd -= 20;
+        if (level >= 50) cd -= 20;
+        if (level >= 60) cd -= 20;
+        return Math.max(20, cd);
     }
 
     @Override
@@ -55,6 +75,7 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
         }
 
         currentTarget = target;
+        ownerRef = player;
         phase = 1;
         ticksRemaining = levitationDuration;
         active = true;
@@ -63,6 +84,15 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
                 MobEffects.LEVITATION, levitationDuration + 10, levitationAmplifier,
                 false, true, true
         ));
+
+        int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+        int slownessAmp = getEffectiveSelfSlownessAmplifier(level);
+        if (slownessAmp >= 0) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN, levitationDuration + 70, slownessAmp,
+                    false, true, true
+            ));
+        }
 
         return ActivationResult.SUCCESS;
     }
@@ -87,11 +117,8 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
             ticksRemaining--;
             boolean onGround = currentTarget.onGround();
             if (onGround || ticksRemaining <= 0) {
-                float multiplier = getEffectiveFallDamageMultiplier(player);
-                float slamDamage = currentTarget.fallDistance * multiplier;
-                if (slamDamage > 0) {
-                    currentTarget.hurt(player.damageSources().playerAttack(player), slamDamage);
-                }
+                int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+                currentTarget.hurt(player.damageSources().playerAttack(player), getEffectiveDamage(level));
                 cleanup();
             }
         }
@@ -101,6 +128,10 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
         if (currentTarget != null) {
             currentTarget.removeEffect(MobEffects.LEVITATION);
             currentTarget = null;
+        }
+        if (ownerRef != null) {
+            ownerRef.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+            ownerRef = null;
         }
         phase = 0;
         active = false;

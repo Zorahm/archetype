@@ -7,7 +7,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.inventory.MerchantMenu;
-import net.minecraft.world.item.trading.MerchantOffers;
 
 public class VillagerRejectionPassive extends AbstractPassiveAbility {
 
@@ -18,10 +17,9 @@ public class VillagerRejectionPassive extends AbstractPassiveAbility {
     @Override
     public void tick(ServerPlayer player) {
         if (player.level().isClientSide()) return;
-        if (player.containerMenu instanceof MerchantMenu merchantMenu) {
+        if (player.containerMenu instanceof MerchantMenu) {
             if (!player.hasEffect(MobEffects.HERO_OF_THE_VILLAGE)) {
-                // Clear offers so the villager appears to have no trades (like a nitwit)
-                merchantMenu.getOffers().clear();
+                player.closeContainer();
             }
         }
     }

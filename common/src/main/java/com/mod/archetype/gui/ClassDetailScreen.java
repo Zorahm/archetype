@@ -209,9 +209,7 @@ public class ClassDetailScreen extends Screen {
     private int renderAttributes(GuiGraphics g, int x, int y, int contentWidth) {
         int barWidth = Math.min(120, contentWidth / 3);
         for (AttributeModifierEntry attr : playerClass.getAttributes()) {
-            String attrName = attr.attribute().getPath().replace("generic.", "")
-                    .replace("_", " ");
-            attrName = attrName.substring(0, 1).toUpperCase() + attrName.substring(1);
+            String attrName = Component.translatable("gui.archetype.attr." + attr.attribute().getPath().replace("generic.", "")).getString();
             double baseValue = getBaseValue(attr.attribute().toString());
             double value = baseValue + attr.value() * barAnimProgress;
             ClassScreenRenderer.renderAttributeBar(g, font, attrName, value, baseValue, x, y, barWidth);
