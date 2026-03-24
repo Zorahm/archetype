@@ -42,7 +42,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
 
         switch (mode) {
             case 1 -> spawnFangsLine(player, count);
-            case 2 -> spawnFangsTargeted(player);
+            case 2 -> spawnFangsTargeted(player, count);
             case 3 -> spawnFangsAround(player, count);
             default -> spawnFangsLine(player, count);
         }
@@ -68,7 +68,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         }
     }
 
-    private void spawnFangsTargeted(ServerPlayer player) {
+    private void spawnFangsTargeted(ServerPlayer player, int count) {
         Vec3 eyePos = player.getEyePosition();
         Vec3 look = player.getLookAngle();
         Vec3 endPos = eyePos.add(look.scale(20));
@@ -78,9 +78,33 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         if (hit.getType() == HitResult.Type.MISS) return;
 
         BlockPos targetPos = hit.getBlockPos().relative(hit.getDirection());
-        EvokerFangs fangs = new EvokerFangs(player.level(), targetPos.getX() + 0.5,
-                targetPos.getY(), targetPos.getZ() + 0.5, 0, 0, player);
-        player.level().addFreshEntity(fangs);
+        double cx = targetPos.getX() + 0.5;
+        double cy = targetPos.getY();
+        double cz = targetPos.getZ() + 0.5;
+
+        if (count == 1) {
+            BlockPos ground = findGround(player, targetPos);
+            if (ground != null) {
+                EvokerFangs fangs = new EvokerFangs(player.level(), cx, ground.getY(), cz, 0, 0, player);
+                player.level().addFreshEntity(fangs);
+            }
+            return;
+        }
+
+        double angleStep = 2 * Math.PI / count;
+        double radius = 1.5;
+        for (int i = 0; i < count; i++) {
+            double angle = angleStep * i;
+            double x = cx + Math.cos(angle) * radius;
+            double z = cz + Math.sin(angle) * radius;
+            BlockPos blockPos = BlockPos.containing(x, cy, z);
+            BlockPos ground = findGround(player, blockPos);
+            if (ground != null) {
+                EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(), z,
+                        (float) angle, i, player);
+                player.level().addFreshEntity(fangs);
+            }
+        }
     }
 
     private void spawnFangsAround(ServerPlayer player, int count) {

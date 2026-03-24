@@ -11,7 +11,7 @@
     {
       "attribute": "minecraft:generic.max_health",
       "operation": "ADDITION",
-      "value": -2.0
+      "value": -4.0
     },
     {
       "attribute": "minecraft:generic.attack_speed",
@@ -59,14 +59,14 @@
     {
       "type": "archetype:evoker_fangs",
       "slot": "ability_1",
-      "cooldown": 60,
+      "cooldown": 200,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {
         "mode": 1,
-        "base_fangs": 3,
+        "base_fangs": 1,
         "max_fangs": 9,
-        "damage": 4
+        "damage": 2
       },
       "name": "ability.archetype.summoner.devour_line.name",
       "description": "ability.archetype.summoner.devour_line.description",
@@ -75,14 +75,14 @@
     {
       "type": "archetype:evoker_fangs",
       "slot": "ability_2",
-      "cooldown": 40,
+      "cooldown": 100,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {
         "mode": 2,
         "base_fangs": 1,
         "max_fangs": 9,
-        "damage": 4
+        "damage": 2
       },
       "name": "ability.archetype.summoner.devour_target.name",
       "description": "ability.archetype.summoner.devour_target.description",
@@ -93,20 +93,67 @@
       "slot": "ability_3",
       "cooldown": 100,
       "resource_cost": 0,
-      "unlock_level": 1,
+      "unlock_level": 0,
       "params": {
         "mode": 3,
-        "base_fangs": 4,
+        "base_fangs": 2,
         "max_fangs": 12,
-        "damage": 4
+        "damage": 2
       },
       "name": "ability.archetype.summoner.devour_around.name",
       "description": "ability.archetype.summoner.devour_around.description",
       "icon": "archetype:textures/gui/ability/devour.png"
     }
   ],
+  "ability_stats": [
+    {"name": "gui.archetype.summoner.stat.header_line", "base": 0, "format": "header", "bonuses": []},
+    {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
+      {"level": 10, "value": 1},
+      {"level": 30, "value": 1},
+      {"level": 50, "value": 1}
+    ]},
+    {"name": "gui.archetype.summoner.stat.cooldown_line", "base": 10, "format": "seconds", "bonuses": []},
+    {"name": "gui.archetype.summoner.stat.fangs", "base": 1, "format": "int", "bonuses": [
+      {"level": 10, "value": 1},
+      {"level": 20, "value": 1},
+      {"level": 30, "value": 1},
+      {"level": 40, "value": 1},
+      {"level": 50, "value": 1}
+    ]},
+    {"name": "gui.archetype.summoner.stat.header_target", "base": 0, "format": "header", "bonuses": []},
+    {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
+      {"level": 10, "value": 1},
+      {"level": 30, "value": 1},
+      {"level": 50, "value": 1}
+    ]},
+    {"name": "gui.archetype.summoner.stat.cooldown_target", "base": 5, "format": "seconds", "bonuses": []},
+    {"name": "gui.archetype.summoner.stat.fangs", "base": 1, "format": "int", "bonuses": [
+      {"level": 10, "value": 1},
+      {"level": 20, "value": 1},
+      {"level": 30, "value": 1},
+      {"level": 40, "value": 1},
+      {"level": 50, "value": 1}
+    ]},
+    {"name": "gui.archetype.summoner.stat.header_around", "base": 0, "format": "header", "bonuses": []},
+    {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
+      {"level": 10, "value": 1},
+      {"level": 30, "value": 1},
+      {"level": 50, "value": 1}
+    ]},
+    {"name": "gui.archetype.summoner.stat.cooldown_around", "base": 5, "format": "seconds", "bonuses": []},
+    {"name": "gui.archetype.summoner.stat.fangs", "base": 2, "format": "int", "bonuses": [
+      {"level": 10, "value": 1},
+      {"level": 20, "value": 1},
+      {"level": 30, "value": 1},
+      {"level": 40, "value": 1},
+      {"level": 50, "value": 1}
+    ]}
+  ],
   "progression": [
     { "level": 10, "key": "progression.archetype.summoner.level_10" },
-    { "level": 20, "key": "progression.archetype.summoner.level_20" }
+    { "level": 20, "key": "progression.archetype.summoner.level_20" },
+    { "level": 30, "key": "progression.archetype.summoner.level_30" },
+    { "level": 40, "key": "progression.archetype.summoner.level_40" },
+    { "level": 50, "key": "progression.archetype.summoner.level_50" }
   ]
 }

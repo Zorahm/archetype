@@ -91,6 +91,58 @@
       "icon": "archetype:textures/gui/ability/teleport.png"
     }
   ],
+  "ability_stats": [
+    {"name": "gui.archetype.lin_qi.stat.header_creation", "base": 0, "format": "header", "bonuses": []},
+    {"name": "gui.archetype.lin_qi.stat.arrow_damage", "base": 1, "format": "int", "bonuses": [
+      {"level": 20, "value": 1},
+      {"level": 40, "value": 1},
+      {"level": 60, "value": 1}
+    ]},
+    {"name": "gui.archetype.lin_qi.stat.creation_cooldown", "base": 4, "format": "seconds", "bonuses": [
+      {"level": 30, "value": -1},
+      {"level": 60, "value": -1}
+    ]},
+    {"name": "gui.archetype.lin_qi.stat.arrow_chance", "base": 25, "format": "percent", "bonuses": [
+      {"level": 10, "value": 5},
+      {"level": 20, "value": 5},
+      {"level": 30, "value": 5},
+      {"level": 40, "value": 5},
+      {"level": 50, "value": 5}
+    ]},
+    {"name": "gui.archetype.lin_qi.stat.potion_chance", "base": 5, "format": "percent", "bonuses": [
+      {"level": 10, "value": 5},
+      {"level": 20, "value": 5},
+      {"level": 30, "value": 5},
+      {"level": 40, "value": 5},
+      {"level": 50, "value": 5}
+    ]},
+    {"name": "gui.archetype.lin_qi.stat.snowball_chance", "base": 70, "format": "percent", "bonuses": [
+      {"level": 10, "value": -10},
+      {"level": 20, "value": -10},
+      {"level": 30, "value": -10},
+      {"level": 40, "value": -10},
+      {"level": 50, "value": -10}
+    ]},
+    {"name": "gui.archetype.lin_qi.stat.header_teleport", "base": 0, "format": "header", "bonuses": []},
+    {"name": "gui.archetype.lin_qi.stat.teleport_cooldown", "base": 9, "format": "seconds", "bonuses": [
+      {"level": 30, "value": -2},
+      {"level": 60, "value": -2}
+    ]},
+    {"name": "gui.archetype.lin_qi.stat.pearl_chance", "base": 25, "format": "percent", "bonuses": [
+      {"level": 10, "value": 10},
+      {"level": 20, "value": 10},
+      {"level": 30, "value": 10},
+      {"level": 40, "value": 10},
+      {"level": 50, "value": 10}
+    ]},
+    {"name": "gui.archetype.lin_qi.stat.snowball_chance", "base": 70, "format": "percent", "bonuses": [
+      {"level": 10, "value": -10},
+      {"level": 20, "value": -10},
+      {"level": 30, "value": -10},
+      {"level": 40, "value": -10},
+      {"level": 50, "value": -10}
+    ]}
+  ],
   "progression": [
     { "level": 10, "key": "progression.archetype.lin_qi.level_10" },
     { "level": 20, "key": "progression.archetype.lin_qi.level_20" },

@@ -2,6 +2,7 @@ package com.mod.archetype.gui;
 
 import com.mod.archetype.core.PlayerClass;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
+import com.mod.archetype.keybind.ArchetypeKeybinds;
 import com.mod.archetype.core.PlayerClass.AttributeModifierEntry;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
@@ -163,10 +164,11 @@ public class ClassInfoScreen extends Screen {
             ly += font.lineHeight + 4;
 
             for (AttributeModifierEntry attr : playerClass.getAttributes()) {
-                String attrName = attr.attribute().getPath().replace("generic.", "").replace("_", " ");
-                attrName = attrName.substring(0, 1).toUpperCase() + attrName.substring(1);
                 double baseValue = getBaseValue(attr.attribute().toString());
                 double scalingBonus = getXpScalingBonus(attr.attribute(), level);
+                if (Math.abs(attr.value() + scalingBonus) < 0.001) continue;
+                String attrName = attr.attribute().getPath().replace("generic.", "").replace("_", " ");
+                attrName = attrName.substring(0, 1).toUpperCase() + attrName.substring(1);
                 double value = baseValue + attr.value() + scalingBonus;
                 int barWidth = Math.min(80, leftWidth / 3);
                 ClassScreenRenderer.renderAttributeBar(g, font, attrName, value, baseValue, leftX, ly, barWidth);
@@ -180,6 +182,15 @@ public class ClassInfoScreen extends Screen {
             ly += SECTION_GAP - 4;
 
             for (PlayerClass.AbilityStatEntry stat : playerClass.getAbilityStats()) {
+                if ("header".equals(stat.format())) {
+                    ly += 2;
+                    Component headerText = Component.translatable(stat.nameKey());
+                    g.drawString(font, headerText, leftX, ly, 0xFF000000 | classColor, false);
+                    int hw = font.width(headerText);
+                    g.fill(leftX + hw + 4, ly + font.lineHeight / 2, leftX + leftWidth, ly + font.lineHeight / 2 + 1, 0x20FFFFFF);
+                    ly += font.lineHeight + 3;
+                    continue;
+                }
                 Component statName = Component.translatable(stat.nameKey());
                 String statValue = stat.formatValue(level);
                 int valueColor;
@@ -204,7 +215,6 @@ public class ClassInfoScreen extends Screen {
             renderSectionLabel(g, "gui.archetype.abilities", rightX, ry, rightWidth);
             ry += font.lineHeight + 6;
 
-            String[] slotKeys = {"R", "V", "G"};
             for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
                 int slotIdx = switch (ability.slot()) {
                     case "ability_1" -> 0;
@@ -212,7 +222,7 @@ public class ClassInfoScreen extends Screen {
                     case "ability_3" -> 2;
                     default -> 0;
                 };
-                String key = slotIdx < slotKeys.length ? slotKeys[slotIdx] : "?";
+                String key = ArchetypeKeybinds.getSlotKeyDisplay(slotIdx);
 
                 // Card
                 Component desc = Component.translatable(ability.descriptionKey());

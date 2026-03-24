@@ -34,6 +34,14 @@ public class RandomProjectileAbility extends AbstractActiveAbility {
     @Override
     public boolean managesCooldown() { return true; }
 
+    private double getArrowDamage(int classLevel) {
+        double dmg = 1.0;
+        if (classLevel >= 20) dmg += 1.0;
+        if (classLevel >= 40) dmg += 1.0;
+        if (classLevel >= 60) dmg += 1.0;
+        return dmg;
+    }
+
     private int computeCooldown(int classLevel) {
         // -1s at level 30, -1s at level 60
         int reduction = (classLevel >= 30 ? 1 : 0) + (classLevel >= 60 ? 1 : 0);
@@ -69,7 +77,7 @@ public class RandomProjectileAbility extends AbstractActiveAbility {
             Arrow arrow = new Arrow(player.level(), player);
             arrow.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
             arrow.shoot(look.x, look.y, look.z, 2.0f, 0f);
-            arrow.setBaseDamage(4.0);
+            arrow.setBaseDamage(getArrowDamage(classLevel));
             arrow.pickup = Arrow.Pickup.DISALLOWED;
             player.level().addFreshEntity(arrow);
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),

@@ -32,6 +32,7 @@ public final class PlayerClass {
     private final List<LevelMilestone> progression;
     private final List<ExtraAbilitySection> extraAbilitySections;
     private final List<AbilityStatEntry> abilityStats;
+    private final List<CommandTrigger> commands;
 
     public PlayerClass(ResourceLocation id, String nameKey, String descriptionKey,
                        ResourceLocation icon, int color, ClassCategory category,
@@ -45,7 +46,8 @@ public final class PlayerClass {
                        List<ResourceLocation> incompatibleWith,
                        List<LevelMilestone> progression,
                        List<ExtraAbilitySection> extraAbilitySections,
-                       List<AbilityStatEntry> abilityStats) {
+                       List<AbilityStatEntry> abilityStats,
+                       List<CommandTrigger> commands) {
         this.id = id;
         this.nameKey = nameKey;
         this.descriptionKey = descriptionKey;
@@ -63,6 +65,7 @@ public final class PlayerClass {
         this.progression = List.copyOf(progression);
         this.extraAbilitySections = List.copyOf(extraAbilitySections);
         this.abilityStats = List.copyOf(abilityStats);
+        this.commands = List.copyOf(commands);
     }
 
     public ResourceLocation getId() { return id; }
@@ -82,6 +85,7 @@ public final class PlayerClass {
     public List<LevelMilestone> getProgression() { return progression; }
     public List<ExtraAbilitySection> getExtraAbilitySections() { return extraAbilitySections; }
     public List<AbilityStatEntry> getAbilityStats() { return abilityStats; }
+    public List<CommandTrigger> getCommands() { return commands; }
 
     // --- Nested records ---
 
@@ -162,12 +166,29 @@ public final class PlayerClass {
                 case "seconds" -> String.format("%.0fs", value);
                 case "float" -> String.format("%.1f", value);
                 case "boolean" -> value > 0 ? "\u2714" : "\u2718";
+                case "percent" -> String.format("%.0f%%", value);
+                case "header" -> "";
                 default -> String.format("%.0f", value);
             };
         }
     }
 
     public record LevelBonus(int level, float value) {}
+
+    /**
+     * Vanilla command executed at a specific lifecycle point.
+     * Supported triggers: on_assign, on_remove, on_tick, on_death, on_respawn, on_level_up
+     * Placeholders: {player} → player name, {level} → current class level (on_level_up only)
+     * Commands run with player's source at permission level 4 (@s = the player).
+     */
+    public record CommandTrigger(String trigger, String command, int interval) {
+        /** @param trigger  lifecycle trigger id
+         *  @param command  command string without leading /
+         *  @param interval ticks between executions, only for "on_tick" (default 20) */
+        public CommandTrigger {
+            if (interval <= 0) interval = 20;
+        }
+    }
 
     public record ConditionDefinition(
             String type,
