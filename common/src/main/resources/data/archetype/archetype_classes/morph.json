@@ -11,7 +11,7 @@
     {
       "attribute": "minecraft:generic.max_health",
       "operation": "ADDITION",
-      "value": -8.0
+      "value": -6.0
     },
     {
       "attribute": "minecraft:generic.attack_damage",
@@ -55,9 +55,8 @@
             "on_hit_radius": 1,
             "attack_damage_modifier": -0.3,
             "progression": [
-              {"level": 5, "on_hit_damage": 2},
-              {"level": 10, "on_hit_radius": 2},
-              {"level": 15, "on_hit_damage": 3}
+              {"level": 30, "on_hit_radius": 2, "on_hit_damage": 2},
+              {"level": 60, "on_hit_damage": 3}
             ]
           },
           {
@@ -70,8 +69,7 @@
             "max_health_modifier": -2,
             "attack_speed_modifier": -0.3,
             "progression": [
-              {"level_interval": 5, "on_hit_effect_duration_growth": 20, "max_duration": 100},
-              {"level_interval": 10, "on_hit_effect_amplifier_growth": 1, "max_amplifier": 2}
+              {"level_interval": 10, "on_hit_effect_amplifier_growth": 1, "max_amplifier": 6}
             ]
           },
           {
@@ -84,8 +82,9 @@
             "attack_damage_modifier": 0.05,
             "max_health_modifier": -4,
             "progression": [
-              {"level_interval": 5, "on_hit_effect_duration_growth": 20, "max_duration": 60},
-              {"level_interval": 10, "on_hit_effect_amplifier_growth": 1, "max_amplifier": 1}
+              {"level": 20, "on_hit_effect_amplifier": 1},
+              {"level": 30, "on_hit_effect_duration": 40},
+              {"level": 60, "on_hit_effect_amplifier": 2, "on_hit_effect_duration": 60}
             ]
           },
           {
@@ -97,8 +96,9 @@
             "fire_damage_multiplier": 2.0,
             "fall_damage_multiplier": 2.0,
             "progression": [
-              {"level_interval": 5, "on_hit_fire_duration_growth": 20, "max_duration": 60},
-              {"level_interval": 10, "on_hit_fire_amplifier_growth": 1, "max_amplifier": 1}
+              {"level": 10, "on_hit_fire_duration": 40},
+              {"level": 30, "on_hit_fire_duration": 60},
+              {"level": 50, "on_hit_fire_duration": 80}
             ]
           },
           {
@@ -106,20 +106,16 @@
             "form_id": "zombie",
             "on_hit_type": "none",
             "day_effects": {
-              "sun_damage": true,
-              "effects": [
-                {"effect": "minecraft:hunger", "amplifier": 0}
-              ]
+              "sun_damage": true
             },
-            "night_bonuses": {
-              "attack_speed_modifier": 0.1,
-              "max_health_modifier": 2
-            },
+            "night_attack_damage_modifier": 0.0,
+            "night_attack_speed_modifier": 0.0,
             "progression": [
-              {"level": 5, "day_max_health_modifier": 2},
-              {"level": 10, "remove_hunger_debuff": true},
-              {"level": 15, "day_attack_speed_modifier": 0.05},
-              {"level": 20, "remove_sun_damage": true}
+              {"level": 10, "night_vision": true},
+              {"level": 20, "night_attack_damage": 0.05},
+              {"level": 40, "night_attack_damage": 0.10, "night_attack_speed": 0.05},
+              {"level": 50, "remove_sun_damage": true},
+              {"level": 60, "night_attack_damage": 0.15, "night_attack_speed": 0.10}
             ]
           }
         ]
@@ -169,9 +165,143 @@
       ]
     }
   ],
+  "ability_stats": [
+    {
+      "name": "gui.archetype.morph.stat.zombie_header",
+      "base": 0,
+      "format": "header",
+      "bonuses": []
+    },
+    {
+      "name": "gui.archetype.morph.stat.zombie_night_damage",
+      "base": 0,
+      "format": "percent",
+      "bonuses": [
+        {"level": 20, "value": 5},
+        {"level": 40, "value": 5},
+        {"level": 60, "value": 5}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.zombie_night_speed",
+      "base": 0,
+      "format": "percent",
+      "bonuses": [
+        {"level": 40, "value": 5},
+        {"level": 60, "value": 5}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.zombie_night_vision",
+      "base": 0,
+      "format": "boolean",
+      "bonuses": [
+        {"level": 10, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.zombie_sun_burn",
+      "base": 1,
+      "format": "boolean",
+      "bonuses": [
+        {"level": 50, "value": -1}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.creeper_header",
+      "base": 0,
+      "format": "header",
+      "bonuses": []
+    },
+    {
+      "name": "gui.archetype.morph.stat.creeper_radius",
+      "base": 1,
+      "format": "int",
+      "bonuses": [
+        {"level": 30, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.creeper_damage",
+      "base": 1,
+      "format": "int",
+      "bonuses": [
+        {"level": 30, "value": 1},
+        {"level": 60, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.snowman_header",
+      "base": 0,
+      "format": "header",
+      "bonuses": []
+    },
+    {
+      "name": "gui.archetype.morph.stat.snowman_effect_duration",
+      "base": 1,
+      "format": "seconds",
+      "bonuses": []
+    },
+    {
+      "name": "gui.archetype.morph.stat.snowman_effect_level",
+      "base": 1,
+      "format": "int",
+      "bonuses": [
+        {"level": 10, "value": 1},
+        {"level": 20, "value": 1},
+        {"level": 30, "value": 1},
+        {"level": 40, "value": 1},
+        {"level": 50, "value": 1},
+        {"level": 60, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.blaze_header",
+      "base": 0,
+      "format": "header",
+      "bonuses": []
+    },
+    {
+      "name": "gui.archetype.morph.stat.blaze_fire_duration",
+      "base": 1,
+      "format": "seconds",
+      "bonuses": [
+        {"level": 10, "value": 1},
+        {"level": 30, "value": 1},
+        {"level": 50, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.wither_header",
+      "base": 0,
+      "format": "header",
+      "bonuses": []
+    },
+    {
+      "name": "gui.archetype.morph.stat.wither_effect_duration",
+      "base": 1,
+      "format": "seconds",
+      "bonuses": [
+        {"level": 30, "value": 1},
+        {"level": 60, "value": 1}
+      ]
+    },
+    {
+      "name": "gui.archetype.morph.stat.wither_effect_level",
+      "base": 1,
+      "format": "int",
+      "bonuses": [
+        {"level": 20, "value": 1},
+        {"level": 60, "value": 1}
+      ]
+    }
+  ],
   "progression": [
     { "level": 10, "key": "progression.archetype.morph.level_10" },
-    { "level": 15, "key": "progression.archetype.morph.level_15" },
-    { "level": 20, "key": "progression.archetype.morph.level_20" }
+    { "level": 20, "key": "progression.archetype.morph.level_20" },
+    { "level": 30, "key": "progression.archetype.morph.level_30" },
+    { "level": 40, "key": "progression.archetype.morph.level_40" },
+    { "level": 50, "key": "progression.archetype.morph.level_50" },
+    { "level": 60, "key": "progression.archetype.morph.level_60" }
   ]
 }
