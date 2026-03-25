@@ -46,7 +46,7 @@ Shadow JAR включает common в каждый платформенный м
 | `network/` | 8 пакетов (ClassSelect, AbilityUse/Release, OpenClassSelection, SyncClassData, ClassAssignResult, PlayerClassSync). Серверная валидация |
 | `registry/` | `ClassRegistry` — загрузка JSON-классов из датапаков |
 | `gui/` | `ClassSelectionScreen`, `ClassDetailScreen`, `ClassInfoScreen`, `AbilityHudOverlay` |
-| `command/` | `/archetype set/remove/get/list/select/reload/ability/resource/level` |
+| `command/` | `/archetype set/remove/get/list/reload` |
 | `item/` | `RebirthScrollItem` — предмет смены класса |
 
 ## Жизненный цикл класса

@@ -183,8 +183,9 @@ public class ClassInfoScreen extends Screen {
             for (PlayerClass.AbilityStatEntry stat : playerClass.getAbilityStats()) {
                 if ("header".equals(stat.format())) {
                     ly += 2;
-                    Component headerText = Component.translatable(stat.nameKey());
-                    g.drawString(font, headerText, leftX, ly, 0xFF000000 | classColor, false);
+                    Component headerText = Component.translatable(stat.nameKey())
+                            .withStyle(Style.EMPTY.withBold(true));
+                    g.drawString(font, headerText, leftX, ly, brightenColor(classColor, 0.45f), false);
                     int hw = font.width(headerText);
                     g.fill(leftX + hw + 4, ly + font.lineHeight / 2, leftX + leftWidth, ly + font.lineHeight / 2 + 1, 0x20FFFFFF);
                     ly += font.lineHeight + 3;
@@ -214,6 +215,7 @@ public class ClassInfoScreen extends Screen {
             renderSectionLabel(g, "gui.archetype.abilities", rightX, ry, rightWidth);
             ry += font.lineHeight + 6;
 
+            // Render all ability cards first so they appear adjacent
             for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
                 int slotIdx = switch (ability.slot()) {
                     case "ability_1" -> 0;
@@ -223,7 +225,6 @@ public class ClassInfoScreen extends Screen {
                 };
                 String key = ArchetypeKeybinds.getSlotKeyDisplay(slotIdx);
 
-                // Card
                 Component desc = Component.translatable(ability.descriptionKey());
                 List<FormattedCharSequence> descLines = font.split(desc, rightWidth - 36);
                 int descH = descLines.size() * (font.lineHeight + 1);
@@ -231,12 +232,10 @@ public class ClassInfoScreen extends Screen {
                 int cardBottom = ry + 12 + descH + CARD_PAD;
                 g.fill(rightX, cardTop, rightX + rightWidth - 12, cardBottom, 0x1CFFFFFF);
 
-                // Key badge
                 String badge = "[" + key + "]";
                 g.fill(rightX + 2, ry - 1, rightX + 2 + font.width(badge) + 4, ry + font.lineHeight + 1, 0xC0000000 | classColor);
                 g.drawString(font, badge, rightX + 4, ry, 0xFFFFFF, false);
 
-                // Name
                 g.drawString(font, Component.translatable(ability.nameKey()), rightX + 28, ry, 0xFFFFFF, false);
                 ry += 12;
 
@@ -245,8 +244,10 @@ public class ClassInfoScreen extends Screen {
                     ry += font.lineHeight + 1;
                 }
                 ry += CARD_PAD + 2;
+            }
 
-                // Extra ability sections for this slot
+            // Extra sections rendered after all ability cards
+            for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
                 for (PlayerClass.ExtraAbilitySection section : playerClass.getExtraAbilitySections()) {
                     if (section.parentSlot().equals(ability.slot())) {
                         ry = renderExtraAbilitySection(g, rightX, ry, rightWidth, section, classColor, level);
@@ -592,5 +593,13 @@ public class ClassInfoScreen extends Screen {
             case "minecraft:generic.knockback_resistance" -> 0.0;
             default -> 0.0;
         };
+    }
+
+    /** Lerps each RGB channel of color toward white by factor t (0=original, 1=white). */
+    private static int brightenColor(int color, float t) {
+        int r = Math.min(255, (int) (((color >> 16) & 0xFF) * (1 - t) + 255 * t));
+        int g = Math.min(255, (int) (((color >> 8) & 0xFF) * (1 - t) + 255 * t));
+        int b = Math.min(255, (int) ((color & 0xFF) * (1 - t) + 255 * t));
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 }

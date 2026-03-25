@@ -220,6 +220,8 @@ public class ClassDetailScreen extends Screen {
 
     private int renderActiveAbilities(GuiGraphics g, int x, int y, int contentWidth, int classColor) {
         String[] slotKeys = {"R", "V", "G"};
+
+        // Render all ability cards first so they appear adjacent to each other
         for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
             int slotIndex = switch (ability.slot()) {
                 case "ability_1" -> 0;
@@ -231,7 +233,6 @@ public class ClassDetailScreen extends Screen {
 
             // Card background
             int cardTop = y - CARD_PADDING / 2;
-            // Pre-calculate description height for card sizing
             Component desc = Component.translatable(ability.descriptionKey());
             List<FormattedCharSequence> descLines = font.split(desc, contentWidth - 38);
             int descHeight = descLines.size() * (font.lineHeight + 1);
@@ -256,14 +257,17 @@ public class ClassDetailScreen extends Screen {
                 y += font.lineHeight + 1;
             }
             y += ITEM_GAP + 2;
+        }
 
-            // Extra ability sections for this slot
+        // Extra sections rendered after all ability cards
+        for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
             for (PlayerClass.ExtraAbilitySection section : playerClass.getExtraAbilitySections()) {
                 if (section.parentSlot().equals(ability.slot())) {
                     y = renderExtraAbilitySection(g, x, y, contentWidth, section, classColor);
                 }
             }
         }
+
         return y;
     }
 

@@ -8,9 +8,13 @@ import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -98,8 +102,24 @@ public class FormShiftAbility extends AbstractActiveAbility {
         active = true;
 
         applyFormModifiers(player, matchedForm);
+        playFormSound(player, matchedForm.formId);
 
         return ActivationResult.SUCCESS;
+    }
+
+    private void playFormSound(ServerPlayer player, String formId) {
+        var sound = switch (formId) {
+            case "creeper"        -> SoundEvents.CREEPER_HURT;
+            case "zombie"         -> SoundEvents.ZOMBIE_HURT;
+            case "snowman"        -> SoundEvents.SNOW_GOLEM_HURT;
+            case "blaze"          -> SoundEvents.BLAZE_HURT;
+            case "wither_skeleton"-> SoundEvents.WITHER_SKELETON_HURT;
+            default               -> null;
+        };
+        if (sound != null) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    sound, SoundSource.PLAYERS, 1.0f, 1.0f);
+        }
     }
 
     private void applyFormModifiers(ServerPlayer player, FormDefinition form) {
@@ -239,6 +259,13 @@ public class FormShiftAbility extends AbstractActiveAbility {
                     e.hurt(player.damageSources().playerAttack(player), damage);
                 }
                 living.hurt(player.damageSources().playerAttack(player), damage);
+                if (player.level() instanceof ServerLevel serverLevel) {
+                    var particle = level < 30 ? ParticleTypes.EXPLOSION : ParticleTypes.EXPLOSION_EMITTER;
+                    serverLevel.sendParticles(particle,
+                            target.getX(), target.getY(), target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+                    serverLevel.playSound(null, target.getX(), target.getY(), target.getZ(),
+                            SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 0.5f, 1.0f);
+                }
             }
             case "effect" -> {
                 MobEffect effect = currentForm.getOnHitEffect();
@@ -246,6 +273,12 @@ public class FormShiftAbility extends AbstractActiveAbility {
                     int duration = currentForm.getEffectiveOnHitEffectDuration(level);
                     int amplifier = currentForm.getEffectiveOnHitEffectAmplifier(level);
                     living.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, false));
+                }
+                if ("snowman".equals(currentForm.formId) && player.level() instanceof ServerLevel serverLevel) {
+                    int snowflakeCount = Math.min(level / 10 + 1, 7);
+                    serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
+                            target.getX(), target.getY() + target.getBbHeight() / 2.0, target.getZ(),
+                            snowflakeCount, 0.0, 0.5, 0.0, 0.1);
                 }
             }
             case "fire" -> {

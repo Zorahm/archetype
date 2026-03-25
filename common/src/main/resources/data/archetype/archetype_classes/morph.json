@@ -51,7 +51,7 @@
             "item": "minecraft:gunpowder",
             "form_id": "creeper",
             "on_hit_type": "explosion",
-            "on_hit_damage": 1,
+            "on_hit_damage": 2,
             "on_hit_radius": 1,
             "attack_damage_modifier": -0.3,
             "progression": [
@@ -60,7 +60,7 @@
             ]
           },
           {
-            "item": "minecraft:snow_block",
+            "item": "minecraft:snowball",
             "form_id": "snowman",
             "on_hit_type": "effect",
             "on_hit_effect": "minecraft:slowness",
@@ -77,7 +77,7 @@
             "form_id": "wither_skeleton",
             "on_hit_type": "effect",
             "on_hit_effect": "minecraft:wither",
-            "on_hit_effect_duration": 20,
+            "on_hit_effect_duration": 40,
             "on_hit_effect_amplifier": 0,
             "attack_damage_modifier": 0.05,
             "max_health_modifier": -4,
