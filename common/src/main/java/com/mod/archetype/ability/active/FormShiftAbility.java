@@ -31,6 +31,8 @@ public class FormShiftAbility extends AbstractActiveAbility {
     private static final UUID FORM_HEALTH_UUID = UUID.fromString("a1b2c3d4-1111-4000-8000-000000000001");
     private static final UUID FORM_ATTACK_DAMAGE_UUID = UUID.fromString("a1b2c3d4-2222-4000-8000-000000000002");
     private static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("a1b2c3d4-3333-4000-8000-000000000003");
+    private static final UUID ZOMBIE_NIGHT_DAMAGE_UUID = UUID.fromString("a1b2c3d4-4444-4000-8000-000000000004");
+    private static final UUID ZOMBIE_NIGHT_SPEED_UUID = UUID.fromString("a1b2c3d4-5555-4000-8000-000000000005");
 
     private final List<FormDefinition> forms;
     private final int globalDamageGrowthPer5Levels;
@@ -39,6 +41,7 @@ public class FormShiftAbility extends AbstractActiveAbility {
     private final int globalMaxBonusRadius;
 
     private FormDefinition currentForm;
+    private boolean zombieNightModifiersActive = false;
 
     public FormShiftAbility(ActiveAbilityEntry entry) {
         super(entry);
@@ -135,6 +138,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
         removeModifier(player, Attributes.MAX_HEALTH, FORM_HEALTH_UUID);
         removeModifier(player, Attributes.ATTACK_DAMAGE, FORM_ATTACK_DAMAGE_UUID);
         removeModifier(player, Attributes.ATTACK_SPEED, FORM_ATTACK_SPEED_UUID);
+        removeModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_UUID);
+        removeModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_UUID);
+        zombieNightModifiersActive = false;
 
         if (player.getHealth() > player.getMaxHealth()) {
             player.setHealth(player.getMaxHealth());
@@ -158,27 +164,57 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
         if ("zombie".equals(currentForm.formId)) {
             tickZombieForm(player);
+        } else if ("blaze".equals(currentForm.formId)) {
+            tickBlazeForm(player);
         }
     }
 
     private void tickZombieForm(ServerPlayer player) {
         if (player.level().isClientSide()) return;
         int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
-        boolean isDaytime = player.level().isDay();
+        boolean isDay = player.level().isDay();
+        boolean hasSkyAccess = player.level().canSeeSky(player.blockPosition());
+        boolean isNightOrCave = !isDay || !hasSkyAccess;
 
-        if (isDaytime) {
-            boolean noSunDamage = level >= 20;
-            if (!noSunDamage && player.level().canSeeSky(player.blockPosition())) {
-                if (player.tickCount % 20 == 0) {
-                    player.setSecondsOnFire(2);
+        if (player.tickCount % 20 == 0) {
+            // Constant slowness I, hidden particles
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, false, false));
+
+            // Sun damage
+            if (isDay && hasSkyAccess && currentForm.isSunDamageEnabled(level)) {
+                player.setSecondsOnFire(2);
+            }
+
+            // Night vision at night/caves when level >= 10
+            if (currentForm.hasNightVisionAtLevel(level) && isNightOrCave) {
+                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 400, 0, false, false, false));
+            }
+
+            // Night attack bonuses (applied dynamically based on day/night)
+            if (isNightOrCave) {
+                float nightDamage = currentForm.getEffectiveNightAttackDamage(level);
+                float nightSpeed = currentForm.getEffectiveNightAttackSpeed(level);
+                if (nightDamage > 0) {
+                    applyModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_UUID,
+                            "Zombie Night Damage", nightDamage, AttributeModifier.Operation.MULTIPLY_BASE);
                 }
+                if (nightSpeed > 0) {
+                    applyModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_UUID,
+                            "Zombie Night Speed", nightSpeed, AttributeModifier.Operation.MULTIPLY_BASE);
+                }
+                zombieNightModifiersActive = nightDamage > 0 || nightSpeed > 0;
+            } else if (zombieNightModifiersActive) {
+                removeModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_UUID);
+                removeModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_UUID);
+                zombieNightModifiersActive = false;
             }
+        }
+    }
 
-            boolean noHunger = level >= 15;
-            if (!noHunger && player.tickCount % 40 == 0) {
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.HUNGER, 100, 0, true, false, false));
-            }
+    private void tickBlazeForm(ServerPlayer player) {
+        if (player.level().isClientSide()) return;
+        if (player.tickCount % 20 == 0) {
+            player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 0, false, false, false));
         }
     }
 
@@ -209,7 +245,7 @@ public class FormShiftAbility extends AbstractActiveAbility {
                 if (effect != null) {
                     int duration = currentForm.getEffectiveOnHitEffectDuration(level);
                     int amplifier = currentForm.getEffectiveOnHitEffectAmplifier(level);
-                    living.addEffect(new MobEffectInstance(effect, duration, amplifier));
+                    living.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, false));
                 }
             }
             case "fire" -> {
@@ -249,10 +285,10 @@ public class FormShiftAbility extends AbstractActiveAbility {
         final float attackSpeedModifier;
         final float maxHealthModifier;
 
-        // Zombie day/night specifics
-        final float nightAttackSpeedModifier;
-        final float nightMaxHealthModifier;
-        final float dayMaxHealthModifier;
+        // Zombie-specific
+        final boolean hasSunDamage;
+        final float baseNightAttackDamage;
+        final float baseNightAttackSpeed;
 
         final JsonArray progression;
 
@@ -272,12 +308,11 @@ public class FormShiftAbility extends AbstractActiveAbility {
             this.attackSpeedModifier = json.has("attack_speed_modifier") ? json.get("attack_speed_modifier").getAsFloat() : 0;
             this.maxHealthModifier = json.has("max_health_modifier") ? json.get("max_health_modifier").getAsFloat() : 0;
 
-            JsonObject nightBonuses = json.has("night_bonuses") ? json.getAsJsonObject("night_bonuses") : null;
-            this.nightAttackSpeedModifier = nightBonuses != null && nightBonuses.has("attack_speed_modifier")
-                    ? nightBonuses.get("attack_speed_modifier").getAsFloat() : 0;
-            this.nightMaxHealthModifier = nightBonuses != null && nightBonuses.has("max_health_modifier")
-                    ? nightBonuses.get("max_health_modifier").getAsFloat() : 0;
-            this.dayMaxHealthModifier = 0;
+            JsonObject dayEffects = json.has("day_effects") ? json.getAsJsonObject("day_effects") : null;
+            this.hasSunDamage = dayEffects != null && dayEffects.has("sun_damage") && dayEffects.get("sun_damage").getAsBoolean();
+
+            this.baseNightAttackDamage = json.has("night_attack_damage_modifier") ? json.get("night_attack_damage_modifier").getAsFloat() : 0;
+            this.baseNightAttackSpeed = json.has("night_attack_speed_modifier") ? json.get("night_attack_speed_modifier").getAsFloat() : 0;
 
             this.progression = json.has("progression") ? json.getAsJsonArray("progression") : new JsonArray();
         }
@@ -285,6 +320,49 @@ public class FormShiftAbility extends AbstractActiveAbility {
         MobEffect getOnHitEffect() {
             if (onHitEffectId.isEmpty()) return null;
             return BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(onHitEffectId));
+        }
+
+        boolean isSunDamageEnabled(int level) {
+            if (!hasSunDamage) return false;
+            for (JsonElement elem : progression) {
+                JsonObject p = elem.getAsJsonObject();
+                if (p.has("level") && p.has("remove_sun_damage") && level >= p.get("level").getAsInt()) {
+                    if (p.get("remove_sun_damage").getAsBoolean()) return false;
+                }
+            }
+            return true;
+        }
+
+        boolean hasNightVisionAtLevel(int level) {
+            for (JsonElement elem : progression) {
+                JsonObject p = elem.getAsJsonObject();
+                if (p.has("level") && p.has("night_vision") && level >= p.get("level").getAsInt()) {
+                    return p.get("night_vision").getAsBoolean();
+                }
+            }
+            return false;
+        }
+
+        float getEffectiveNightAttackDamage(int level) {
+            float damage = baseNightAttackDamage;
+            for (JsonElement elem : progression) {
+                JsonObject p = elem.getAsJsonObject();
+                if (p.has("level") && p.has("night_attack_damage") && level >= p.get("level").getAsInt()) {
+                    damage = p.get("night_attack_damage").getAsFloat();
+                }
+            }
+            return damage;
+        }
+
+        float getEffectiveNightAttackSpeed(int level) {
+            float speed = baseNightAttackSpeed;
+            for (JsonElement elem : progression) {
+                JsonObject p = elem.getAsJsonObject();
+                if (p.has("level") && p.has("night_attack_speed") && level >= p.get("level").getAsInt()) {
+                    speed = p.get("night_attack_speed").getAsFloat();
+                }
+            }
+            return speed;
         }
 
         float getEffectiveOnHitDamage(int level) {
@@ -313,7 +391,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
             int duration = baseOnHitEffectDuration;
             for (JsonElement elem : progression) {
                 JsonObject p = elem.getAsJsonObject();
-                if (p.has("level_interval") && p.has("on_hit_effect_duration_growth")) {
+                if (p.has("level") && p.has("on_hit_effect_duration") && level >= p.get("level").getAsInt()) {
+                    duration = p.get("on_hit_effect_duration").getAsInt();
+                } else if (p.has("level_interval") && p.has("on_hit_effect_duration_growth")) {
                     int interval = p.get("level_interval").getAsInt();
                     int growth = p.get("on_hit_effect_duration_growth").getAsInt();
                     int maxDur = p.has("max_duration") ? p.get("max_duration").getAsInt() : Integer.MAX_VALUE;
@@ -328,7 +408,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
             int amplifier = baseOnHitEffectAmplifier;
             for (JsonElement elem : progression) {
                 JsonObject p = elem.getAsJsonObject();
-                if (p.has("level_interval") && p.has("on_hit_effect_amplifier_growth")) {
+                if (p.has("level") && p.has("on_hit_effect_amplifier") && level >= p.get("level").getAsInt()) {
+                    amplifier = p.get("on_hit_effect_amplifier").getAsInt();
+                } else if (p.has("level_interval") && p.has("on_hit_effect_amplifier_growth")) {
                     int interval = p.get("level_interval").getAsInt();
                     int growth = p.get("on_hit_effect_amplifier_growth").getAsInt();
                     int maxAmp = p.has("max_amplifier") ? p.get("max_amplifier").getAsInt() : Integer.MAX_VALUE;
@@ -343,7 +425,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
             int duration = baseOnHitFireDuration;
             for (JsonElement elem : progression) {
                 JsonObject p = elem.getAsJsonObject();
-                if (p.has("level_interval") && p.has("on_hit_fire_duration_growth")) {
+                if (p.has("level") && p.has("on_hit_fire_duration") && level >= p.get("level").getAsInt()) {
+                    duration = p.get("on_hit_fire_duration").getAsInt();
+                } else if (p.has("level_interval") && p.has("on_hit_fire_duration_growth")) {
                     int interval = p.get("level_interval").getAsInt();
                     int growth = p.get("on_hit_fire_duration_growth").getAsInt();
                     int maxDur = p.has("max_duration") ? p.get("max_duration").getAsInt() : Integer.MAX_VALUE;
@@ -355,21 +439,10 @@ public class FormShiftAbility extends AbstractActiveAbility {
         }
 
         float getEffectiveHealthModifier(int level) {
-            float mod = maxHealthModifier;
             if ("zombie".equals(formId)) {
-                boolean isDaytime = true; // will be set at apply time
-                // For zombie, base modifier depends on time of day
-                // This is handled dynamically in tickActive, not here
-                // Return night bonus as default since it's the most common modifier
-                mod = nightMaxHealthModifier;
-                for (JsonElement elem : progression) {
-                    JsonObject p = elem.getAsJsonObject();
-                    if (p.has("level") && p.has("day_max_health_modifier") && level >= p.get("level").getAsInt()) {
-                        // Day health bonus also applies
-                    }
-                }
+                return 0;
             }
-            return mod;
+            return maxHealthModifier;
         }
 
         float getEffectiveAttackDamageModifier(int level) {
@@ -377,18 +450,10 @@ public class FormShiftAbility extends AbstractActiveAbility {
         }
 
         float getEffectiveAttackSpeedModifier(int level) {
-            float mod = attackSpeedModifier;
             if ("zombie".equals(formId)) {
-                // Night bonus attack speed
-                mod = nightAttackSpeedModifier;
-                for (JsonElement elem : progression) {
-                    JsonObject p = elem.getAsJsonObject();
-                    if (p.has("level") && p.has("day_attack_speed_modifier") && level >= p.get("level").getAsInt()) {
-                        // This adds day attack speed too
-                    }
-                }
+                return 0;
             }
-            return mod;
+            return attackSpeedModifier;
         }
     }
 }
