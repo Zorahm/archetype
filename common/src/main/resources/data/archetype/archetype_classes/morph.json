@@ -52,11 +52,11 @@
             "form_id": "creeper",
             "on_hit_type": "explosion",
             "on_hit_damage": 2,
-            "on_hit_radius": 1,
+            "on_hit_radius": 2,
             "attack_damage_modifier": -0.3,
             "progression": [
-              {"level": 30, "on_hit_radius": 2, "on_hit_damage": 2},
-              {"level": 60, "on_hit_damage": 3}
+              {"level": 30, "on_hit_radius": 3, "on_hit_damage": 3},
+              {"level": 60, "on_hit_damage": 4}
             ]
           },
           {
@@ -215,7 +215,7 @@
     },
     {
       "name": "gui.archetype.morph.stat.creeper_radius",
-      "base": 1,
+      "base": 2,
       "format": "int",
       "bonuses": [
         {"level": 30, "value": 1}
@@ -223,7 +223,7 @@
     },
     {
       "name": "gui.archetype.morph.stat.creeper_damage",
-      "base": 1,
+      "base": 2,
       "format": "int",
       "bonuses": [
         {"level": 30, "value": 1},

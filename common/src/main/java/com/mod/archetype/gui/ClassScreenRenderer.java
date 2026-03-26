@@ -24,7 +24,7 @@ public class ClassScreenRenderer {
     public static void renderAttributeBar(GuiGraphics g, Font font, String name, double value, double baseValue,
                                            int x, int y, int barWidth) {
         int barHeight = 6;
-        int nameWidth = 80;
+        int nameWidth = Math.min(80, font.width(name) + 2);
         int barX = x + nameWidth + 4;
 
         g.drawString(font, name, x, y, 0xCCCCCC, false);

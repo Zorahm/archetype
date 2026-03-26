@@ -260,9 +260,8 @@ public class FormShiftAbility extends AbstractActiveAbility {
                 }
                 living.hurt(player.damageSources().playerAttack(player), damage);
                 if (player.level() instanceof ServerLevel serverLevel) {
-                    var particle = level < 30 ? ParticleTypes.EXPLOSION : ParticleTypes.EXPLOSION_EMITTER;
-                    serverLevel.sendParticles(particle,
-                            target.getX(), target.getY(), target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+                    serverLevel.sendParticles(ParticleTypes.EXPLOSION,
+                            target.getX(), target.getY() + 1.0, target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
                     serverLevel.playSound(null, target.getX(), target.getY(), target.getZ(),
                             SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 0.5f, 1.0f);
                 }

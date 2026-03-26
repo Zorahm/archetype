@@ -25,6 +25,8 @@ public class ClassInfoScreen extends Screen {
     private PlayerClass playerClass;
     private float scrollOffset = 0;
     private float contentHeight = 0;
+    private float leftScrollOffset = 0;
+    private float leftContentHeight = 0;
 
     private static final int PANEL_PADDING = 14;
     private static final int SECTION_GAP = 12;
@@ -32,6 +34,7 @@ public class ClassInfoScreen extends Screen {
     private static final int SCROLLBAR_WIDTH = 3;
     private static final int DIVIDER_WIDTH = 1;
     private int levelBarX, levelBarY, levelBarW;
+    private int cachedLeftX, cachedDividerX, cachedContentTop, cachedContentBottom, cachedLeftScrollTop;
 
     public ClassInfoScreen() {
         super(Component.translatable("gui.archetype.class_info"));
@@ -84,10 +87,16 @@ public class ClassInfoScreen extends Screen {
         // Vertical divider
         renderVerticalDivider(g, dividerX, contentTop + 4, contentBottom - 4, classColor);
 
-        // ---- LEFT COLUMN (no scroll) ----
+        // Cache layout values for mouseScrolled
+        this.cachedLeftX = leftX;
+        this.cachedDividerX = dividerX;
+        this.cachedContentTop = contentTop;
+        this.cachedContentBottom = contentBottom;
+
+        // ---- LEFT COLUMN ----
         int ly = contentTop;
 
-        // Class name (big)
+        // Class name (big) — fixed, not scrolled
         var pose = g.pose();
         pose.pushPose();
         float scale = 1.6f;
@@ -100,7 +109,7 @@ public class ClassInfoScreen extends Screen {
         pose.popPose();
         ly += (int) (font.lineHeight * scale) + 8;
 
-        // Lore (word-wrapped, centered)
+        // Lore (word-wrapped, centered) — fixed
         if (!playerClass.getLoreKeys().isEmpty()) {
             Component lore = Component.translatable(playerClass.getLoreKeys().get(0))
                     .withStyle(s -> s.withItalic(true).withColor(0x707070));
@@ -117,7 +126,7 @@ public class ClassInfoScreen extends Screen {
         renderHorizontalSeparator(g, leftX, ly, leftWidth, classColor);
         ly += SECTION_GAP;
 
-        // Level + XP
+        // Level + XP — fixed
         int level = data.getLevel();
         int xp = data.getExperience();
         int neededXp = PlayerClassData.experienceForLevel(level + 1, 100);
@@ -135,6 +144,12 @@ public class ClassInfoScreen extends Screen {
                 && mouseY >= ly && mouseY <= ly + 20;
         ClassScreenRenderer.renderProgressBar(g, leftX, ly, barW, 6, xpProgress, barHover ? 0x66DD66 : 0x44CC44);
         ly += 14;
+
+        // ---- Left column scrollable area (resource, attributes, ability stats) ----
+        int leftScrollTop = ly;
+        this.cachedLeftScrollTop = leftScrollTop;
+        g.enableScissor(leftX, leftScrollTop, dividerX - PANEL_PADDING, contentBottom);
+        ly -= (int) leftScrollOffset;
 
         // Resource
         if (playerClass.getResource() != null) {
@@ -199,10 +214,28 @@ public class ClassInfoScreen extends Screen {
                 } else {
                     valueColor = 0xCCCCCC;
                 }
-                g.drawString(font, statName, leftX, ly, 0x999999, false);
-                g.drawString(font, statValue, leftX + leftWidth - font.width(statValue), ly, valueColor, false);
-                ly += 11;
+                int nameW = font.width(statName);
+                int valueW = font.width(statValue);
+                if (nameW + valueW + 6 > leftWidth) {
+                    g.drawString(font, statName, leftX, ly, 0x999999, false);
+                    ly += font.lineHeight + 1;
+                    g.drawString(font, statValue, leftX + leftWidth - valueW, ly, valueColor, false);
+                    ly += font.lineHeight + 1;
+                } else {
+                    g.drawString(font, statName, leftX, ly, 0x999999, false);
+                    g.drawString(font, statValue, leftX + leftWidth - valueW, ly, valueColor, false);
+                    ly += 11;
+                }
             }
+        }
+
+        leftContentHeight = ly + leftScrollOffset - leftScrollTop + PANEL_PADDING;
+        g.disableScissor();
+
+        // Scrollbar for left column
+        float leftViewH = contentBottom - leftScrollTop;
+        if (leftContentHeight > leftViewH) {
+            renderLeftScrollbar(g, dividerX - PANEL_PADDING - SCROLLBAR_WIDTH, leftScrollTop, leftViewH, classColor);
         }
 
         // ---- RIGHT COLUMN (scrollable) ----
@@ -313,15 +346,15 @@ public class ClassInfoScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        int panelH = Math.min(height - 24, (int) ((width - 40) * 9.0 / 16.0));
-        int panelW = (int) (panelH * 16.0 / 9.0);
-        if (panelW > width - 24) {
-            panelW = width - 24;
-            panelH = (int) (panelW * 9.0 / 16.0);
+        if (mouseX >= cachedLeftX && mouseX < cachedDividerX) {
+            float leftViewH = cachedContentBottom - cachedLeftScrollTop;
+            leftScrollOffset -= (float) (delta * 20);
+            leftScrollOffset = Mth.clamp(leftScrollOffset, 0, Math.max(0, leftContentHeight - leftViewH));
+        } else {
+            float viewH = cachedContentBottom - cachedContentTop;
+            scrollOffset -= (float) (delta * 20);
+            scrollOffset = Mth.clamp(scrollOffset, 0, Math.max(0, contentHeight - viewH));
         }
-        float viewH = panelH - PANEL_PADDING * 2;
-        scrollOffset -= (float) (delta * 20);
-        scrollOffset = Mth.clamp(scrollOffset, 0, Math.max(0, contentHeight - viewH));
         return true;
     }
 
@@ -431,6 +464,15 @@ public class ClassInfoScreen extends Screen {
         g.fill(x, thumbY, x + SCROLLBAR_WIDTH, thumbY + thumbH, 0x80000000 | classColor);
     }
 
+    private void renderLeftScrollbar(GuiGraphics g, int x, int top, float viewH, int classColor) {
+        float maxScroll = Math.max(1, leftContentHeight - viewH);
+        float thumbRatio = viewH / leftContentHeight;
+        int thumbH = Math.max(10, (int) (viewH * thumbRatio));
+        int thumbY = (int) top + (int) ((viewH - thumbH) * (leftScrollOffset / maxScroll));
+        g.fill(x, (int) top, x + SCROLLBAR_WIDTH, (int) (top + viewH), 0x10FFFFFF);
+        g.fill(x, thumbY, x + SCROLLBAR_WIDTH, thumbY + thumbH, 0x80000000 | classColor);
+    }
+
     private void renderLevelTooltip(GuiGraphics g, int mouseX, int mouseY) {
         ClientClassData data = ClientClassData.getInstance();
         int level = data.getLevel();
@@ -486,11 +528,10 @@ public class ClassInfoScreen extends Screen {
                 lines.add(Component.empty());
                 lines.add(Component.translatable("gui.archetype.next_level")
                         .withStyle(Style.EMPTY.withColor(0xFFCC88)));
-                Component desc = Component.translatable(nextMilestone.descriptionKey());
                 lines.add(Component.translatable("gui.archetype.level_unlock", nextMilestone.level())
-                        .withStyle(Style.EMPTY.withColor(0x888888))
-                        .append(Component.literal(" "))
-                        .append(desc.copy().withStyle(Style.EMPTY.withColor(0xAAAAAA))));
+                        .withStyle(Style.EMPTY.withColor(0x888888)));
+                Component desc = Component.translatable(nextMilestone.descriptionKey());
+                lines.add(desc.copy().withStyle(Style.EMPTY.withColor(0xAAAAAA)));
             }
         }
 
