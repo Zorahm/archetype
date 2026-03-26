@@ -42,21 +42,21 @@
       "unlock_level": 0,
       "params": {
         "consumes_item": true,
-        "global_damage_growth_per_5_levels": 1,
-        "global_max_bonus_damage": 5,
-        "global_radius_growth_per_5_levels": 1,
-        "global_max_bonus_radius": 3,
+        "global_damage_growth_per_5_levels": 0,
+        "global_max_bonus_damage": 0,
+        "global_radius_growth_per_5_levels": 0,
+        "global_max_bonus_radius": 0,
         "forms": [
           {
             "item": "minecraft:gunpowder",
             "form_id": "creeper",
             "on_hit_type": "explosion",
-            "on_hit_damage": 2,
-            "on_hit_radius": 2,
+            "on_hit_damage": 1,
+            "on_hit_radius": 0,
             "attack_damage_modifier": -0.3,
             "progression": [
-              {"level": 30, "on_hit_radius": 3, "on_hit_damage": 3},
-              {"level": 60, "on_hit_damage": 4}
+              {"level": 30, "on_hit_radius": 1},
+              {"level": 60, "on_hit_damage": 2}
             ]
           },
           {
@@ -215,7 +215,7 @@
     },
     {
       "name": "gui.archetype.morph.stat.creeper_radius",
-      "base": 2,
+      "base": 0,
       "format": "int",
       "bonuses": [
         {"level": 30, "value": 1}
@@ -223,10 +223,9 @@
     },
     {
       "name": "gui.archetype.morph.stat.creeper_damage",
-      "base": 2,
+      "base": 1,
       "format": "int",
       "bonuses": [
-        {"level": 30, "value": 1},
         {"level": 60, "value": 1}
       ]
     },
