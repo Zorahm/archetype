@@ -202,7 +202,7 @@
   "passive.archetype.morph.formless.name": "Бесформенность",
   "passive.archetype.morph.formless.description": "Без формы вы ослаблены и замедлены.",
   "ability.archetype.morph.form_shift.name": "Форма",
-  "ability.archetype.morph.form_shift.description": "Держа особый предмет, принимает облик.",
+  "ability.archetype.morph.form_shift.description": "Держа особый предмет, примите форму существа.",
   "ability.archetype.morph.form_cancel.name": "Сброс формы",
   "ability.archetype.morph.form_cancel.description": "Отменяет текущую форму.",
   "gui.archetype.morph.forms": "Формы",

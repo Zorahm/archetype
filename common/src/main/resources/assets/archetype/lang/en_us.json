@@ -202,7 +202,7 @@
   "passive.archetype.morph.formless.name": "Formless",
   "passive.archetype.morph.formless.description": "Without a form, you are weakened and slowed.",
   "ability.archetype.morph.form_shift.name": "Form",
-  "ability.archetype.morph.form_shift.description": "Hold a special item to take a form.",
+  "ability.archetype.morph.form_shift.description": "Hold a special item to assume a creature's form.",
   "ability.archetype.morph.form_cancel.name": "Cancel Form",
   "ability.archetype.morph.form_cancel.description": "Cancel the current form.",
   "gui.archetype.morph.forms": "Forms",
