@@ -1,8 +1,13 @@
 <div align="center">
+<p align="right">
+  <b>English</b> | <a href="README_RU.md">Русский</a>
+</p>
+
+<img src="icon.png" width="128" height="128" alt="Archetype Icon">
 
 # ⚔ Archetype
 
-### Система классов для Minecraft
+### Class System for Minecraft
 
 ![MC](https://img.shields.io/badge/Minecraft-1.20.1-62b447?style=flat-square&logo=minecraft&logoColor=white)
 ![Forge](https://img.shields.io/badge/Forge-multiloader-e07a33?style=flat-square)
@@ -10,65 +15,65 @@
 ![Java](https://img.shields.io/badge/Java-17-f89820?style=flat-square&logo=openjdk&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
-*Каждый бонус компенсирован штрафом. Нет идеального класса — только твой выбор.*
+*Every bonus is compensated by a penalty. There is no perfect class — only your choice.*
 
 </div>
 
 ---
 
-## Что это
+## Overview
 
-Archetype добавляет систему классов, которая меняет правила игры для каждого игрока. Классы переписывают характеристики, дают уникальные активные и пассивные способности, накладывают ограничения.
+Archetype introduces a comprehensive class system that fundamentally alters the gameplay experience for every player. Classes redefine core attributes, grant unique active and passive abilities, and impose strategic restrictions.
 
-**Главный принцип — баланс через компромисс:**
+**Core Philosophy — Balance through Compromise:**
 
-| Класс | Сила | Слабость |
-|-------|------|----------|
-| 🧛 Ви | Высокий урон, крит-механика | Уязвим без накопленного ресурса |
-| 🗿 Рам | Огонь, ярость, живучесть | Ограниченная мобильность |
-| 🌀 Лин Ци | Хаотичная магия | Нестабильные эффекты |
-| ☯ Ру И | Ресурсный баланс | Зависимость от состояния |
-| 🦷 Призыватель | Призыв клыков (линия / цель / круг) | Ест только мясо, жители не торгуют |
-| 🎭 Морф | Трансформация в 5 форм с уникальными бонусами | Ослаблен и замедлен без активной формы |
+| Class | Strength | Weakness |
+|-------|----------|----------|
+| 🧛 Vi | High damage, crit mechanics | Vulnerable without stored resource |
+| 🗿 Ram | Fire, rage, durability | Limited mobility |
+| 🌀 Lin Qi | Chaotic magic | Unstable effects |
+| ☯ Ru Yi | Resource balancing | Highly state-dependent |
+| 🦷 Summoner | Fang summoning (line / target / circle) | Carnivore diet, villagers refuse trading |
+| 🎭 Morph | Transformation into 5 forms with unique bonuses | Weakened and slowed while in base form |
 
-Классы задаются JSON-файлами — серверы добавляют свои через датапаки без единой строки Java.
+Classes are defined via JSON files — server owners can add custom classes via datapacks without writing a single line of Java.
 
 ---
 
-## Архитектура
+## Architecture
 
-Мультилоадерный проект на [Architectury](https://github.com/architectury/architectury-api) — один общий модуль, два платформенных слоя:
+A multiloader project powered by [Architectury](https://github.com/architectury/architectury-api) — featuring a shared core module and platform-specific layers:
 
 ```
 archetype/
-├── common/     95% кода — ядро, способности, сеть, GUI, команды
-├── forge/      Forge: Capabilities, SimpleChannel, события
-└── fabric/     Fabric: Data Attachments, Networking API, события
+├── common/     95% of code — core logic, abilities, networking, GUI, commands
+├── forge/      Forge implementation: Capabilities, SimpleChannel, events
+└── fabric/     Fabric implementation: Data Attachments, Networking API, events
 ```
 
-Платформо-зависимый код изолирован через ServiceLoader (`NetworkHandler`, `PlayerDataAccess`, `PlatformHelper`).
+Platform-dependent code is isolated using ServiceLoader (`NetworkHandler`, `PlayerDataAccess`, `PlatformHelper`).
 
-### Модули
+### Modules
 
-| Модуль | Назначение |
-|--------|-----------|
-| `core/` | `ClassManager` — жизненный цикл. `PlayerClass` — определение класса |
-| `ability/` | 25 пассивных + 14 активных типов. Фабрики, интерфейсы, реестр |
-| `condition/` | 12 типов условий + комбинаторы `and` / `or` / `not` |
-| `data/` | `PlayerClassData` — состояние игрока, NBT-сериализация |
-| `network/` | 8 пакетов, серверная валидация, клиентская синхронизация |
-| `registry/` | `ClassRegistry` — JSON-датапаки через `SimpleJsonResourceReloadListener` |
-| `gui/` | Экран выбора, досье, HUD-оверлей |
+| Module | Purpose |
+|--------|---------|
+| `core/` | `ClassManager` lifecycle. `PlayerClass` definitions. |
+| `ability/` | 25 passive + 14 active types. Factories, interfaces, registry. |
+| `condition/` | 12 condition types + logic gates (`and` / `or` / `not`). |
+| `data/` | `PlayerClassData` — player state and NBT serialization. |
+| `network/` | 8 packet types, server-side validation, client-side sync. |
+| `registry/` | `ClassRegistry` — JSON loading via `SimpleJsonResourceReloadListener`. |
+| `gui/` | Selection screen, dossier, and HUD overlay. |
 | `command/` | `/archetype set/remove/get/list/reload` |
-| `item/` | Свиток Перерождения — смена класса в руках |
-| `config/` | Серверный и клиентский конфиг |
-| `advancement/` | Достижения за классы и способности |
+| `item/` | Rebirth Scroll — held item for class switching. |
+| `config/` | Server and client configurations. |
+| `advancement/` | Custom advancements for classes and abilities. |
 
 ---
 
-## Формат класса (JSON)
+## Class Format (JSON)
 
-Новый класс — один файл в `data/<namespace>/archetype_classes/`:
+Define a new class in `data/<namespace>/archetype_classes/`:
 
 ```json
 {
@@ -89,33 +94,35 @@ archetype/
 
 ---
 
-## API для моддинга
+## Modding API
 
 ```java
-// Регистрация новых типов способностей
+// Register new ability types
 ArchetypeAPI.registerAbilityType(id, factory);
 ArchetypeAPI.registerPassiveType(id, factory);
 ArchetypeAPI.registerConditionType(id, factory);
 
-// Управление классами игрока
+// Manage player classes
 ArchetypeAPI.getPlayerClass(player);
 ArchetypeAPI.assignClass(serverPlayer, classId);
 ```
 
 ---
 
-## Сборка
+## Build Instructions
+ 
+ ю б
 
 ```bash
 ./gradlew build
 ```
 
-Артефакты: `forge/build/libs/` · `fabric/build/libs/`
+Artifacts are found in: `forge/build/libs/` · `fabric/build/libs/`
 
-**Зависимости:** Minecraft 1.20.1 · Architectury API · Fabric API (только для Fabric-сборки) · Java 17
+**Dependencies:** Minecraft 1.20.1 · Architectury API · Fabric API (for Fabric build) · Java 17
 
 ---
 
-## Лицензия
+## License
 
 All Rights Reserved © ZorahM
