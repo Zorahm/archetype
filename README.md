@@ -110,8 +110,6 @@ ArchetypeAPI.assignClass(serverPlayer, classId);
 ---
 
 ## Build Instructions
- 
- ю б
 
 ```bash
 ./gradlew build
