@@ -292,8 +292,12 @@ public class ClassSelectionScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        int availableH = height - TITLE_HEIGHT - LORE_PANEL_HEIGHT - 10;
+        int gridHeight = gridRows * (cardSize + cardSpacing + 14) - cardSpacing;
+        int maxScroll = Math.max(0, gridHeight - availableH);
+        if (maxScroll == 0) return false;
         scrollOffset -= (int) (delta * 20);
-        scrollOffset = Math.max(0, scrollOffset);
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
         return true;
     }
 

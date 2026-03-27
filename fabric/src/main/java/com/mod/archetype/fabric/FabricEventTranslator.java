@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
@@ -75,6 +76,18 @@ public class FabricEventTranslator {
                 ClassManager.getInstance().onPlayerHurt(serverPlayer, source, amount);
             }
             return true;
+        });
+
+        // Entity interact event (e.g. villager rejection)
+        UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (player instanceof ServerPlayer serverPlayer
+                    && hand == net.minecraft.world.InteractionHand.MAIN_HAND
+                    && entity != null) {
+                if (ClassManager.getInstance().onEntityInteract(serverPlayer, entity)) {
+                    return InteractionResult.FAIL;
+                }
+            }
+            return InteractionResult.PASS;
         });
 
         // Attack event

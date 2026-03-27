@@ -28,6 +28,8 @@ public interface PassiveAbility {
 
     default boolean shouldCancelItemUse(ServerPlayer player, ItemStack item) { return false; }
 
+    default boolean onEntityInteract(ServerPlayer player, Entity entity) { return false; }
+
     ResourceLocation getType();
 
     boolean isPositive();

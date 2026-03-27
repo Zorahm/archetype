@@ -21,13 +21,16 @@ public class ClassScreenRenderer {
         g.fill(textX + textWidth + pad, lineY, x + width, lineY + 1, 0x40FFFFFF);
     }
 
+    private static final int ATTR_LABEL_WIDTH = 80;
+
     public static void renderAttributeBar(GuiGraphics g, Font font, String name, double value, double baseValue,
                                            int x, int y, int barWidth) {
         int barHeight = 6;
-        int nameWidth = Math.min(80, font.width(name) + 2);
-        int barX = x + nameWidth + 4;
+        int barX = x + ATTR_LABEL_WIDTH + 4;
 
-        g.drawString(font, name, x, y, 0xCCCCCC, false);
+        // Truncate label to fixed column width so all bars align regardless of language
+        String displayName = font.plainSubstrByWidth(name, ATTR_LABEL_WIDTH);
+        g.drawString(font, displayName, x, y, 0xCCCCCC, false);
 
         // Background
         g.fill(barX, y + 2, barX + barWidth, y + 2 + barHeight, 0x40FFFFFF);

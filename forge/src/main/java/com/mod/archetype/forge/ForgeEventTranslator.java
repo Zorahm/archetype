@@ -76,6 +76,16 @@ public class ForgeEventTranslator {
     }
 
     @SubscribeEvent
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer
+                && event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND) {
+            if (ClassManager.getInstance().onEntityInteract(serverPlayer, event.getTarget())) {
+                event.setCanceled(true);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onItemUse(PlayerInteractEvent.RightClickItem event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             if (ClassManager.getInstance().shouldCancelItemUse(serverPlayer, event.getItemStack())) {

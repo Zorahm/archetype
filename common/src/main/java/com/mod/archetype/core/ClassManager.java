@@ -438,6 +438,16 @@ public class ClassManager {
         return false;
     }
 
+    public boolean onEntityInteract(ServerPlayer player, Entity entity) {
+        ActiveClassInstance instance = activeInstances.get(player.getUUID());
+        if (instance == null) return false;
+
+        for (PassiveAbility passive : instance.getActivePassives()) {
+            if (passive.onEntityInteract(player, entity)) return true;
+        }
+        return false;
+    }
+
     public void onBlockBreak(ServerPlayer player, net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
         ActiveClassInstance instance = activeInstances.get(player.getUUID());
         if (instance == null) return;
