@@ -75,9 +75,12 @@ ArchetypeAPI.getPlayerClass(player);                // Получить теку
 ArchetypeAPI.assignClass(serverPlayer, classId);    // Назначить класс
 ```
 
-## Спецификация
+## Релизы
 
-Полная концепция мода (GUI, механики, все детали): `MOD.md`
+- Текст релиза — на **английском языке**
+- Прикреплять только два JAR-файла: `archetype-<version>-fabric.jar` и `archetype-<version>-forge.jar`
+- Dev-shadow и sources JAR к релизу **не прикладывать**
+- JAR-файлы брать из GitHub Actions артефактов после завершения билда
 
 ## Локализация
 
