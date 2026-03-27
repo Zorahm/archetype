@@ -1,0 +1,19 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:compass"
+    },
+    "title": {"translate": "advancement.archetype.all_classes_tried.title"},
+    "description": {"translate": "advancement.archetype.all_classes_tried.description"},
+    "frame": "challenge"
+  },
+  "parent": "archetype:choose_class",
+  "criteria": {
+    "all_classes": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "all_classes_tried"
+      }
+    }
+  }
+}

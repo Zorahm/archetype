@@ -63,7 +63,7 @@ public class ForgeEventTranslator {
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            ClassManager.getInstance().onPlayerDeath(serverPlayer);
+            ClassManager.getInstance().onPlayerDeath(serverPlayer, event.getSource());
         }
     }
 

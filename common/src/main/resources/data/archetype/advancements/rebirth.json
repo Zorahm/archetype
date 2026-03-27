@@ -9,10 +9,14 @@
   },
   "parent": "archetype:choose_class",
   "criteria": {
-    "rebirth": {
-      "trigger": "archetype:class_action",
+    "obtain_scroll": {
+      "trigger": "minecraft:inventory_changed",
       "conditions": {
-        "action": "rebirth"
+        "items": [
+          {
+            "items": ["archetype:rebirth_scroll"]
+          }
+        ]
       }
     }
   }

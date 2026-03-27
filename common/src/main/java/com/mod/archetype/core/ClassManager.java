@@ -11,7 +11,9 @@ import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.NetworkHandler;
 import com.mod.archetype.platform.PlayerDataAccess;
 import com.mod.archetype.registry.ClassRegistry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -19,6 +21,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 import com.mod.archetype.config.ConfigManager;
 import org.jetbrains.annotations.Nullable;
@@ -106,8 +110,17 @@ public class ClassManager {
         // Publish event
         ArchetypeEvents.CLASS_ASSIGNED.invoker().onAssigned(player, classDef);
 
+        // Track tried classes
+        data.addTriedClass(classId);
+
         // Trigger advancements
         ClassActionTrigger.INSTANCE.trigger(player, "choose_class", data.getClassLevel());
+
+        // "Осознанный выбор" — tried all registered classes
+        int totalClasses = ClassRegistry.getInstance().getAll().size();
+        if (totalClasses > 0 && data.getTriedClasses().size() >= totalClasses) {
+            ClassActionTrigger.INSTANCE.trigger(player, "all_classes_tried", data.getClassLevel());
+        }
 
         // Execute on_assign commands
         executeCommands(player, classDef, "on_assign");
@@ -235,6 +248,11 @@ public class ClassManager {
             updateResource(player, instance, data);
         }
 
+        // Every 100 ticks: check End City entry for "Кровное предательство"
+        if (tick % 100 == 0) {
+            checkEndCityEntry(player, data);
+        }
+
         // on_tick commands
         executeTickCommands(player, instance.getClassDefinition(), tick);
 
@@ -284,7 +302,7 @@ public class ClassManager {
 
     // --- Event Handlers ---
 
-    public void onPlayerDeath(ServerPlayer player) {
+    public void onPlayerDeath(ServerPlayer player, DamageSource damageSource) {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         if (!data.hasClass()) return;
 
@@ -296,6 +314,21 @@ public class ClassManager {
             executeCommands(player, classDef, "on_death");
         }
         // Cooldowns are preserved across death
+
+        // PvP kill advancements — trigger on the killer
+        Entity killer = damageSource.getEntity();
+        if (killer instanceof ServerPlayer killerPlayer) {
+            PlayerClassData killerData = PlayerDataAccess.INSTANCE.getClassData(killerPlayer);
+            if (killerData.hasClass()) {
+                // "Разница навыков" — kill another player while having a class
+                ClassActionTrigger.INSTANCE.trigger(killerPlayer, "ability_kill_player", killerData.getClassLevel());
+
+                // "Спасение энда" / "Свержение энда" — kill max-level player of specific class
+                String victimClassId = data.getCurrentClassId().toString();
+                int victimLevel = data.getClassLevel();
+                ClassActionTrigger.INSTANCE.trigger(killerPlayer, "kill_class_player", victimLevel, victimClassId);
+            }
+        }
     }
 
     public void onPlayerRespawn(ServerPlayer player) {
@@ -588,6 +621,23 @@ public class ClassManager {
         }
 
         activeInstances.put(player.getUUID(), new ActiveClassInstance(classDef, passives, actives));
+    }
+
+    private void checkEndCityEntry(ServerPlayer player, PlayerClassData data) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) return;
+        // Only in The End dimension
+        if (!serverLevel.dimension().equals(net.minecraft.world.level.Level.END)) return;
+
+        Structure endCity = serverLevel.registryAccess()
+                .registryOrThrow(Registries.STRUCTURE)
+                .get(new ResourceLocation("minecraft", "end_city"));
+        if (endCity == null) return;
+
+        StructureStart start = serverLevel.structureManager().getStructureAt(player.blockPosition(), endCity);
+        if (start.isValid()) {
+            ClassActionTrigger.INSTANCE.trigger(player, "enter_end_city", data.getClassLevel(),
+                    data.getCurrentClassId().toString());
+        }
     }
 
     public void syncToClient(ServerPlayer player) {

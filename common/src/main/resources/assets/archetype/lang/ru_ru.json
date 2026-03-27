@@ -252,15 +252,33 @@
 
   "advancement.archetype.root.title": "Архетип",
   "advancement.archetype.root.description": "Выберите свою судьбу",
-  "advancement.archetype.choose_class.title": "Новый путь",
-  "advancement.archetype.choose_class.description": "Выберите свой первый класс",
+  "advancement.archetype.choose_class.title": "Новая жизнь",
+  "advancement.archetype.choose_class.description": "С новой жизнью, новая надежда",
   "advancement.archetype.reach_level_5.title": "Растущая сила",
   "advancement.archetype.reach_level_5.description": "Достигните 5 уровня класса",
-  "advancement.archetype.reach_level_10.title": "Истинный потенциал",
-  "advancement.archetype.reach_level_10.description": "Достигните 10 уровня класса",
+  "advancement.archetype.reach_level_10.title": "Первые шаги",
+  "advancement.archetype.reach_level_10.description": "Улучшите свои навыки до 10 уровня",
   "advancement.archetype.rebirth.title": "Перерождение",
-  "advancement.archetype.rebirth.description": "Смените свой класс с помощью Свитка перерождения",
+  "advancement.archetype.rebirth.description": "Заполучите свиток перерождения",
 
   "advancement.archetype.same_class_rebirth.title": "Зачем?",
-  "advancement.archetype.same_class_rebirth.description": "Потратить редчайший Свиток Перерождения, чтобы остаться тем же, кем ты был. Стабильность \u2014 признак мастерства?"
+  "advancement.archetype.same_class_rebirth.description": "Потратить Драгоценнейший свиток, чтобы ничего не изменить? Зачем?",
+
+  "advancement.archetype.all_classes_tried.title": "Осознанный выбор",
+  "advancement.archetype.all_classes_tried.description": "Попробуйте все классы",
+
+  "advancement.archetype.ability_kill_player.title": "Разница навыков",
+  "advancement.archetype.ability_kill_player.description": "Убейте другого игрока способностью",
+
+  "advancement.archetype.beat_minecraft.title": "Нули и единицы",
+  "advancement.archetype.beat_minecraft.description": "Спасибо что приняли участие в бета тестировании мода",
+
+  "advancement.archetype.kill_max_ram.title": "Спасение энда",
+  "advancement.archetype.kill_max_ram.description": "Убейте Рам достигшего максимального уровня",
+
+  "advancement.archetype.kill_max_ru_yi.title": "Свержение энда",
+  "advancement.archetype.kill_max_ru_yi.description": "Убейте Ру И достигшего максимального уровня",
+
+  "advancement.archetype.enter_end_city.title": "Кровное предательство",
+  "advancement.archetype.enter_end_city.description": "Вторгнитесь в город энда играя за Ру И"
 }

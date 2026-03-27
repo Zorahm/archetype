@@ -24,29 +24,42 @@ public class ClassActionTrigger extends SimpleCriterionTrigger<ClassActionTrigge
     protected Instance createInstance(JsonObject json, ContextAwarePredicate predicate, DeserializationContext context) {
         String action = GsonHelper.getAsString(json, "action", "");
         int minLevel = GsonHelper.getAsInt(json, "min_level", -1);
-        return new Instance(predicate, action, minLevel);
+        String classId = GsonHelper.getAsString(json, "class_id", "");
+        return new Instance(predicate, action, minLevel, classId);
     }
 
     public void trigger(ServerPlayer player, String action, int level) {
-        this.trigger(player, instance -> instance.matches(action, level));
+        this.trigger(player, instance -> instance.matches(action, level, ""));
+    }
+
+    public void trigger(ServerPlayer player, String action, int level, String classId) {
+        this.trigger(player, instance -> instance.matches(action, level, classId));
     }
 
     public static class Instance extends AbstractCriterionTriggerInstance {
 
         private final String action;
         private final int minLevel;
+        private final String classId;
 
-        public Instance(ContextAwarePredicate predicate, String action, int minLevel) {
+        public Instance(ContextAwarePredicate predicate, String action, int minLevel, String classId) {
             super(ID, predicate);
             this.action = action;
             this.minLevel = minLevel;
+            this.classId = classId;
         }
 
-        public boolean matches(String action, int level) {
+        public boolean matches(String action, int level, String classId) {
             if (!this.action.isEmpty() && !this.action.equals(action)) {
                 return false;
             }
-            return this.minLevel < 0 || level >= this.minLevel;
+            if (this.minLevel >= 0 && level < this.minLevel) {
+                return false;
+            }
+            if (!this.classId.isEmpty() && !this.classId.equals(classId)) {
+                return false;
+            }
+            return true;
         }
 
         @Override
@@ -57,6 +70,9 @@ public class ClassActionTrigger extends SimpleCriterionTrigger<ClassActionTrigge
             }
             if (minLevel >= 0) {
                 json.addProperty("min_level", minLevel);
+            }
+            if (!classId.isEmpty()) {
+                json.addProperty("class_id", classId);
             }
             return json;
         }

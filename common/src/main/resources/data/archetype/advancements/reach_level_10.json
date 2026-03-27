@@ -1,11 +1,11 @@
 {
   "display": {
     "icon": {
-      "item": "minecraft:dragon_egg"
+      "item": "minecraft:experience_bottle"
     },
     "title": {"translate": "advancement.archetype.reach_level_10.title"},
     "description": {"translate": "advancement.archetype.reach_level_10.description"},
-    "frame": "challenge"
+    "frame": "task"
   },
   "parent": "archetype:reach_level_5",
   "criteria": {

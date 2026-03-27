@@ -252,15 +252,33 @@
 
   "advancement.archetype.root.title": "Archetype",
   "advancement.archetype.root.description": "Choose your destiny",
-  "advancement.archetype.choose_class.title": "A New Path",
-  "advancement.archetype.choose_class.description": "Choose your first class",
+  "advancement.archetype.choose_class.title": "New Life",
+  "advancement.archetype.choose_class.description": "With a new life, new hope",
   "advancement.archetype.reach_level_5.title": "Growing Power",
   "advancement.archetype.reach_level_5.description": "Reach class level 5",
-  "advancement.archetype.reach_level_10.title": "True Potential",
-  "advancement.archetype.reach_level_10.description": "Reach class level 10",
+  "advancement.archetype.reach_level_10.title": "First Steps",
+  "advancement.archetype.reach_level_10.description": "Improve your skills to level 10",
   "advancement.archetype.rebirth.title": "Rebirth",
-  "advancement.archetype.rebirth.description": "Change your class using a Scroll of Rebirth",
+  "advancement.archetype.rebirth.description": "Obtain a Scroll of Rebirth",
 
   "advancement.archetype.same_class_rebirth.title": "Why?",
-  "advancement.archetype.same_class_rebirth.description": "Use a rare Scroll of Rebirth only to pick the same class you already had. Consistency is mastery?"
+  "advancement.archetype.same_class_rebirth.description": "Spend a most precious scroll only to change nothing. Why?",
+
+  "advancement.archetype.all_classes_tried.title": "Informed Choice",
+  "advancement.archetype.all_classes_tried.description": "Try every class at least once",
+
+  "advancement.archetype.ability_kill_player.title": "Skill Gap",
+  "advancement.archetype.ability_kill_player.description": "Kill another player using your class abilities",
+
+  "advancement.archetype.beat_minecraft.title": "Zeros and Ones",
+  "advancement.archetype.beat_minecraft.description": "Thank you for participating in the mod beta test",
+
+  "advancement.archetype.kill_max_ram.title": "Salvation of the End",
+  "advancement.archetype.kill_max_ram.description": "Kill a Ram who has reached the maximum level",
+
+  "advancement.archetype.kill_max_ru_yi.title": "Overthrow of the End",
+  "advancement.archetype.kill_max_ru_yi.description": "Kill a Ru Yi who has reached the maximum level",
+
+  "advancement.archetype.enter_end_city.title": "Blood Betrayal",
+  "advancement.archetype.enter_end_city.description": "Invade an End City while playing as Ru Yi"
 }

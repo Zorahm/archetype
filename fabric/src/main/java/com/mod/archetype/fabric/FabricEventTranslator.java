@@ -62,7 +62,7 @@ public class FabricEventTranslator {
         // Death event
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (entity instanceof ServerPlayer serverPlayer) {
-                ClassManager.getInstance().onPlayerDeath(serverPlayer);
+                ClassManager.getInstance().onPlayerDeath(serverPlayer, damageSource);
             }
         });
 
