@@ -75,7 +75,8 @@
       "params": {},
       "name": "ability.archetype.lin_qi.random_creation.name",
       "description": "ability.archetype.lin_qi.random_creation.description",
-      "icon": "archetype:textures/gui/ability/random_creation.png"
+      "icon": "archetype:textures/gui/ability/random_creation.png",
+      "item": "minecraft:arrow"
     },
     {
       "type": "archetype:random_teleport",
@@ -88,7 +89,8 @@
       },
       "name": "ability.archetype.lin_qi.teleport.name",
       "description": "ability.archetype.lin_qi.teleport.description",
-      "icon": "archetype:textures/gui/ability/teleport.png"
+      "icon": "archetype:textures/gui/ability/teleport.png",
+      "item": "minecraft:ender_pearl"
     }
   ],
   "ability_stats": [

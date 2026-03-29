@@ -292,6 +292,11 @@ public class FormShiftAbility extends AbstractActiveAbility {
         removeFormModifiers(player);
         currentForm = null;
         active = false;
+
+        // Sync form deactivation to client
+        var data = PlayerDataAccess.INSTANCE.getClassData(player);
+        ResourceLocation abilityId = new ResourceLocation("archetype", "ability_1");
+        data.setToggleState(abilityId, false);
     }
 
     @Override

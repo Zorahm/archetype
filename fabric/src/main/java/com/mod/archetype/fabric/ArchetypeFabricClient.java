@@ -41,7 +41,7 @@ public class ArchetypeFabricClient implements ClientModInitializer {
 
         ArchetypeKeybinds.setKeyMappings(ABILITY_1_KEY, ABILITY_2_KEY, ABILITY_3_KEY, CLASS_INFO_KEY);
 
-        // Client tick for keybinds
+        // Client tick: keybinds
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ArchetypeKeybinds.tickKeybinds(ABILITY_1_KEY, ABILITY_2_KEY, ABILITY_3_KEY, CLASS_INFO_KEY);
         });

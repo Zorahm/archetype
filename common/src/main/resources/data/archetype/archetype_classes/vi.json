@@ -58,7 +58,8 @@
       },
       "name": "ability.archetype.vi.dash.name",
       "description": "ability.archetype.vi.dash.description",
-      "icon": "archetype:textures/gui/ability/dash.png"
+      "icon": "archetype:textures/gui/ability/dash.png",
+      "item": "minecraft:feather"
     }
   ],
   "extra_ability_sections": [
@@ -89,7 +90,8 @@
       "format": "int",
       "bonuses": [
         {"level": 10, "value": 1},
-        {"level": 30, "value": 1}
+        {"level": 30, "value": 1},
+        {"level": 50, "value": 1}
       ]
     },
     {

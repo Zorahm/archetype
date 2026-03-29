@@ -254,8 +254,6 @@
   "advancement.archetype.root.description": "Выберите свою судьбу",
   "advancement.archetype.choose_class.title": "Новая жизнь",
   "advancement.archetype.choose_class.description": "С новой жизнью, новая надежда",
-  "advancement.archetype.reach_level_5.title": "Растущая сила",
-  "advancement.archetype.reach_level_5.description": "Достигните 5 уровня класса",
   "advancement.archetype.reach_level_10.title": "Первые шаги",
   "advancement.archetype.reach_level_10.description": "Улучшите свои навыки до 10 уровня",
   "advancement.archetype.rebirth.title": "Перерождение",
@@ -280,5 +278,7 @@
   "advancement.archetype.kill_max_ru_yi.description": "Убейте Ру И достигшего максимального уровня",
 
   "advancement.archetype.enter_end_city.title": "Кровное предательство",
-  "advancement.archetype.enter_end_city.description": "Вторгнитесь в город энда играя за Ру И"
+  "advancement.archetype.enter_end_city.description": "Вторгнитесь в город энда играя за Ру И",
+
+  "gui.archetype.progression": "Прогрессия"
 }

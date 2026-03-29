@@ -78,7 +78,8 @@
       },
       "name": "ability.archetype.ru_yi.chase.name",
       "description": "ability.archetype.ru_yi.chase.description",
-      "icon": "archetype:textures/gui/ability/chase.png"
+      "icon": "archetype:textures/gui/ability/chase.png",
+      "item": "minecraft:ender_eye"
     },
     {
       "type": "archetype:antigravity_throw",
@@ -94,7 +95,8 @@
       },
       "name": "ability.archetype.ru_yi.antigravity.name",
       "description": "ability.archetype.ru_yi.antigravity.description",
-      "icon": "archetype:textures/gui/ability/antigravity.png"
+      "icon": "archetype:textures/gui/ability/antigravity.png",
+      "item": "minecraft:feather"
     }
   ],
   "ability_stats": [

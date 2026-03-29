@@ -26,6 +26,11 @@ public class ClassDetailScreen extends Screen {
     private float barAnimProgress = 0;
     private int selectBtnX, selectBtnY, selectBtnWidth, selectBtnHeight;
 
+    // Hovered ability slot tracking (set during render, used after scissor)
+    private int hoveredAbilitySlot = -1;
+    private int tooltipMouseX = 0;
+    private int tooltipMouseY = 0;
+
     // Layout constants
     private static final int PANEL_PADDING = 16;
     private static final int SECTION_GAP = 14;
@@ -52,7 +57,7 @@ public class ClassDetailScreen extends Screen {
         barAnimProgress = Math.min(1.0f, barAnimProgress + partialTick * 0.02f);
 
         int classColor = playerClass.getColor();
-        int panelWidth = Math.min(340, width - 40);
+        int panelWidth = Math.min(420, width - 40);
         int panelX = (width - panelWidth) / 2;
         int viewTop = 16;
         int viewBottom = height - 16;
@@ -68,6 +73,9 @@ public class ClassDetailScreen extends Screen {
         g.enableScissor(contentX, scissorTop, contentX + innerWidth, scissorBottom);
 
         int y = scissorTop - (int) scrollOffset;
+
+        // Reset hovered ability slot each frame
+        hoveredAbilitySlot = -1;
 
         // Header
         y = renderHeader(g, contentX, y, innerWidth, classColor);
@@ -89,7 +97,7 @@ public class ClassDetailScreen extends Screen {
         if (!playerClass.getActiveAbilities().isEmpty()) {
             y = renderSectionTitle(g, "gui.archetype.abilities", contentX, y, innerWidth, classColor);
             y += 6;
-            y = renderActiveAbilities(g, contentX, y, innerWidth, classColor);
+            y = renderActiveAbilities(g, contentX, y, innerWidth, classColor, mouseX, mouseY);
             y += SECTION_GAP;
         }
 
@@ -116,6 +124,12 @@ public class ClassDetailScreen extends Screen {
 
         g.disableScissor();
 
+        // Ability slot tooltip (rendered after disableScissor)
+        if (hoveredAbilitySlot >= 0 && hoveredAbilitySlot < playerClass.getActiveAbilities().size()) {
+            renderAbilityTooltip(g, playerClass.getActiveAbilities().get(hoveredAbilitySlot),
+                    tooltipMouseX, tooltipMouseY, innerWidth, classColor);
+        }
+
         // Scrollbar
         float viewHeight = scissorBottom - scissorTop;
         if (contentHeight > viewHeight) {
@@ -134,12 +148,17 @@ public class ClassDetailScreen extends Screen {
     }
 
     private void renderDimBackground(GuiGraphics g) {
-        g.fill(0, 0, width, height, 0xFF000000);
+        g.fill(0, 0, width, height, 0xCC000000);
+        // Vignette gradients
+        g.fillGradient(0, 0, width / 4, height, 0x88000000, 0x00000000);
+        g.fillGradient(width * 3 / 4, 0, width, height, 0x00000000, 0x88000000);
+        g.fillGradient(0, 0, width, height / 4, 0x88000000, 0x00000000);
+        g.fillGradient(0, height * 3 / 4, width, height, 0x00000000, 0x88000000);
     }
 
     private void renderPanel(GuiGraphics g, int x, int y, int w, int h, int classColor) {
         // Main panel fill
-        g.fill(x, y, x + w, y + h, 0xFF161622);
+        g.fill(x, y, x + w, y + h, 0xE6111122);
 
         // Thin class-colored border
         int borderColor = 0xCC000000 | classColor;
@@ -218,11 +237,16 @@ public class ClassDetailScreen extends Screen {
         return y;
     }
 
-    private int renderActiveAbilities(GuiGraphics g, int x, int y, int contentWidth, int classColor) {
+    private int renderActiveAbilities(GuiGraphics g, int x, int y, int contentWidth, int classColor, int mouseX, int mouseY) {
         String[] slotKeys = {"R", "V", "G"};
+        List<ActiveAbilityEntry> abilities = playerClass.getActiveAbilities();
 
-        // Render all ability cards first so they appear adjacent to each other
-        for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
+        int slotSize = 32;
+        int slotSpacing = 6;
+        int totalRowWidth = abilities.size() * slotSize + (abilities.size() - 1) * slotSpacing;
+
+        for (int i = 0; i < abilities.size(); i++) {
+            ActiveAbilityEntry ability = abilities.get(i);
             int slotIndex = switch (ability.slot()) {
                 case "ability_1" -> 0;
                 case "ability_2" -> 1;
@@ -231,36 +255,49 @@ public class ClassDetailScreen extends Screen {
             };
             String key = slotIndex < slotKeys.length ? slotKeys[slotIndex] : "?";
 
-            // Card background
-            int cardTop = y - CARD_PADDING / 2;
-            Component desc = Component.translatable(ability.descriptionKey());
-            List<FormattedCharSequence> descLines = font.split(desc, contentWidth - 38);
-            int descHeight = descLines.size() * (font.lineHeight + 1);
-            int cardBottom = y + 12 + descHeight + CARD_PADDING / 2;
-            g.fill(x, cardTop, x + contentWidth - 12, cardBottom, 0x20FFFFFF);
+            int slotX = x + i * (slotSize + slotSpacing);
+            int slotY = y;
 
-            // Key badge
-            int badgeColor = 0xC0000000 | classColor;
+            // Slot background
+            g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, 0x28FFFFFF);
+            // 1px border using classColor
+            int borderColor = 0x50000000 | classColor;
+            g.fill(slotX, slotY, slotX + slotSize, slotY + 1, borderColor);
+            g.fill(slotX, slotY + slotSize - 1, slotX + slotSize, slotY + slotSize, borderColor);
+            g.fill(slotX, slotY, slotX + 1, slotY + slotSize, borderColor);
+            g.fill(slotX + slotSize - 1, slotY, slotX + slotSize, slotY + slotSize, borderColor);
+
+            // Key badge at top-left
             String badge = "[" + key + "]";
-            g.fill(x + 2, y - 1, x + 2 + font.width(badge) + 4, y + font.lineHeight + 1, badgeColor);
-            g.drawString(font, badge, x + 4, y, 0xFFFFFF, false);
+            int badgeBg = 0xC0000000 | classColor;
+            g.fill(slotX + 1, slotY + 1, slotX + 1 + font.width(badge) + 2, slotY + 1 + font.lineHeight, badgeBg);
+            g.drawString(font, badge, slotX + 2, slotY + 1, 0xFFFFFF, false);
 
-            // Name
+            // Ability name (truncated to fit slot width)
             Component aName = Component.translatable(ability.nameKey());
-            g.drawString(font, aName, x + 30, y, 0xFFFFFF, false);
-
-            y += 12;
-
-            // Description — WORD WRAPPED
-            for (FormattedCharSequence line : descLines) {
-                g.drawString(font, line, x + 30, y, 0x999999, false);
-                y += font.lineHeight + 1;
+            String nameStr = aName.getString();
+            int maxNameW = slotSize - 4;
+            // Truncate if needed
+            while (font.width(nameStr) > maxNameW && nameStr.length() > 1) {
+                nameStr = nameStr.substring(0, nameStr.length() - 1);
             }
-            y += ITEM_GAP + 2;
+            if (!nameStr.equals(aName.getString())) {
+                nameStr = nameStr.substring(0, Math.max(0, nameStr.length() - 2)) + "..";
+            }
+            g.drawString(font, nameStr, slotX + 2, slotY + slotSize - font.lineHeight - 2, 0xDDDDDD, false);
+
+            // Hover detection
+            if (mouseX >= slotX && mouseX < slotX + slotSize && mouseY >= slotY && mouseY < slotY + slotSize) {
+                hoveredAbilitySlot = i;
+                tooltipMouseX = mouseX;
+                tooltipMouseY = mouseY;
+            }
         }
 
-        // Extra sections rendered after all ability cards
-        for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
+        y += slotSize + 4;
+
+        // Extra sections rendered after all ability slots
+        for (ActiveAbilityEntry ability : abilities) {
             for (PlayerClass.ExtraAbilitySection section : playerClass.getExtraAbilitySections()) {
                 if (section.parentSlot().equals(ability.slot())) {
                     y = renderExtraAbilitySection(g, x, y, contentWidth, section, classColor);
@@ -269,6 +306,54 @@ public class ClassDetailScreen extends Screen {
         }
 
         return y;
+    }
+
+    private void renderAbilityTooltip(GuiGraphics g, ActiveAbilityEntry ability, int mouseX, int mouseY,
+                                       int contentWidth, int classColor) {
+        String[] slotKeys = {"R", "V", "G"};
+        int slotIndex = switch (ability.slot()) {
+            case "ability_1" -> 0;
+            case "ability_2" -> 1;
+            case "ability_3" -> 2;
+            default -> 0;
+        };
+        String key = slotIndex < slotKeys.length ? slotKeys[slotIndex] : "?";
+
+        Component aName = Component.translatable(ability.nameKey());
+        Component desc = Component.translatable(ability.descriptionKey());
+
+        int tipW = Math.min(200, contentWidth);
+        List<FormattedCharSequence> descLines = font.split(desc, tipW - 12);
+        int tipH = font.lineHeight + 4 + descLines.size() * (font.lineHeight + 1) + 8;
+
+        int tipX = mouseX + 10;
+        int tipY = mouseY - tipH / 2;
+
+        // Keep on screen
+        if (tipX + tipW > width - 4) tipX = mouseX - tipW - 4;
+        if (tipY + tipH > height - 4) tipY = height - tipH - 4;
+        if (tipY < 4) tipY = 4;
+
+        // Background
+        g.fill(tipX, tipY, tipX + tipW, tipY + tipH, 0xFF0E0E18);
+        // Border
+        int bc = 0xCC000000 | classColor;
+        g.fill(tipX, tipY, tipX + tipW, tipY + 1, bc);
+        g.fill(tipX, tipY + tipH - 1, tipX + tipW, tipY + tipH, bc);
+        g.fill(tipX, tipY, tipX + 1, tipY + tipH, bc);
+        g.fill(tipX + tipW - 1, tipY, tipX + tipW, tipY + tipH, bc);
+
+        // Key badge + name
+        String badge = "[" + key + "] ";
+        int badgeW = font.width(badge);
+        g.drawString(font, badge, tipX + 6, tipY + 4, 0xFF000000 | classColor, false);
+        g.drawString(font, aName, tipX + 6 + badgeW, tipY + 4, 0xFFFFFF, false);
+
+        int ty = tipY + 4 + font.lineHeight + 2;
+        for (FormattedCharSequence line : descLines) {
+            g.drawString(font, line, tipX + 6, ty, 0x999999, false);
+            ty += font.lineHeight + 1;
+        }
     }
 
     private int renderExtraAbilitySection(GuiGraphics g, int x, int y, int contentWidth,
@@ -358,7 +443,8 @@ public class ClassDetailScreen extends Screen {
         Component resName = Component.translatable(res.typeKey());
         g.drawString(font, resName, x, y, 0xFF000000 | res.color(), false);
         y += 14;
-        int barW = Math.min(200, contentWidth - 50);
+        // Bar full inner width
+        int barW = contentWidth;
         ClassScreenRenderer.renderProgressBar(g, x, y, barW, 8, 1.0f, res.color());
         g.drawString(font, res.maxValue() + "/" + res.maxValue(), x + barW + 6, y, 0xCCCCCC, false);
         y += 14;
@@ -366,9 +452,9 @@ public class ClassDetailScreen extends Screen {
     }
 
     private int renderSelectButton(GuiGraphics g, int x, int y, int contentWidth, int mouseX, int mouseY, int classColor) {
-        int btnWidth = Math.min(180, contentWidth);
-        int btnHeight = 26;
-        int btnX = x + (contentWidth - btnWidth) / 2;
+        int btnWidth = contentWidth;
+        int btnHeight = 32;
+        int btnX = x;
         int btnY = y + 8;
 
         this.selectBtnX = btnX;
@@ -438,7 +524,7 @@ public class ClassDetailScreen extends Screen {
         }
 
         // Back button check
-        int panelWidth = Math.min(340, width - 40);
+        int panelWidth = Math.min(420, width - 40);
         int panelX = (width - panelWidth) / 2;
         int viewBottom = height - 16;
         int bx = panelX + PANEL_PADDING;

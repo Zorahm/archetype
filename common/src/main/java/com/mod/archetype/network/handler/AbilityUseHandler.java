@@ -80,6 +80,11 @@ public class AbilityUseHandler {
                 data.setCooldown(abilityId, ability.getCooldownTicks(player));
             }
 
+            // Sync form shift active state to client
+            if (ability.getType().getPath().equals("form_shift")) {
+                data.setToggleState(abilityId, ability.isActive());
+            }
+
             // Publish event
             ArchetypeEvents.ABILITY_USED.invoker().onUsed(player, ability);
 

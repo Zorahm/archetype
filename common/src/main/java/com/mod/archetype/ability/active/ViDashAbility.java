@@ -157,7 +157,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         // Compute scaled values (classLevel = XP level)
         // Damage: +1 at XP 10, 30
         float baseDamage = getFloat("damage", 1.0f);
-        int damageBonus = (classLevel >= 10 ? 1 : 0) + (classLevel >= 30 ? 1 : 0);
+        int damageBonus = (classLevel >= 10 ? 1 : 0) + (classLevel >= 30 ? 1 : 0) + (classLevel >= 50 ? 1 : 0);
         currentDashDamage = baseDamage + damageBonus;
 
         // Resistance: +1 at XP 15, 30

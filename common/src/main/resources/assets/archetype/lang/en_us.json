@@ -254,8 +254,6 @@
   "advancement.archetype.root.description": "Choose your destiny",
   "advancement.archetype.choose_class.title": "New Life",
   "advancement.archetype.choose_class.description": "With a new life, new hope",
-  "advancement.archetype.reach_level_5.title": "Growing Power",
-  "advancement.archetype.reach_level_5.description": "Reach class level 5",
   "advancement.archetype.reach_level_10.title": "First Steps",
   "advancement.archetype.reach_level_10.description": "Improve your skills to level 10",
   "advancement.archetype.rebirth.title": "Rebirth",
@@ -280,5 +278,7 @@
   "advancement.archetype.kill_max_ru_yi.description": "Kill a Ru Yi who has reached the maximum level",
 
   "advancement.archetype.enter_end_city.title": "Blood Betrayal",
-  "advancement.archetype.enter_end_city.description": "Invade an End City while playing as Ru Yi"
+  "advancement.archetype.enter_end_city.description": "Invade an End City while playing as Ru Yi",
+
+  "gui.archetype.progression": "Progression"
 }

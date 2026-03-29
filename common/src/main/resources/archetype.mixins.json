@@ -3,8 +3,12 @@
   "minVersion": "0.8",
   "package": "com.mod.archetype.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [],
-  "client": [],
+  "mixins": [
+    "EvokerFangsMixin"
+  ],
+  "client": [
+    "KeyboardInputMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

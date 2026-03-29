@@ -119,7 +119,8 @@ public final class PlayerClass {
             JsonObject params,
             String nameKey,
             String descriptionKey,
-            ResourceLocation icon
+            ResourceLocation icon,
+            @Nullable String item
     ) {}
 
     public record ResourceDefinition(

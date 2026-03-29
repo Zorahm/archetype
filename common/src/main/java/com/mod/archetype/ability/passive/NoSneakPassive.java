@@ -11,8 +11,13 @@ public class NoSneakPassive extends AbstractPassiveAbility {
 
     @Override
     public void tick(ServerPlayer player) {
-        if (player.isShiftKeyDown()) {
+        if (player.isShiftKeyDown() || player.isCrouching()) {
             player.setShiftKeyDown(false);
+            // Force pose out of crouching — setShiftKeyDown alone is not enough
+            // because the client re-sends input state every tick
+            if (player.getPose() == net.minecraft.world.entity.Pose.CROUCHING) {
+                player.setPose(net.minecraft.world.entity.Pose.STANDING);
+            }
         }
     }
 

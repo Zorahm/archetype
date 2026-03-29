@@ -70,7 +70,8 @@
       },
       "name": "ability.archetype.summoner.devour_line.name",
       "description": "ability.archetype.summoner.devour_line.description",
-      "icon": "archetype:textures/gui/ability/devour.png"
+      "icon": "archetype:textures/gui/ability/devour.png",
+      "item": "minecraft:arrow"
     },
     {
       "type": "archetype:evoker_fangs",
@@ -86,7 +87,8 @@
       },
       "name": "ability.archetype.summoner.devour_target.name",
       "description": "ability.archetype.summoner.devour_target.description",
-      "icon": "archetype:textures/gui/ability/devour.png"
+      "icon": "archetype:textures/gui/ability/devour.png",
+      "item": "minecraft:snowball"
     },
     {
       "type": "archetype:evoker_fangs",
@@ -102,15 +104,15 @@
       },
       "name": "ability.archetype.summoner.devour_around.name",
       "description": "ability.archetype.summoner.devour_around.description",
-      "icon": "archetype:textures/gui/ability/devour.png"
+      "icon": "archetype:textures/gui/ability/devour.png",
+      "item": "minecraft:gunpowder"
     }
   ],
   "ability_stats": [
     {"name": "gui.archetype.summoner.stat.header_line", "base": 0, "format": "header", "bonuses": []},
     {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
-      {"level": 10, "value": 1},
-      {"level": 30, "value": 1},
-      {"level": 50, "value": 1}
+      {"level": 20, "value": 1},
+      {"level": 40, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.cooldown_line", "base": 10, "format": "seconds", "bonuses": []},
     {"name": "gui.archetype.summoner.stat.fangs", "base": 1, "format": "int", "bonuses": [
@@ -122,9 +124,8 @@
     ]},
     {"name": "gui.archetype.summoner.stat.header_target", "base": 0, "format": "header", "bonuses": []},
     {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
-      {"level": 10, "value": 1},
-      {"level": 30, "value": 1},
-      {"level": 50, "value": 1}
+      {"level": 20, "value": 1},
+      {"level": 40, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.cooldown_target", "base": 5, "format": "seconds", "bonuses": []},
     {"name": "gui.archetype.summoner.stat.fangs", "base": 1, "format": "int", "bonuses": [
@@ -136,9 +137,8 @@
     ]},
     {"name": "gui.archetype.summoner.stat.header_around", "base": 0, "format": "header", "bonuses": []},
     {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
-      {"level": 10, "value": 1},
-      {"level": 30, "value": 1},
-      {"level": 50, "value": 1}
+      {"level": 20, "value": 1},
+      {"level": 40, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.cooldown_around", "base": 5, "format": "seconds", "bonuses": []},
     {"name": "gui.archetype.summoner.stat.fangs", "base": 2, "format": "int", "bonuses": [

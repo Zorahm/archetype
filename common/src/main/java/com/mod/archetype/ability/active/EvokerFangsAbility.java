@@ -34,23 +34,32 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         return Math.min(total, maxFangs);
     }
 
+    private float getDamage(ServerPlayer player) {
+        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
+        int level = data.getClassLevel();
+        float base = getFloat("damage", 2.0f);
+        int bonus = (level >= 20 ? 1 : 0) + (level >= 40 ? 1 : 0);
+        return base + bonus;
+    }
+
     @Override
     public ActivationResult activate(ServerPlayer player) {
         if (!canActivate(player)) return ActivationResult.FAILED;
 
         int count = getFangCount(player);
+        float damage = getDamage(player);
 
         switch (mode) {
-            case 1 -> spawnFangsLine(player, count);
-            case 2 -> spawnFangsTargeted(player, count);
-            case 3 -> spawnFangsAround(player, count);
-            default -> spawnFangsLine(player, count);
+            case 1 -> spawnFangsLine(player, count, damage);
+            case 2 -> spawnFangsTargeted(player, count, damage);
+            case 3 -> spawnFangsAround(player, count, damage);
+            default -> spawnFangsLine(player, count, damage);
         }
 
         return ActivationResult.SUCCESS;
     }
 
-    private void spawnFangsLine(ServerPlayer player, int count) {
+    private void spawnFangsLine(ServerPlayer player, int count, float damage) {
         Vec3 look = player.getLookAngle();
         Vec3 flatLook = new Vec3(look.x, 0, look.z).normalize();
         Vec3 start = player.position().add(flatLook.scale(1.5));
@@ -63,12 +72,13 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), pos.x, ground.getY(),
                         pos.z, 0, i * 2, player);
+                FangsDamageRegistry.DAMAGE.put(fangs, damage);
                 player.level().addFreshEntity(fangs);
             }
         }
     }
 
-    private void spawnFangsTargeted(ServerPlayer player, int count) {
+    private void spawnFangsTargeted(ServerPlayer player, int count, float damage) {
         Vec3 eyePos = player.getEyePosition();
         Vec3 look = player.getLookAngle();
         Vec3 endPos = eyePos.add(look.scale(20));
@@ -86,6 +96,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         BlockPos centerGround = findGround(player, targetPos);
         if (centerGround != null) {
             EvokerFangs centerFangs = new EvokerFangs(player.level(), cx, centerGround.getY(), cz, 0, 0, player);
+            FangsDamageRegistry.DAMAGE.put(centerFangs, damage);
             player.level().addFreshEntity(centerFangs);
         }
 
@@ -104,12 +115,13 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(), z,
                         (float) angle, i + 1, player);
+                FangsDamageRegistry.DAMAGE.put(fangs, damage);
                 player.level().addFreshEntity(fangs);
             }
         }
     }
 
-    private void spawnFangsAround(ServerPlayer player, int count) {
+    private void spawnFangsAround(ServerPlayer player, int count, float damage) {
         double angleStep = 2 * Math.PI / count;
         double radius = 2.0;
 
@@ -122,6 +134,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(),
                         z, (float) angle, i, player);
+                FangsDamageRegistry.DAMAGE.put(fangs, damage);
                 player.level().addFreshEntity(fangs);
             }
         }

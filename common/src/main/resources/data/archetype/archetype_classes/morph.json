@@ -122,7 +122,8 @@
       },
       "name": "ability.archetype.morph.form_shift.name",
       "description": "ability.archetype.morph.form_shift.description",
-      "icon": "archetype:textures/gui/ability/form_shift.png"
+      "icon": "archetype:textures/gui/ability/form_shift.png",
+      "item": "minecraft:glass_bottle"
     },
     {
       "type": "archetype:form_cancel",
@@ -133,7 +134,8 @@
       "params": {},
       "name": "ability.archetype.morph.form_cancel.name",
       "description": "ability.archetype.morph.form_cancel.description",
-      "icon": "archetype:textures/gui/ability/form_cancel.png"
+      "icon": "archetype:textures/gui/ability/form_cancel.png",
+      "item": "minecraft:barrier"
     }
   ],
   "extra_ability_sections": [

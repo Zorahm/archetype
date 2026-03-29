@@ -8,14 +8,18 @@ import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.network.client.ClientClassData;
 import com.mod.archetype.registry.ClassRegistry;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import com.google.gson.JsonObject;
+import org.joml.Quaternionf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +31,7 @@ public class ClassInfoScreen extends Screen {
     private float contentHeight = 0;
     private float leftScrollOffset = 0;
     private float leftContentHeight = 0;
+    private int selectedTab = 0;
 
     private static final int PANEL_PADDING = 14;
     private static final int SECTION_GAP = 12;
@@ -35,6 +40,18 @@ public class ClassInfoScreen extends Screen {
     private static final int DIVIDER_WIDTH = 1;
     private int levelBarX, levelBarY, levelBarW;
     private int cachedLeftX, cachedDividerX, cachedContentTop, cachedContentBottom, cachedLeftScrollTop;
+    private int cachedRightX, cachedRightWidth, cachedTabHeaderHeight;
+
+    // Animation state
+    private long openTime;
+    private float smoothScrollOffset = 0;
+    private float smoothLeftScrollOffset = 0;
+    private float smoothLevelProgress = -1f;
+    private float tabTransition = 1f;
+
+    // Smoothed model rotation
+    private float smoothModelDx = 0;
+    private float smoothModelDy = 0;
 
     public ClassInfoScreen() {
         super(Component.translatable("gui.archetype.class_info"));
@@ -42,6 +59,7 @@ public class ClassInfoScreen extends Screen {
 
     @Override
     protected void init() {
+        openTime = System.currentTimeMillis();
         ClientClassData data = ClientClassData.getInstance();
         if (data.hasClass() && data.getClassId() != null) {
             playerClass = ClassRegistry.getInstance().get(data.getClassId()).orElse(null);
@@ -50,7 +68,6 @@ public class ClassInfoScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // Dark vignette background
         renderDimBackground(g);
 
         if (playerClass == null) {
@@ -59,8 +76,21 @@ public class ClassInfoScreen extends Screen {
             return;
         }
 
+        // Smooth scroll interpolation
+        smoothScrollOffset += (scrollOffset - smoothScrollOffset) * 0.35f;
+        if (Math.abs(smoothScrollOffset - scrollOffset) < 0.5f) smoothScrollOffset = scrollOffset;
+        smoothLeftScrollOffset += (leftScrollOffset - smoothLeftScrollOffset) * 0.35f;
+        if (Math.abs(smoothLeftScrollOffset - leftScrollOffset) < 0.5f) smoothLeftScrollOffset = leftScrollOffset;
+
+        if (tabTransition < 1f) {
+            tabTransition = Math.min(1f, tabTransition + 0.08f);
+        }
+
         ClientClassData data = ClientClassData.getInstance();
         int classColor = playerClass.getColor();
+
+        long elapsed = System.currentTimeMillis() - openTime;
+        float openAlpha = Mth.clamp(elapsed / 200f, 0f, 1f);
 
         // 16:9 panel
         int panelH = Math.min(height - 24, (int) ((width - 40) * 9.0 / 16.0));
@@ -72,10 +102,17 @@ public class ClassInfoScreen extends Screen {
         int panelX = (width - panelW) / 2;
         int panelY = (height - panelH) / 2;
 
-        // Draw panel
+        var pose = g.pose();
+        if (openAlpha < 1f) {
+            float scale = 0.95f + 0.05f * openAlpha;
+            pose.pushPose();
+            pose.translate(width / 2f, height / 2f, 0);
+            pose.scale(scale, scale, 1f);
+            pose.translate(-width / 2f, -height / 2f, 0);
+        }
+
         renderPanel(g, panelX, panelY, panelW, panelH, classColor);
 
-        // Split into left (35%) and right (65%) columns
         int leftWidth = (int) ((panelW - PANEL_PADDING * 3 - DIVIDER_WIDTH) * 0.35);
         int rightWidth = panelW - PANEL_PADDING * 3 - DIVIDER_WIDTH - leftWidth;
         int leftX = panelX + PANEL_PADDING;
@@ -84,32 +121,44 @@ public class ClassInfoScreen extends Screen {
         int contentTop = panelY + PANEL_PADDING;
         int contentBottom = panelY + panelH - PANEL_PADDING;
 
-        // Vertical divider
         renderVerticalDivider(g, dividerX, contentTop + 4, contentBottom - 4, classColor);
 
-        // Cache layout values for mouseScrolled
         this.cachedLeftX = leftX;
         this.cachedDividerX = dividerX;
         this.cachedContentTop = contentTop;
         this.cachedContentBottom = contentBottom;
+        this.cachedRightX = rightX;
+        this.cachedRightWidth = rightWidth;
+
+        int tabHeaderHeight = font.lineHeight + 8;
+        this.cachedTabHeaderHeight = tabHeaderHeight;
 
         // ---- LEFT COLUMN ----
         int ly = contentTop;
 
-        // Class name (big) — fixed, not scrolled
-        var pose = g.pose();
+        // 3D player model — smoothly follows cursor
+        int modelSpaceH = 70;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            int modelCenterX = leftX + leftWidth / 2;
+            int modelBottom = contentTop + modelSpaceH;
+            renderPlayerModel(g, mc.player, modelCenterX, modelBottom, 35, mouseX, mouseY);
+        }
+        ly += modelSpaceH + 8;
+
+        // Class name
         pose.pushPose();
-        float scale = 1.6f;
+        float nameScale = 1.6f;
         Component name = Component.translatable(playerClass.getNameKey());
-        int namePixelW = (int) (font.width(name) * scale);
+        int namePixelW = (int) (font.width(name) * nameScale);
         float nameX = leftX + (leftWidth - namePixelW) / 2f;
         pose.translate(nameX, ly, 0);
-        pose.scale(scale, scale, 1);
+        pose.scale(nameScale, nameScale, 1);
         g.drawString(font, name, 0, 0, 0xFF000000 | classColor, false);
         pose.popPose();
-        ly += (int) (font.lineHeight * scale) + 8;
+        ly += (int) (font.lineHeight * nameScale) + 8;
 
-        // Lore (word-wrapped, centered) — fixed
+        // Lore
         if (!playerClass.getLoreKeys().isEmpty()) {
             Component lore = Component.translatable(playerClass.getLoreKeys().get(0))
                     .withStyle(s -> s.withItalic(true).withColor(0x707070));
@@ -122,15 +171,18 @@ public class ClassInfoScreen extends Screen {
             ly += 8;
         }
 
-        // Separator
         renderHorizontalSeparator(g, leftX, ly, leftWidth, classColor);
         ly += SECTION_GAP;
 
-        // Level + XP — fixed
+        // Level + XP
         int level = data.getLevel();
         int xp = data.getExperience();
         int neededXp = PlayerClassData.experienceForLevel(level + 1, 100);
         float xpProgress = neededXp > 0 ? (float) xp / neededXp : 0;
+
+        if (smoothLevelProgress < 0) smoothLevelProgress = 0f;
+        smoothLevelProgress += (xpProgress - smoothLevelProgress) * 0.1f;
+        if (Math.abs(smoothLevelProgress - xpProgress) < 0.005f) smoothLevelProgress = xpProgress;
 
         Component levelText = Component.translatable("gui.archetype.level", level);
         g.drawString(font, levelText, leftX, ly, 0xFFCC88, false);
@@ -142,14 +194,16 @@ public class ClassInfoScreen extends Screen {
         this.levelBarW = barW;
         boolean barHover = mouseX >= leftX && mouseX <= leftX + barW
                 && mouseY >= ly && mouseY <= ly + 20;
-        ClassScreenRenderer.renderProgressBar(g, leftX, ly, barW, 6, xpProgress, barHover ? 0x66DD66 : 0x44CC44);
+
+        renderAnimatedProgressBar(g, leftX, ly, barW, 6, smoothLevelProgress,
+                barHover ? 0x66DD66 : 0x44CC44, classColor);
         ly += 14;
 
-        // ---- Left column scrollable area (resource, attributes, ability stats) ----
+        // ---- Left scrollable area ----
         int leftScrollTop = ly;
         this.cachedLeftScrollTop = leftScrollTop;
         g.enableScissor(leftX, leftScrollTop, dividerX - PANEL_PADDING, contentBottom);
-        ly -= (int) leftScrollOffset;
+        ly -= (int) smoothLeftScrollOffset;
 
         // Resource
         if (playerClass.getResource() != null) {
@@ -184,13 +238,13 @@ public class ClassInfoScreen extends Screen {
                 if (Math.abs(attr.value()) < 0.001) continue;
                 String attrName = Component.translatable("gui.archetype.attr." + attr.attribute().getPath().replace("generic.", "")).getString();
                 double value = baseValue + attr.value() + scalingBonus;
-                int barWidth = Math.min(80, leftWidth / 3);
-                ClassScreenRenderer.renderAttributeBar(g, font, attrName, value, baseValue, leftX, ly, barWidth);
+                int attrBarW = Math.min(80, leftWidth / 3);
+                ClassScreenRenderer.renderAttributeBar(g, font, attrName, value, baseValue, leftX, ly, attrBarW);
                 ly += 13;
             }
         }
 
-        // Ability stats (dynamic, level-based)
+        // Ability stats
         if (!playerClass.getAbilityStats().isEmpty()) {
             renderHorizontalSeparator(g, leftX, ly, leftWidth, classColor);
             ly += SECTION_GAP - 4;
@@ -229,119 +283,291 @@ public class ClassInfoScreen extends Screen {
             }
         }
 
-        leftContentHeight = ly + leftScrollOffset - leftScrollTop + PANEL_PADDING;
+        leftContentHeight = ly + smoothLeftScrollOffset - leftScrollTop + PANEL_PADDING;
         g.disableScissor();
 
-        // Scrollbar for left column
         float leftViewH = contentBottom - leftScrollTop;
         if (leftContentHeight > leftViewH) {
             renderLeftScrollbar(g, dividerX - PANEL_PADDING - SCROLLBAR_WIDTH, leftScrollTop, leftViewH, classColor);
         }
 
-        // ---- RIGHT COLUMN (scrollable) ----
-        g.enableScissor(rightX, contentTop, rightX + rightWidth, contentBottom);
+        // ---- RIGHT COLUMN ----
+        int tabY = contentTop;
+        Component abilitiesTab = Component.translatable("gui.archetype.abilities");
+        Component passivesTab = Component.translatable("gui.archetype.passives");
 
-        int ry = contentTop - (int) scrollOffset;
+        int tab0X = rightX;
+        int tab1X = rightX + rightWidth / 2;
+        int tabW = rightWidth / 2;
 
-        // Active abilities
-        if (!playerClass.getActiveAbilities().isEmpty()) {
-            renderSectionLabel(g, "gui.archetype.abilities", rightX, ry, rightWidth);
-            ry += font.lineHeight + 6;
+        boolean hoverTab0 = mouseX >= tab0X && mouseX < tab0X + tabW
+                && mouseY >= tabY && mouseY < tabY + tabHeaderHeight;
+        boolean hoverTab1 = mouseX >= tab1X && mouseX < tab1X + tabW
+                && mouseY >= tabY && mouseY < tabY + tabHeaderHeight;
 
-            // Render all ability cards first so they appear adjacent
-            for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
-                int slotIdx = switch (ability.slot()) {
-                    case "ability_1" -> 0;
-                    case "ability_2" -> 1;
-                    case "ability_3" -> 2;
-                    default -> 0;
-                };
-                String key = ArchetypeKeybinds.getSlotKeyDisplay(slotIdx);
+        // Tab backgrounds
+        g.fill(tab0X, tabY, tab0X + tabW, tabY + tabHeaderHeight,
+                selectedTab == 0 ? 0x30FFFFFF : (hoverTab0 ? 0x20FFFFFF : 0x10FFFFFF));
+        g.fill(tab1X, tabY, tab1X + tabW, tabY + tabHeaderHeight,
+                selectedTab == 1 ? 0x30FFFFFF : (hoverTab1 ? 0x20FFFFFF : 0x10FFFFFF));
 
-                Component desc = Component.translatable(ability.descriptionKey());
-                List<FormattedCharSequence> descLines = font.split(desc, rightWidth - 36);
-                int descH = descLines.size() * (font.lineHeight + 1);
-                int cardTop = ry - CARD_PAD / 2;
-                int cardBottom = ry + 12 + descH + CARD_PAD;
-                g.fill(rightX, cardTop, rightX + rightWidth - 12, cardBottom, 0x1CFFFFFF);
+        int tab0Color = selectedTab == 0 ? (0xFF000000 | classColor) : (hoverTab0 ? 0xBBBBBB : 0x888888);
+        int tab1Color = selectedTab == 1 ? (0xFF000000 | classColor) : (hoverTab1 ? 0xBBBBBB : 0x888888);
+        g.drawCenteredString(font, abilitiesTab, tab0X + tabW / 2, tabY + (tabHeaderHeight - font.lineHeight) / 2, tab0Color);
+        g.drawCenteredString(font, passivesTab, tab1X + tabW / 2, tabY + (tabHeaderHeight - font.lineHeight) / 2, tab1Color);
 
-                String badge = "[" + key + "]";
-                g.fill(rightX + 2, ry - 1, rightX + 2 + font.width(badge) + 4, ry + font.lineHeight + 1, 0xC0000000 | classColor);
-                g.drawString(font, badge, rightX + 4, ry, 0xFFFFFF, false);
+        // Underline
+        int ulX = selectedTab == 0 ? tab0X : tab1X;
+        g.fill(ulX, tabY + tabHeaderHeight - 2, ulX + tabW, tabY + tabHeaderHeight, 0xFF000000 | classColor);
 
-                g.drawString(font, Component.translatable(ability.nameKey()), rightX + 28, ry, 0xFFFFFF, false);
-                ry += 12;
+        // Right content
+        int rightContentTop = contentTop + tabHeaderHeight + 6;
+        g.enableScissor(rightX, rightContentTop, rightX + rightWidth, contentBottom);
 
-                for (FormattedCharSequence line : descLines) {
-                    g.drawString(font, line, rightX + 28, ry, 0x999999, false);
-                    ry += font.lineHeight + 1;
-                }
-                ry += CARD_PAD + 2;
-            }
+        int ry = rightContentTop - (int) smoothScrollOffset;
 
-            // Extra sections rendered after all ability cards
-            for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
-                for (PlayerClass.ExtraAbilitySection section : playerClass.getExtraAbilitySections()) {
-                    if (section.parentSlot().equals(ability.slot())) {
-                        ry = renderExtraAbilitySection(g, rightX, ry, rightWidth, section, classColor, level);
-                    }
-                }
-            }
-            ry += 4;
+        if (selectedTab == 0) {
+            ry = renderAbilitiesTab(g, rightX, ry, rightWidth, data, classColor, level, mouseX, mouseY);
+        } else {
+            ry = renderPassivesTab(g, rightX, ry, rightWidth, classColor, mouseX, mouseY);
         }
 
-        // Passives
-        if (!playerClass.getPassiveAbilities().isEmpty()) {
-            renderSectionLabel(g, "gui.archetype.passives", rightX, ry, rightWidth);
-            ry += font.lineHeight + 6;
-
-            var sorted = playerClass.getPassiveAbilities().stream()
-                    .filter(p -> !p.hidden())
-                    .sorted((a, b) -> Boolean.compare(b.positive(), a.positive()))
-                    .toList();
-            for (PassiveAbilityEntry passive : sorted) {
-                boolean positive = passive.positive();
-                int color = positive ? 0xFF44CC44 : 0xFFCC4444;
-                String marker = positive ? "\u2714" : "\u2718";
-
-                Component pDesc = Component.translatable(passive.descriptionKey());
-                List<FormattedCharSequence> descLines = font.split(pDesc, rightWidth - 24);
-                int descH = descLines.size() * (font.lineHeight + 1);
-                int cardTop = ry - CARD_PAD / 2;
-                int cardBottom = ry + 12 + descH + CARD_PAD;
-
-                int bgColor = positive ? 0x18008800 : 0x18880000;
-                g.fill(rightX, cardTop, rightX + rightWidth - 8, cardBottom, bgColor);
-                g.fill(rightX, cardTop, rightX + 2, cardBottom, 0x80000000 | (color & 0x00FFFFFF));
-
-                g.drawString(font, marker, rightX + 6, ry, color, false);
-                g.drawString(font, Component.translatable(passive.nameKey()), rightX + 16, ry, color, false);
-                ry += 12;
-
-                for (FormattedCharSequence line : descLines) {
-                    g.drawString(font, line, rightX + 16, ry, 0x999999, false);
-                    ry += font.lineHeight + 1;
-                }
-                ry += CARD_PAD + 2;
-            }
-        }
-
-        contentHeight = ry + scrollOffset - contentTop + PANEL_PADDING;
+        contentHeight = ry + smoothScrollOffset - rightContentTop + PANEL_PADDING;
         g.disableScissor();
 
-        // Scrollbar for right column
-        float viewH = contentBottom - contentTop;
+        float viewH = contentBottom - rightContentTop;
         if (contentHeight > viewH) {
-            renderScrollbar(g, rightX + rightWidth - SCROLLBAR_WIDTH - 2, contentTop, viewH, classColor);
+            renderScrollbar(g, rightX + rightWidth - SCROLLBAR_WIDTH - 2, rightContentTop, viewH, classColor);
+        }
+
+        if (openAlpha < 1f) {
+            pose.popPose();
         }
 
         super.render(g, mouseX, mouseY, partialTick);
 
-        // Level bar tooltip
         if (playerClass != null && mouseX >= levelBarX && mouseX <= levelBarX + levelBarW
                 && mouseY >= levelBarY && mouseY <= levelBarY + 20) {
             renderLevelTooltip(g, mouseX, mouseY);
         }
+    }
+
+    // ---- Abilities tab ----
+
+    private int renderAbilitiesTab(GuiGraphics g, int x, int ry, int rw,
+                                   ClientClassData data, int classColor, int level,
+                                   int mouseX, int mouseY) {
+        if (playerClass.getActiveAbilities().isEmpty()) return ry;
+
+        for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
+            int slotIdx = switch (ability.slot()) {
+                case "ability_1" -> 0;
+                case "ability_2" -> 1;
+                case "ability_3" -> 2;
+                default -> 0;
+            };
+            String key = ArchetypeKeybinds.getSlotKeyDisplay(slotIdx);
+            boolean locked = ability.unlockLevel() > data.getLevel();
+
+            Component desc = Component.translatable(ability.descriptionKey());
+            List<FormattedCharSequence> descLines = font.split(desc, rw - 42);
+            int descH = descLines.size() * (font.lineHeight + 1);
+
+            // Card dimensions
+            int cardLeft = x;
+            int cardRight = x + rw - 6;
+            int cardTop = ry;
+            int cardBottom = ry + 10 + font.lineHeight + 4 + descH + 8;
+
+            boolean hover = mouseX >= cardLeft && mouseX < cardRight
+                    && mouseY >= cardTop && mouseY < cardBottom;
+
+            // Card background — gradient with subtle class color tint
+            int bgTop = locked ? 0x20222222 : (hover ? 0x30FFFFFF : 0x20FFFFFF);
+            int bgBot = locked ? 0x10111111 : (hover ? 0x18FFFFFF : 0x0CFFFFFF);
+            g.fillGradient(cardLeft, cardTop, cardRight, cardBottom, bgTop, bgBot);
+
+            // Left accent strip (3px wide, class-colored)
+            int accentAlpha = locked ? 0x30 : (hover ? 0xA0 : 0x60);
+            g.fill(cardLeft, cardTop, cardLeft + 3, cardBottom, (accentAlpha << 24) | (classColor & 0x00FFFFFF));
+
+            // Bottom border line
+            g.fill(cardLeft + 3, cardBottom - 1, cardRight, cardBottom, 0x10FFFFFF);
+
+            // Keybind badge — small pill shape
+            int badgeX = cardLeft + 8;
+            int badgeY = cardTop + 8;
+            int badgeW = font.width(key) + 8;
+            int badgeH = font.lineHeight + 4;
+            int badgeBg = locked ? 0x60333333 : (0xB0000000 | (classColor & 0x00FFFFFF));
+            g.fill(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH, badgeBg);
+            g.fill(badgeX, badgeY, badgeX + badgeW, badgeY + 1, 0x20FFFFFF); // top highlight
+            int keyColor = locked ? 0x666666 : 0xEEEEEE;
+            g.drawString(font, key, badgeX + 4, badgeY + 2, keyColor, false);
+
+            // Ability name
+            int nameX = badgeX + badgeW + 6;
+            int nameColor = locked ? 0x666666 : 0xFFFFFF;
+            g.drawString(font, Component.translatable(ability.nameKey()), nameX, badgeY + 2, nameColor, false);
+
+            // Lock indicator on the right
+            if (locked) {
+                Component lockText = Component.translatable("gui.archetype.locked", ability.unlockLevel());
+                int lockW = font.width(lockText);
+                g.drawString(font, lockText, cardRight - lockW - 6, badgeY + 2, 0x555555, false);
+            }
+
+            // Slot label (small, top-right)
+            String slotLabel = ability.slot().replace("ability_", "#");
+            int slotLabelW = font.width(slotLabel);
+            g.drawString(font, slotLabel, cardRight - slotLabelW - 6, badgeY + 2, 0x404050, false);
+
+            // Description
+            int descY = badgeY + badgeH + 4;
+            int descColor = locked ? 0x555555 : 0x999999;
+            for (FormattedCharSequence line : descLines) {
+                g.drawString(font, line, cardLeft + 10, descY, descColor, false);
+                descY += font.lineHeight + 1;
+            }
+
+            ry = cardBottom + 4;
+        }
+
+        // Extra sections
+        for (ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
+            for (PlayerClass.ExtraAbilitySection section : playerClass.getExtraAbilitySections()) {
+                if (section.parentSlot().equals(ability.slot())) {
+                    ry = renderExtraAbilitySection(g, x, ry, rw, section, classColor, level, mouseX, mouseY);
+                }
+            }
+        }
+        ry += 4;
+
+        return ry;
+    }
+
+    // ---- Passives tab ----
+
+    private int renderPassivesTab(GuiGraphics g, int x, int ry, int rw,
+                                  int classColor, int mouseX, int mouseY) {
+        if (playerClass.getPassiveAbilities().isEmpty()) return ry;
+
+        var sorted = playerClass.getPassiveAbilities().stream()
+                .filter(p -> !p.hidden())
+                .sorted((a, b) -> Boolean.compare(b.positive(), a.positive()))
+                .toList();
+
+        for (PassiveAbilityEntry passive : sorted) {
+            boolean positive = passive.positive();
+            int accentColor = positive ? 0x44CC44 : 0xCC4444;
+
+            Component pDesc = Component.translatable(passive.descriptionKey());
+            List<FormattedCharSequence> descLines = font.split(pDesc, rw - 28);
+            int descH = descLines.size() * (font.lineHeight + 1);
+
+            // Card dimensions
+            int cardLeft = x;
+            int cardRight = x + rw - 6;
+            int cardTop = ry;
+            int cardBottom = ry + 8 + font.lineHeight + 4 + descH + 6;
+
+            boolean hover = mouseX >= cardLeft && mouseX < cardRight
+                    && mouseY >= cardTop && mouseY < cardBottom;
+
+            // Background — different tint for positive/negative
+            int bgBase = positive ? 0x003300 : 0x330000;
+            int bgAlphaTop = hover ? 0x28 : 0x18;
+            int bgAlphaBot = hover ? 0x18 : 0x0C;
+            g.fillGradient(cardLeft, cardTop, cardRight, cardBottom,
+                    (bgAlphaTop << 24) | bgBase, (bgAlphaBot << 24) | bgBase);
+
+            // Left accent strip (3px)
+            int stripAlpha = hover ? 0xC0 : 0x80;
+            g.fill(cardLeft, cardTop, cardLeft + 3, cardBottom, (stripAlpha << 24) | (accentColor & 0x00FFFFFF));
+
+            // Bottom border
+            g.fill(cardLeft + 3, cardBottom - 1, cardRight, cardBottom, 0x08FFFFFF);
+
+            // Marker icon — circle-ish indicator
+            int iconX = cardLeft + 10;
+            int iconY = cardTop + 8;
+            String marker = positive ? "\u25B2" : "\u25BC"; // ▲ / ▼
+            g.drawString(font, marker, iconX, iconY, accentColor, false);
+
+            // Passive name
+            int nameX = iconX + font.width(marker) + 4;
+            g.drawString(font, Component.translatable(passive.nameKey()), nameX, iconY, accentColor, false);
+
+            // Description
+            int descY = iconY + font.lineHeight + 4;
+            for (FormattedCharSequence line : descLines) {
+                g.drawString(font, line, cardLeft + 10, descY, 0x999999, false);
+                descY += font.lineHeight + 1;
+            }
+
+            ry = cardBottom + 3;
+        }
+
+        return ry;
+    }
+
+    // ---- Player model ----
+
+    private void renderPlayerModel(GuiGraphics g, LivingEntity entity, int x, int y, int modelScale,
+                                   int mouseX, int mouseY) {
+        // Target offset from model center to cursor
+        float targetDx = (float) x - mouseX;
+        float targetDy = (float) (y - modelScale) - mouseY;
+
+        // Smooth interpolation — slow, gentle follow
+        smoothModelDx += (targetDx - smoothModelDx) * 0.08f;
+        smoothModelDy += (targetDy - smoothModelDy) * 0.08f;
+
+        // Clamp rotation range so model doesn't spin wildly
+        float clampedDx = Mth.clamp(smoothModelDx, -80f, 80f);
+        float clampedDy = Mth.clamp(smoothModelDy, -50f, 50f);
+
+        // Reduced multipliers for gentler rotation
+        Quaternionf entityPose = new Quaternionf().rotateZ((float) Math.PI);
+        Quaternionf cameraOrientation = new Quaternionf().rotateX(clampedDy * 8f * ((float) Math.PI / 180f));
+
+        float origBodyRot = entity.yBodyRot;
+        float origYRot = entity.getYRot();
+        float origXRot = entity.getXRot();
+        float origHeadRotO = entity.yHeadRotO;
+        float origHeadRot = entity.yHeadRot;
+
+        entity.yBodyRot = 180f + clampedDx * 8f;
+        entity.setYRot(180f + clampedDx * 12f);
+        entity.setXRot(-clampedDy * 8f);
+        entity.yHeadRot = entity.getYRot();
+        entity.yHeadRotO = entity.getYRot();
+
+        InventoryScreen.renderEntityInInventory(g, x, y, modelScale, entityPose, cameraOrientation, entity);
+
+        entity.yBodyRot = origBodyRot;
+        entity.setYRot(origYRot);
+        entity.setXRot(origXRot);
+        entity.yHeadRotO = origHeadRotO;
+        entity.yHeadRot = origHeadRot;
+    }
+
+    // ---- Input ----
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && mouseX >= cachedRightX && mouseX < cachedRightX + cachedRightWidth
+                && mouseY >= cachedContentTop && mouseY < cachedContentTop + cachedTabHeaderHeight) {
+            int newTab = (mouseX < cachedRightX + cachedRightWidth / 2) ? 0 : 1;
+            if (newTab != selectedTab) {
+                selectedTab = newTab;
+                scrollOffset = 0;
+                smoothScrollOffset = 0;
+                tabTransition = 0f;
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
@@ -358,51 +584,81 @@ public class ClassInfoScreen extends Screen {
         return true;
     }
 
-    // ---- Rendering helpers (shared style with ClassDetailScreen) ----
+    // ---- Rendering helpers ----
 
     private void renderDimBackground(GuiGraphics g) {
         g.fill(0, 0, width, height, 0xFF000000);
     }
 
     private void renderPanel(GuiGraphics g, int x, int y, int w, int h, int classColor) {
-        g.fill(x, y, x + w, y + h, 0xFF161622);
+        g.fillGradient(x, y, x + w, y + h, 0xFF181828, 0xFF121220);
+
         int borderColor = 0xCC000000 | classColor;
         g.fill(x, y, x + w, y + 1, borderColor);
         g.fill(x, y + h - 1, x + w, y + h, borderColor);
         g.fill(x, y, x + 1, y + h, borderColor);
         g.fill(x + w - 1, y, x + w, y + h, borderColor);
-        int accentColor = 0xFF000000 | classColor;
-        g.fill(x + 1, y, x + w - 1, y + 2, accentColor);
+
+        int accentFull = 0xFF000000 | classColor;
+        int accentHalf = 0x60000000 | classColor;
+        int mid = x + w / 2;
+        g.fillGradient(x + 1, y, mid, y + 2, accentHalf, accentFull);
+        g.fillGradient(mid, y, x + w - 1, y + 2, accentFull, accentHalf);
+
+        g.fillGradient(x + 1, y + 2, x + w - 1, y + 12, 0x18000000 | classColor, 0x00000000);
     }
 
     private void renderVerticalDivider(GuiGraphics g, int x, int top, int bottom, int classColor) {
         int mid = (top + bottom) / 2;
         int quarterH = (bottom - top) / 4;
+        g.fillGradient(x, top, x + DIVIDER_WIDTH, mid - quarterH, 0x08000000 | classColor, 0x18000000 | classColor);
         g.fill(x, mid - quarterH, x + DIVIDER_WIDTH, mid + quarterH, 0x50000000 | classColor);
-        g.fill(x, top, x + DIVIDER_WIDTH, mid - quarterH, 0x18000000 | classColor);
-        g.fill(x, mid + quarterH, x + DIVIDER_WIDTH, bottom, 0x18000000 | classColor);
+        g.fillGradient(x, mid + quarterH, x + DIVIDER_WIDTH, bottom, 0x18000000 | classColor, 0x08000000 | classColor);
     }
 
-    private void renderHorizontalSeparator(GuiGraphics g, int x, int y, int width, int classColor) {
-        int mid = x + width / 2;
-        int core = width / 6;
+    private void renderHorizontalSeparator(GuiGraphics g, int x, int y, int w, int classColor) {
+        int mid = x + w / 2;
+        int core = w / 6;
         g.fill(mid - core, y, mid + core, y + 1, 0x50000000 | classColor);
         g.fill(x, y, mid - core, y + 1, 0x18000000 | classColor);
-        g.fill(mid + core, y, x + width, y + 1, 0x18000000 | classColor);
+        g.fill(mid + core, y, x + w, y + 1, 0x18000000 | classColor);
     }
 
-    private void renderSectionLabel(GuiGraphics g, String titleKey, int x, int y, int width) {
+    private void renderSectionLabel(GuiGraphics g, String titleKey, int x, int y, int w) {
         Component title = Component.translatable(titleKey).withStyle(Style.EMPTY.withColor(0x909090));
         g.drawString(font, title, x, y, 0x909090, false);
         int tw = font.width(title);
-        g.fill(x + tw + 6, y + font.lineHeight / 2, x + width, y + font.lineHeight / 2 + 1, 0x1CFFFFFF);
+        g.fill(x + tw + 6, y + font.lineHeight / 2, x + w, y + font.lineHeight / 2 + 1, 0x1CFFFFFF);
+    }
+
+    private void renderAnimatedProgressBar(GuiGraphics g, int x, int y, int barWidth, int barHeight,
+                                           float progress, int color, int classColor) {
+        g.fill(x, y, x + barWidth, y + barHeight, 0x25FFFFFF);
+
+        int fillWidth = (int) (barWidth * Mth.clamp(progress, 0f, 1f));
+        if (fillWidth > 0) {
+            int baseColor = 0xFF000000 | color;
+            int lighterColor = brightenColor(color, 0.3f);
+            g.fillGradient(x, y, x + fillWidth, y + barHeight, lighterColor, baseColor);
+            g.fill(x, y, x + fillWidth, y + 1, 0x30FFFFFF);
+
+            long time = System.currentTimeMillis();
+            float shimmerPos = (float) ((time % 3000) / 3000.0);
+            int shimmerX = x + (int) (shimmerPos * barWidth);
+            int shimmerWidth = 8;
+            if (shimmerX < x + fillWidth && shimmerX + shimmerWidth > x) {
+                int sx1 = Math.max(shimmerX, x);
+                int sx2 = Math.min(shimmerX + shimmerWidth, x + fillWidth);
+                g.fill(sx1, y, sx2, y + barHeight, 0x18FFFFFF);
+            }
+        }
     }
 
     private int renderExtraAbilitySection(GuiGraphics g, int x, int y, int contentWidth,
-                                           PlayerClass.ExtraAbilitySection section, int classColor, int playerLevel) {
+                                          PlayerClass.ExtraAbilitySection section, int classColor, int playerLevel,
+                                          int mouseX, int mouseY) {
         boolean locked = section.unlockLevel() > 0 && playerLevel < section.unlockLevel();
 
-        // Section title centered with decorative lines
         Component sectionName = Component.translatable(section.nameKey());
         int nameWidth = font.width(sectionName);
         int centerX = x + contentWidth / 2;
@@ -416,37 +672,36 @@ public class ClassInfoScreen extends Screen {
         y += font.lineHeight + 6;
 
         if (locked) {
-            // Locked: darkened overlay with lock text
             int cardTop = y;
             int entryH = section.entries().size() * (font.lineHeight + 4) + CARD_PAD * 2;
             int cardBottom = cardTop + entryH;
             g.fill(x, cardTop, x + contentWidth - 8, cardBottom, 0x30000000);
 
-            // Lock text centered
             Component lockMsg = Component.translatable("gui.archetype.locked", section.unlockLevel());
             int lockMsgW = font.width(lockMsg);
-            int lockX = centerX - lockMsgW / 2;
-            int lockY = cardTop + entryH / 2 - font.lineHeight / 2;
-            g.drawString(font, lockMsg, lockX, lockY, 0x555555, false);
+            g.drawString(font, lockMsg, centerX - lockMsgW / 2, cardTop + entryH / 2 - font.lineHeight / 2, 0x555555, false);
 
             y = cardBottom + 4;
         } else {
-            // Unlocked: show entries
             for (PlayerClass.ExtraAbilityEntry entry : section.entries()) {
                 Component entryName = Component.translatable(entry.nameKey());
                 Component entryDesc = Component.translatable(entry.descriptionKey());
 
-                // Entry card
                 List<FormattedCharSequence> descLines = font.split(entryDesc, contentWidth - 28);
                 int totalH = font.lineHeight + descLines.size() * (font.lineHeight + 1) + 4;
-                g.fill(x + 4, y - 2, x + contentWidth - 12, y + totalH, 0x10000000 | classColor);
-                g.fill(x + 4, y - 2, x + 6, y + totalH, 0x40000000 | classColor);
 
-                g.drawString(font, entryName, x + 10, y, 0xDDDDDD, false);
+                boolean entryHover = mouseX >= x + 4 && mouseX < x + contentWidth - 12
+                        && mouseY >= y - 2 && mouseY < y + totalH;
+
+                int bgAlpha = entryHover ? 0x20 : 0x10;
+                g.fill(x + 4, y - 2, x + contentWidth - 12, y + totalH, (bgAlpha << 24) | (classColor & 0x00FFFFFF));
+                g.fill(x + 4, y - 2, x + 7, y + totalH, 0x40000000 | classColor);
+
+                g.drawString(font, entryName, x + 12, y, 0xDDDDDD, false);
                 y += font.lineHeight + 1;
 
                 for (FormattedCharSequence line : descLines) {
-                    g.drawString(font, line, x + 10, y, 0x888888, false);
+                    g.drawString(font, line, x + 12, y, 0x888888, false);
                     y += font.lineHeight + 1;
                 }
                 y += 4;
@@ -459,7 +714,7 @@ public class ClassInfoScreen extends Screen {
         float maxScroll = Math.max(1, contentHeight - viewH);
         float thumbRatio = viewH / contentHeight;
         int thumbH = Math.max(10, (int) (viewH * thumbRatio));
-        int thumbY = (int) top + (int) ((viewH - thumbH) * (scrollOffset / maxScroll));
+        int thumbY = (int) top + (int) ((viewH - thumbH) * (smoothScrollOffset / maxScroll));
         g.fill(x, (int) top, x + SCROLLBAR_WIDTH, (int) (top + viewH), 0x10FFFFFF);
         g.fill(x, thumbY, x + SCROLLBAR_WIDTH, thumbY + thumbH, 0x80000000 | classColor);
     }
@@ -468,7 +723,7 @@ public class ClassInfoScreen extends Screen {
         float maxScroll = Math.max(1, leftContentHeight - viewH);
         float thumbRatio = viewH / leftContentHeight;
         int thumbH = Math.max(10, (int) (viewH * thumbRatio));
-        int thumbY = (int) top + (int) ((viewH - thumbH) * (leftScrollOffset / maxScroll));
+        int thumbY = (int) top + (int) ((viewH - thumbH) * (smoothLeftScrollOffset / maxScroll));
         g.fill(x, (int) top, x + SCROLLBAR_WIDTH, (int) (top + viewH), 0x10FFFFFF);
         g.fill(x, thumbY, x + SCROLLBAR_WIDTH, thumbY + thumbH, 0x80000000 | classColor);
     }
@@ -484,11 +739,9 @@ public class ClassInfoScreen extends Screen {
 
         List<Component> lines = new ArrayList<>();
 
-        // Header: Level X / maxLevel
         lines.add(Component.translatable("gui.archetype.level", level)
                 .append(Component.literal(" / " + maxLevel).withStyle(Style.EMPTY.withColor(0x666666))));
 
-        // XP progress
         if (level < maxLevel) {
             int pct = neededXp > 0 ? (int) ((float) xp / neededXp * 100) : 0;
             lines.add(Component.literal(xp + " / " + neededXp + " XP (" + pct + "%)")
@@ -498,24 +751,22 @@ public class ClassInfoScreen extends Screen {
                     .withStyle(Style.EMPTY.withColor(0xFFCC88)));
         }
 
-        // Ability unlock levels
         for (PlayerClass.ActiveAbilityEntry ability : playerClass.getActiveAbilities()) {
             int unlock = ability.unlockLevel();
             if (unlock > 1) {
-                Component name = Component.translatable(ability.nameKey());
+                Component abilityName = Component.translatable(ability.nameKey());
                 if (unlock > level) {
                     lines.add(Component.translatable("gui.archetype.level_unlock", unlock)
                             .withStyle(Style.EMPTY.withColor(0xCC4444))
                             .append(Component.literal(" "))
-                            .append(name.copy().withStyle(Style.EMPTY.withColor(0xAAAAAA))));
+                            .append(abilityName.copy().withStyle(Style.EMPTY.withColor(0xAAAAAA))));
                 } else {
                     lines.add(Component.literal("\u2714 ").withStyle(Style.EMPTY.withColor(0x44CC44))
-                            .append(name.copy().withStyle(Style.EMPTY.withColor(0x44CC44))));
+                            .append(abilityName.copy().withStyle(Style.EMPTY.withColor(0x44CC44))));
                 }
             }
         }
 
-        // Progression: show only the next milestone
         if (!progression.isEmpty()) {
             PlayerClass.LevelMilestone nextMilestone = null;
             for (PlayerClass.LevelMilestone milestone : progression) {
@@ -535,7 +786,6 @@ public class ClassInfoScreen extends Screen {
             }
         }
 
-        // Cap tooltip width and wrap lines
         int maxRawW = 0;
         for (Component line : lines) {
             maxRawW = Math.max(maxRawW, font.width(line));
@@ -543,11 +793,10 @@ public class ClassInfoScreen extends Screen {
         int contentW = Math.min(maxRawW, 200);
         int tipW = contentW + 12;
 
-        // Split lines for wrapping
         List<FormattedCharSequence> rendered = new ArrayList<>();
         for (Component line : lines) {
             if (line.getString().isEmpty()) {
-                rendered.add(null); // spacer
+                rendered.add(null);
             } else {
                 rendered.addAll(font.split(line, contentW));
             }
@@ -561,15 +810,11 @@ public class ClassInfoScreen extends Screen {
 
         int tipX = mouseX + 12;
         int tipY = mouseY - 8;
-
-        // Keep on screen
         if (tipX + tipW > width - 4) tipX = mouseX - tipW - 4;
         if (tipY + tipH > height - 4) tipY = height - tipH - 4;
         if (tipY < 4) tipY = 4;
 
-        // Background
-        g.fill(tipX, tipY, tipX + tipW, tipY + tipH, 0xFF0E0E18);
-        // Border
+        g.fillGradient(tipX, tipY, tipX + tipW, tipY + tipH, 0xFF121220, 0xFF0E0E18);
         int classColor = playerClass.getColor();
         int bc = 0xCC000000 | classColor;
         g.fill(tipX, tipY, tipX + tipW, tipY + 1, bc);
@@ -577,7 +822,6 @@ public class ClassInfoScreen extends Screen {
         g.fill(tipX, tipY, tipX + 1, tipY + tipH, bc);
         g.fill(tipX + tipW - 1, tipY, tipX + tipW, tipY + tipH, bc);
 
-        // Text
         int textY = tipY + 4;
         for (FormattedCharSequence seq : rendered) {
             if (seq == null) {
@@ -588,6 +832,8 @@ public class ClassInfoScreen extends Screen {
             textY += lineH;
         }
     }
+
+    // ---- Data helpers ----
 
     private double getXpScalingBonus(ResourceLocation attributeId, int classLevel) {
         double totalBonus = 0;
@@ -636,7 +882,6 @@ public class ClassInfoScreen extends Screen {
         };
     }
 
-    /** Lerps each RGB channel of color toward white by factor t (0=original, 1=white). */
     private static int brightenColor(int color, float t) {
         int r = Math.min(255, (int) (((color >> 16) & 0xFF) * (1 - t) + 255 * t));
         int g = Math.min(255, (int) (((color >> 8) & 0xFF) * (1 - t) + 255 * t));

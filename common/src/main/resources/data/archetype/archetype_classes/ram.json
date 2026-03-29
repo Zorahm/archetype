@@ -78,7 +78,8 @@
       "params": {},
       "name": "ability.archetype.ram.rage.name",
       "description": "ability.archetype.ram.rage.description",
-      "icon": "archetype:textures/gui/ability/rage.png"
+      "icon": "archetype:textures/gui/ability/rage.png",
+      "item": "minecraft:magma_cream"
     }
   ],
   "extra_ability_sections": [

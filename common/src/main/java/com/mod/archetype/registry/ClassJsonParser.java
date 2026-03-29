@@ -205,9 +205,11 @@ public class ClassJsonParser {
             String iconStr = obj.has("icon") ? obj.get("icon").getAsString() : "archetype:textures/gui/abilities/default.png";
             ResourceLocation icon = parseResourceLocation(iconStr, fileId, "active_abilities[" + i + "].icon");
 
+            String item = obj.has("item") ? obj.get("item").getAsString() : null;
+
             JsonObject params = obj.has("params") && obj.get("params").isJsonObject() ? obj.getAsJsonObject("params") : new JsonObject();
 
-            result.add(new ActiveAbilityEntry(type, slot, cooldown, resourceCost, unlockLevel, params, nameKey, descKey, icon));
+            result.add(new ActiveAbilityEntry(type, slot, cooldown, resourceCost, unlockLevel, params, nameKey, descKey, icon, item));
         }
         return result;
     }

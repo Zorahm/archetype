@@ -7,7 +7,7 @@
     "description": {"translate": "advancement.archetype.reach_level_10.description"},
     "frame": "task"
   },
-  "parent": "archetype:reach_level_5",
+  "parent": "archetype:choose_class",
   "criteria": {
     "reach_level": {
       "trigger": "archetype:class_action",

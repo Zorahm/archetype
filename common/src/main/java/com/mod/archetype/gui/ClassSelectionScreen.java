@@ -1,6 +1,5 @@
 package com.mod.archetype.gui;
 
-import com.mod.archetype.core.ClassCategory;
 import com.mod.archetype.core.PlayerClass;
 import com.mod.archetype.network.client.ClientClassData;
 import com.mod.archetype.registry.ClassRegistry;
@@ -20,19 +19,23 @@ public class ClassSelectionScreen extends Screen {
     private final int mode; // 0=first, 1=rebirth
     private List<PlayerClass> allClasses;
     private List<PlayerClass> filteredClasses;
-    private final Set<ClassCategory> activeFilters = new HashSet<>();
     private int hoveredIndex = -1;
     private int selectedIndex = -1;
     private float[] cardScales;
     private int scrollOffset = 0;
     @Nullable
     private PlayerClass hoveredClass;
+    @Nullable
+    private PlayerClass lastHoveredClass;
+    private float hoverPanelAlpha = 0f;
 
-    private int gridCols, gridRows, cardSize, gridStartX, gridStartY, cardSpacing;
+    private int gridCols, gridRows, cardW, cardH, gridStartX, gridStartY, cardSpacing;
 
-    // Layout
-    private static final int LORE_PANEL_HEIGHT = 48;
-    private static final int TITLE_HEIGHT = 28;
+    // Layout constants
+    private static final int INFO_PANEL_W = 200; // Чуть шире для красивого текста
+    private static final int INFO_PANEL_MARGIN = 16;
+    private static final int TITLE_HEIGHT = 40;
+    private static final int BOTTOM_PAD = 50;
 
     public ClassSelectionScreen(int mode) {
         super(Component.translatable(mode == 0 ? "gui.archetype.selection.title" : "gui.archetype.rebirth.title"));
@@ -49,27 +52,36 @@ public class ClassSelectionScreen extends Screen {
         Arrays.fill(cardScales, 1.0f);
     }
 
+    private int getGridAreaWidth() {
+        return width - INFO_PANEL_W - INFO_PANEL_MARGIN * 2 - 10;
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Dark vignette background
+        // 1. Background (Полупрозрачный с легкой виньеткой)
         renderDimBackground(graphics);
 
-        // Title area
+        // 2. Title
         renderTitle(graphics);
 
-        // Cards
+        // 3. Scissor for card grid
+        int gridAreaW = getGridAreaWidth();
+        graphics.enableScissor(0, TITLE_HEIGHT, gridAreaW, height - BOTTOM_PAD);
+
+        // 4. Cards — update hover state and lerp scales
         hoveredIndex = -1;
         hoveredClass = null;
         for (int i = 0; i < filteredClasses.size(); i++) {
             int row = i / gridCols;
             int col = i % gridCols;
-            int x = gridStartX + col * (cardSize + cardSpacing);
-            int y = gridStartY + row * (cardSize + cardSpacing + 14) - scrollOffset;
+            int x = gridStartX + col * (cardW + cardSpacing);
+            int y = gridStartY + row * (cardH + cardSpacing + 16) - scrollOffset; // Чуть больше отступ по вертикали
 
-            if (y + cardSize < TITLE_HEIGHT || y > height - LORE_PANEL_HEIGHT - 10) continue;
+            if (y + cardH < TITLE_HEIGHT || y > height - BOTTOM_PAD) continue;
 
             PlayerClass cls = filteredClasses.get(i);
-            boolean hovered = mouseX >= x && mouseX <= x + cardSize && mouseY >= y && mouseY <= y + cardSize;
+            boolean hovered = mouseX >= x && mouseX <= x + cardW && mouseY >= y && mouseY <= y + cardH
+                    && mouseX < gridAreaW;
             if (hovered) {
                 hoveredIndex = i;
                 hoveredClass = cls;
@@ -80,171 +92,257 @@ public class ClassSelectionScreen extends Screen {
                 cardScales[i] = Mth.lerp(0.25f, cardScales[i], targetScale);
             }
 
-            boolean isCurrent = mode == 1 && ClientClassData.getInstance().hasClass()
-                    && cls.getId().equals(ClientClassData.getInstance().getClassId());
             boolean isSelected = i == selectedIndex;
-            renderCard(graphics, cls, x, y, cardSize, i < cardScales.length ? cardScales[i] : 1.0f, hovered, isCurrent, isSelected);
+            renderBannerCard(graphics, cls, x, y, i < cardScales.length ? cardScales[i] : 1.0f, hovered, isSelected);
         }
 
-        // Bottom lore panel
-        renderLorePanel(graphics, mouseX, mouseY);
+        graphics.disableScissor();
 
+        // 5. Lerp hoverPanelAlpha
+        float alphaTarget = hoveredClass != null ? 1.0f : 0.0f;
+        hoverPanelAlpha = Mth.lerp(0.18f, hoverPanelAlpha, alphaTarget);
+        if (hoveredClass != null) {
+            lastHoveredClass = hoveredClass;
+        }
+
+        // 6. Info panel
+        if (hoverPanelAlpha > 0.01f && lastHoveredClass != null) {
+            renderInfoPanel(graphics, lastHoveredClass, mouseX, mouseY);
+        }
+
+        // 7. Random button
+        renderRandomButton(graphics, mouseX, mouseY);
+
+        // 8. Super
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderDimBackground(GuiGraphics g) {
-        g.fill(0, 0, width, height, 0xFF000000);
+        // Красивое затемнение фона
+        g.fill(0, 0, width, height, 0xB8000000);
+        // Легкая горизонтальная виньетка
+        g.fillGradient(0, 0, width / 6, height, 0x66000000, 0x00000000);
+        g.fillGradient(width - width / 6, 0, width, height, 0x00000000, 0x66000000);
     }
 
     private void renderTitle(GuiGraphics g) {
-        // Title text
-        int titleY = 8;
-        g.drawCenteredString(font, title, width / 2, titleY, 0xDDDDDD);
+        int gridAreaW = getGridAreaWidth();
+        int titleCenterX = gridAreaW / 2;
+        int titleY = (TITLE_HEIGHT - font.lineHeight) / 2 - 2;
 
-        // Decorative lines on sides of title
-        int tw = font.width(title);
-        int lineY = titleY + font.lineHeight / 2;
-        int pad = 8;
-        int lineLen = 60;
-        // Left line
-        g.fill(width / 2 - tw / 2 - pad - lineLen, lineY, width / 2 - tw / 2 - pad, lineY + 1, 0x25FFFFFF);
-        // Right line
-        g.fill(width / 2 + tw / 2 + pad, lineY, width / 2 + tw / 2 + pad + lineLen, lineY + 1, 0x25FFFFFF);
+        var pose = g.pose();
+        pose.pushPose();
+        float scale = 1.5f;
+        int titleW = (int) (font.width(title) * scale);
+        float titleX = titleCenterX - titleW / 2f;
+        pose.translate(titleX, titleY, 0);
+        pose.scale(scale, scale, 1);
+        g.drawString(font, title, 0, 0, 0xFFFFFF, true);
+        pose.popPose();
 
-        // Subtle separator under title
-        g.fill(width / 4, TITLE_HEIGHT - 2, width * 3 / 4, TITLE_HEIGHT - 1, 0x12FFFFFF);
+        // Красивый градиентный разделитель под заголовком
+        int lineY = TITLE_HEIGHT - 2;
+        int lineWidth = gridAreaW / 2;
+        g.fill(titleCenterX - lineWidth / 2, lineY, titleCenterX + lineWidth / 2, lineY + 1, 0x30FFFFFF);
+        g.fill(titleCenterX - lineWidth / 6, lineY, titleCenterX + lineWidth / 6, lineY + 1, 0x50FFFFFF);
     }
 
-    private void renderCard(GuiGraphics g, PlayerClass cls, int x, int y, int size, float scale,
-                            boolean hovered, boolean isCurrent, boolean isSelected) {
+    private void renderBannerCard(GuiGraphics g, PlayerClass cls, int x, int y, float scale,
+                                  boolean hovered, boolean isSelected) {
         int classColor = cls.getColor();
         var pose = g.pose();
         boolean transformed = scale != 1.0f;
+
         if (transformed) {
-            float cx = x + size / 2f;
-            float cy = y + size / 2f;
+            float cx = x + cardW / 2f;
+            float cy = y + cardH / 2f;
             pose.pushPose();
             pose.translate(cx, cy, 0);
             pose.scale(scale, scale, 1);
             pose.translate(-cx, -cy, 0);
         }
 
-        // Card background — gradient from dark to slightly lighter
-        int bgTop = hovered ? 0xFF2C2C38 : 0xFF1E1E28;
-        int bgBot = hovered ? 0xFF262632 : 0xFF181822;
-        g.fill(x, y, x + size, y + size / 2, bgTop);
-        g.fill(x, y + size / 2, x + size, y + size, bgBot);
+        // Dark glass background
+        int bgAlpha = hovered ? 0xDD : 0xAA;
+        g.fill(x, y, x + cardW, y + cardH, (bgAlpha << 24) | 0x111118);
 
-        // Bottom color accent strip
-        int accentAlpha = hovered ? 0xFF : 0x90;
-        g.fill(x, y + size - 3, x + size, y + size, (accentAlpha << 24) | classColor);
+        // Градиент от прозрачного к цвету класса (Сделан более насыщенным)
+        int gradientTop = y + cardH / 2;
+        g.fillGradient(x, gradientTop, x + cardW, y + cardH, 0x00000000, 0xDD000000 | classColor);
 
-        // Border (2px thick)
-        int borderAlpha = hovered ? 0xFF : (isSelected ? 0xCC : 0x80);
-        int borderColor = (borderAlpha << 24) | classColor;
-        // Top
-        g.fill(x, y, x + size, y + 2, borderColor);
-        // Bottom
-        g.fill(x, y + size - 2, x + size, y + size, borderColor);
-        // Left
-        g.fill(x, y, x + 2, y + size, borderColor);
-        // Right
-        g.fill(x + size - 2, y, x + size, y + size, borderColor);
-
-        // Current class indicator (for rebirth mode)
-        if (isCurrent) {
-            // Small diamond/marker in top-right corner
-            g.fill(x + size - 8, y + 2, x + size - 2, y + 8, 0xFF000000 | classColor);
+        // Рамки
+        int borderColor;
+        if (isSelected) {
+            borderColor = 0xFFFFFFFF; // Яркая белая рамка при выборе с клавиатуры
+        } else {
+            int borderAlpha = hovered ? 0xFF : 0x40;
+            borderColor = (borderAlpha << 24) | classColor;
         }
 
-        // Keyboard selection indicator
-        if (isSelected && !hovered) {
-            // Pulsing outer glow (simplified as brighter outline)
-            g.fill(x - 1, y - 1, x + size + 1, y, 0x80000000 | classColor);
-            g.fill(x - 1, y + size, x + size + 1, y + size + 1, 0x80000000 | classColor);
-            g.fill(x - 1, y, x, y + size, 0x80000000 | classColor);
-            g.fill(x + size, y, x + size + 1, y + size, 0x80000000 | classColor);
-        }
+        g.fill(x, y, x + cardW, y + 1, borderColor);
+        g.fill(x, y + cardH - 1, x + cardW, y + cardH, borderColor);
+        g.fill(x, y, x + 1, y + cardH, borderColor);
+        g.fill(x + cardW - 1, y, x + cardW, y + cardH, borderColor);
 
-        // Name below card
+        // Иконка
+        String icon = "\u2726"; // Более изящная иконка (четырехконечная звезда)
+        float iconScale = 2.0f;
+        int iconW = (int) (font.width(icon) * iconScale);
+        int iconH = (int) (font.lineHeight * iconScale);
+        int iconX = x + (cardW - iconW) / 2;
+        int iconY = y + cardH / 3 - iconH / 2;
+
+        pose.pushPose();
+        pose.translate(iconX, iconY, 0);
+        pose.scale(iconScale, iconScale, 1);
+        // Тень для иконки
+        g.drawString(font, icon, 1, 1, 0x40000000, false);
+        g.drawString(font, icon, 0, 0, 0xFF000000 | classColor, false);
+        pose.popPose();
+
+        // Имя класса (с центрированием и тенью)
         Component name = Component.translatable(cls.getNameKey());
-        int nameColor = hovered ? (0xFF000000 | classColor) : 0xFFBBBBBB;
-        g.drawCenteredString(font, name, x + size / 2, y + size + 3, nameColor);
+        int textY = y + cardH - font.lineHeight - 6;
+        g.drawCenteredString(font, name, x + cardW / 2, textY, 0xFFFFFF);
 
         if (transformed) {
             pose.popPose();
         }
     }
 
-    private void renderLorePanel(GuiGraphics g, int mouseX, int mouseY) {
-        int panelY = height - LORE_PANEL_HEIGHT;
+    private void renderInfoPanel(GuiGraphics g, PlayerClass cls, int mouseX, int mouseY) {
+        int panelX = width - INFO_PANEL_W - INFO_PANEL_MARGIN;
+        int panelY = TITLE_HEIGHT;
+        int panelH = height - TITLE_HEIGHT - BOTTOM_PAD + 10;
+        int classColor = cls.getColor();
 
-        // Panel background
-        g.fill(0, panelY, width, height, 0xFF181824);
-        // Top border
-        g.fill(0, panelY, width, panelY + 1, 0x20FFFFFF);
+        // Плавно меняющаяся альфа для всей панели
+        int alphaValue = (int) (hoverPanelAlpha * 255);
+        if (alphaValue < 5) return; // Оптимизация
 
-        if (hoveredClass != null) {
-            int classColor = hoveredClass.getColor();
+        // Фоновая подложка панели
+        int bgAlpha = (int) (hoverPanelAlpha * 240);
+        g.fill(panelX, panelY, panelX + INFO_PANEL_W, panelY + panelH, (bgAlpha << 24) | 0x0A0A10);
 
-            // Class name on the left
-            Component name = Component.translatable(hoveredClass.getNameKey());
-            g.drawString(font, name, 12, panelY + 6, 0xFF000000 | classColor, false);
+        // Рамка панели цвета класса
+        int borderAlpha = (int) (hoverPanelAlpha * 150);
+        int borderColor = (borderAlpha << 24) | classColor;
+        g.fill(panelX, panelY, panelX + INFO_PANEL_W, panelY + 1, borderColor);
+        g.fill(panelX, panelY + panelH - 1, panelX + INFO_PANEL_W, panelY + panelH, borderColor);
+        g.fill(panelX, panelY, panelX + 1, panelY + panelH, borderColor);
+        g.fill(panelX + INFO_PANEL_W - 1, panelY, panelX + INFO_PANEL_W, panelY + panelH, borderColor);
 
-            // Lore text (word-wrapped, right of name or below on narrow screens)
-            List<String> loreKeys = hoveredClass.getLoreKeys();
-            if (!loreKeys.isEmpty()) {
-                Component lore = Component.translatable(loreKeys.get(0))
-                        .withStyle(s -> s.withItalic(true).withColor(0x888888));
-                int loreX = 12;
-                int loreY = panelY + 18;
-                int loreWidth = width - 24;
-                List<FormattedCharSequence> lines = font.split(lore, loreWidth);
-                for (int i = 0; i < Math.min(lines.size(), 2); i++) {
-                    g.drawString(font, lines.get(i), loreX, loreY, 0x888888, false);
-                    loreY += font.lineHeight + 1;
-                }
+        int innerX = panelX + 12;
+        int innerW = INFO_PANEL_W - 24;
+        int ty = panelY + 14;
+
+        // ВАЖНО: Применяем альфу к цвету текста, чтобы текст не "прыгал", а плавно появлялся
+        int textAlphaMask = alphaValue << 24;
+
+        // Имя класса (Крупно)
+        Component name = Component.translatable(cls.getNameKey());
+        var pose = g.pose();
+        pose.pushPose();
+        float scale = 1.3f;
+        pose.translate(innerX, ty, 0);
+        pose.scale(scale, scale, 1);
+        g.drawString(font, name, 0, 0, textAlphaMask | (classColor & 0x00FFFFFF), true);
+        pose.popPose();
+        ty += (int) (font.lineHeight * scale) + 6;
+
+        // Разделитель
+        int sepColorCenter = (int)(hoverPanelAlpha * 100) << 24 | (classColor & 0x00FFFFFF);
+        int sepColorEdge = (int)(hoverPanelAlpha * 20) << 24 | (classColor & 0x00FFFFFF);
+        g.fill(innerX, ty, innerX + innerW / 2, ty + 1, sepColorCenter);
+        g.fill(innerX + innerW / 2, ty, innerX + innerW, ty + 1, sepColorEdge);
+        ty += 8;
+
+        // Лор (описание)
+        if (!cls.getLoreKeys().isEmpty()) {
+            Component lore = Component.translatable(cls.getLoreKeys().get(0))
+                    .withStyle(s -> s.withItalic(true));
+            List<FormattedCharSequence> loreLines = font.split(lore, innerW);
+            for (int i = 0; i < Math.min(loreLines.size(), 6); i++) {
+                g.drawString(font, loreLines.get(i), innerX, ty, textAlphaMask | 0x999999, false);
+                ty += font.lineHeight + 2;
             }
-
-            // "Click to view" hint on the right
-            Component hint = Component.translatable("gui.archetype.click_to_view")
-                    .withStyle(Style.EMPTY.withColor(0x555555));
-            // Fall back if key doesn't exist — just show nothing extra
-            int hintW = font.width(hint);
-            g.drawString(font, hint, width - hintW - 12, panelY + 6, 0x555555, false);
-        } else {
-            // No hover — show general hint
-            Component hint = Component.translatable("gui.archetype.hover_hint")
-                    .withStyle(Style.EMPTY.withColor(0x555555));
-            g.drawCenteredString(font, hint, width / 2, panelY + (LORE_PANEL_HEIGHT - font.lineHeight) / 2, 0x555555);
+            ty += 8;
         }
 
-        // Random button area (bottom-right, custom rendered)
-        renderRandomButton(g, mouseX, mouseY);
+        // Блок статистики (Способности и Пассивки)
+        int abilityCount = cls.getActiveAbilities().size();
+        int positiveCount = (int) cls.getPassiveAbilities().stream().filter(p -> !p.hidden() && p.positive()).count();
+        int negativeCount = (int) cls.getPassiveAbilities().stream().filter(p -> !p.hidden() && !p.positive()).count();
+
+        // Активные навыки
+        if (abilityCount > 0) {
+            g.drawString(font, "Активные навыки:", innerX, ty, textAlphaMask | 0x777777, false);
+            String abStr = String.valueOf(abilityCount);
+            g.drawString(font, abStr, panelX + INFO_PANEL_W - 12 - font.width(abStr), ty, textAlphaMask | 0xFFFFFF, false);
+            ty += font.lineHeight + 4;
+        }
+
+        // Пассивные черты
+        if (positiveCount > 0 || negativeCount > 0) {
+            g.drawString(font, "Пассивные черты:", innerX, ty, textAlphaMask | 0x777777, false);
+
+            String posStr = "+" + positiveCount;
+            String negStr = "-" + negativeCount;
+
+            int statX = panelX + INFO_PANEL_W - 12;
+            if (negativeCount > 0) {
+                statX -= font.width(negStr);
+                g.drawString(font, negStr, statX, ty, textAlphaMask | 0xFF5555, false);
+                statX -= 4; // отступ
+            }
+            if (positiveCount > 0) {
+                statX -= font.width(posStr);
+                g.drawString(font, posStr, statX, ty, textAlphaMask | 0x55FF55, false);
+            }
+            ty += font.lineHeight + 4;
+        }
+
+        // Подсказка в самом низу панели
+        Component hint = Component.translatable("gui.archetype.click_to_view");
+        int hintW = font.width(hint);
+        int hintY = panelY + panelH - font.lineHeight - 12;
+
+        // Рисуем легкий фон под подсказкой
+        g.fill(panelX + 4, hintY - 4, panelX + INFO_PANEL_W - 4, hintY + font.lineHeight + 4, textAlphaMask | 0x1AFFFFFF);
+        g.drawString(font, hint, panelX + (INFO_PANEL_W - hintW) / 2, hintY, textAlphaMask | 0xAAAAAA, false);
     }
 
     private void renderRandomButton(GuiGraphics g, int mouseX, int mouseY) {
-        Component text = Component.translatable("gui.archetype.random");
-        int bw = font.width(text) + 16;
-        int bh = 16;
-        int bx = width - bw - 8;
-        int by = height - bh - 6;
+        int gridAreaW = getGridAreaWidth();
+        Component text = Component.literal("\u2684 ").append(Component.translatable("gui.archetype.random"));
+        int bw = font.width(text) + 24; // Кнопка стала чуть шире
+        int bh = 22;
+        int bx = gridAreaW / 2 - bw / 2;
+        int by = height - BOTTOM_PAD + (BOTTOM_PAD - bh) / 2;
         boolean hovered = mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh;
 
-        g.fill(bx, by, bx + bw, by + bh, hovered ? 0x40FFFFFF : 0x18FFFFFF);
-        g.fill(bx, by, bx + bw, by + 1, hovered ? 0x35FFFFFF : 0x12FFFFFF);
-        g.drawCenteredString(font, text, bx + bw / 2, by + (bh - font.lineHeight) / 2, hovered ? 0xFFFFFF : 0xAAAAAA);
+        // Эффект стеклянной кнопки
+        g.fill(bx, by, bx + bw, by + bh, hovered ? 0x60FFFFFF : 0x20FFFFFF); // Фон
+        g.fill(bx, by, bx + bw, by + 1, hovered ? 0x50FFFFFF : 0x25FFFFFF); // Верхний блик
+        g.fill(bx, by + bh - 1, bx + bw, by + bh, 0x15FFFFFF); // Нижняя тень
+
+        // Боковые рамки
+        g.fill(bx, by, bx + 1, by + bh, 0x30FFFFFF);
+        g.fill(bx + bw - 1, by, bx + bw, by + bh, 0x30FFFFFF);
+
+        g.drawCenteredString(font, text, bx + bw / 2, by + (bh - font.lineHeight) / 2 + 1, hovered ? 0xFFFFFF : 0xDDDDDD);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            // Random button
-            Component text = Component.translatable("gui.archetype.random");
-            int bw = font.width(text) + 16;
-            int bh = 16;
-            int bx = width - bw - 8;
-            int by = height - bh - 6;
+            int gridAreaW = getGridAreaWidth();
+            Component text = Component.literal("\u2684 ").append(Component.translatable("gui.archetype.random"));
+            int bw = font.width(text) + 24;
+            int bh = 22;
+            int bx = gridAreaW / 2 - bw / 2;
+            int by = height - BOTTOM_PAD + (BOTTOM_PAD - bh) / 2;
+
             if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh) {
                 if (!filteredClasses.isEmpty()) {
                     PlayerClass randomClass = filteredClasses.get(new Random().nextInt(filteredClasses.size()));
@@ -253,7 +351,6 @@ public class ClassSelectionScreen extends Screen {
                 return true;
             }
 
-            // Card click
             if (hoveredIndex >= 0 && hoveredIndex < filteredClasses.size()) {
                 Minecraft.getInstance().setScreen(new ClassDetailScreen(filteredClasses.get(hoveredIndex), mode));
                 return true;
@@ -265,7 +362,7 @@ public class ClassSelectionScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256 && mode == 0) {
-            return true; // ESC blocked on first selection
+            return true;
         }
         if (keyCode == 265) { // UP
             selectedIndex = Math.max(0, selectedIndex - gridCols);
@@ -292,8 +389,8 @@ public class ClassSelectionScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        int availableH = height - TITLE_HEIGHT - LORE_PANEL_HEIGHT - 10;
-        int gridHeight = gridRows * (cardSize + cardSpacing + 14) - cardSpacing;
+        int availableH = height - TITLE_HEIGHT - BOTTOM_PAD - 10;
+        int gridHeight = gridRows * (cardH + cardSpacing + 16) - cardSpacing;
         int maxScroll = Math.max(0, gridHeight - availableH);
         if (maxScroll == 0) return false;
         scrollOffset -= (int) (delta * 20);
@@ -310,26 +407,38 @@ public class ClassSelectionScreen extends Screen {
 
     private void recalculateLayout() {
         int count = filteredClasses.size();
-        if (count <= 6) {
-            gridCols = 3;
-            cardSize = 64;
-        } else if (count <= 15) {
-            gridCols = 5;
-            cardSize = 48;
-        } else if (count <= 24) {
-            gridCols = 6;
-            cardSize = 40;
-        } else {
-            gridCols = 6;
-            cardSize = 40;
+        if (count == 0) {
+            gridCols = 1;
+            gridRows = 0;
+            cardW = 64;
+            cardH = 96;
+            gridStartX = 0;
+            gridStartY = TITLE_HEIGHT + 10;
+            cardSpacing = 12;
+            return;
         }
+
+        int gridAreaW = getGridAreaWidth();
+        cardSpacing = 14; // Сделал отступы между карточками чуть больше для "воздуха"
+
+        gridCols = Math.min(count, 4);
+        while (gridCols > 1) {
+            int computedW = (gridAreaW - (gridCols - 1) * cardSpacing) / gridCols;
+            if (computedW >= 60) break; // Увеличил минимальную ширину карточки до 60
+            gridCols--;
+        }
+
+        cardW = (gridAreaW - (gridCols - 1) * cardSpacing) / gridCols;
+        cardW = Mth.clamp(cardW, 60, 110);
+        cardH = cardW * 3 / 2;
+
         gridRows = (int) Math.ceil((double) count / gridCols);
-        cardSpacing = 10;
-        int gridWidth = gridCols * (cardSize + cardSpacing) - cardSpacing;
-        gridStartX = (width - gridWidth) / 2;
-        // Center cards vertically between title and lore panel
-        int availableH = height - TITLE_HEIGHT - LORE_PANEL_HEIGHT - 10;
-        int gridHeight = gridRows * (cardSize + cardSpacing + 14) - cardSpacing;
-        gridStartY = TITLE_HEIGHT + Math.max(4, (availableH - gridHeight) / 2);
+
+        int gridWidth = gridCols * cardW + (gridCols - 1) * cardSpacing;
+        gridStartX = (gridAreaW - gridWidth) / 2;
+
+        int availableH = height - TITLE_HEIGHT - BOTTOM_PAD - 10;
+        int gridHeight = gridRows * (cardH + cardSpacing + 16) - cardSpacing;
+        gridStartY = TITLE_HEIGHT + 10 + Math.max(0, (availableH - gridHeight) / 2);
     }
 }
