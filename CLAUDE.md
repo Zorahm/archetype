@@ -1,96 +1,111 @@
 # Archetype — Minecraft Class System Mod
 
-## Обзор
+## Overview
 
-Мод системы классов для Minecraft 1.20.1. Мультилоадерный (Forge + Fabric) через Architectury. Java 17, Official Mojang Mappings.
+A class system mod for Minecraft 1.20.1. Multi-loader (Forge + Fabric) via Architectury. Java 17, Official Mojang Mappings.
 
-**Принцип:** баланс через компромисс — каждый бонус компенсирован штрафом.
+**Core principle:** balance through compromise — every bonus is offset by a penalty.
 
-## Структура проекта
+## Branch Workflow
+
+The repository has two active branches: **`master`** and **`1.20.1`**.
+
+**All commits and changes MUST be applied to both branches.** We are actively developing for Minecraft 1.20.1, so both branches must stay in sync at all times.
+
+```bash
+# After committing to master, switch and cherry-pick (or merge) to 1.20.1
+git checkout 1.20.1
+git cherry-pick <commit-hash>
+git checkout master
+```
+
+Never leave changes only in one branch — both must always reflect the latest state.
+
+## Project Structure
 
 ```
 archetype/
-├── common/    # ~95% кода. Ядро, способности, условия, сеть, GUI, команды
-├── fabric/    # Fabric-слой: Data Attachments, Fabric Networking API, события
-├── forge/     # Forge-слой: Capabilities, SimpleChannel, события
+├── common/    # ~95% of code. Core, abilities, conditions, network, GUI, commands
+├── fabric/    # Fabric layer: Data Attachments, Fabric Networking API, events
+├── forge/     # Forge layer: Capabilities, SimpleChannel, events
 ```
 
-Пакет: `com.mod.archetype` (common), `com.mod.archetype.fabric`, `com.mod.archetype.forge`.
+Package: `com.mod.archetype` (common), `com.mod.archetype.fabric`, `com.mod.archetype.forge`.
 
-## Сборка
+## Build
 
 ```bash
 ./gradlew build
 ```
 
-Артефакты: `fabric/build/libs/*.jar`, `forge/build/libs/*.jar`.
+Artifacts: `fabric/build/libs/*.jar`, `forge/build/libs/*.jar`.
 
-Shadow JAR включает common в каждый платформенный модуль.
+Shadow JAR includes common in each platform module.
 
-## Архитектурные решения
+## Architectural Decisions
 
-- **Платформа-абстракция через ServiceLoader**: `NetworkHandler`, `PlayerDataAccess`, `PlatformHelper` — интерфейсы в `platform/`, реализации в forge/fabric модулях
-- **Singleton + приватный конструктор**: `ClassManager.getInstance()`, `AbilityRegistry.getInstance()`, `ConditionRegistry.getInstance()`
-- **Factory-паттерн**: `PassiveAbilityFactory`, `ActiveAbilityFactory`, `ConditionFactory` — создают экземпляры из JSON-параметров
+- **Platform abstraction via ServiceLoader**: `NetworkHandler`, `PlayerDataAccess`, `PlatformHelper` — interfaces in `platform/`, implementations in forge/fabric modules
+- **Singleton + private constructor**: `ClassManager.getInstance()`, `AbilityRegistry.getInstance()`, `ConditionRegistry.getInstance()`
+- **Factory pattern**: `PassiveAbilityFactory`, `ActiveAbilityFactory`, `ConditionFactory` — create instances from JSON parameters
 - **Immutable records**: `PlayerClass`, `AttributeModifierEntry`, `ConditionalAttributeEntry`, `ResourceDefinition`, `ConditionDefinition`
-- **JSON-датапаки**: классы загружаются из `data/<namespace>/archetype_classes/*.json` через `ClassRegistry` (extends `SimpleJsonResourceReloadListener`)
+- **JSON datapacks**: classes are loaded from `data/<namespace>/archetype_classes/*.json` via `ClassRegistry` (extends `SimpleJsonResourceReloadListener`)
 
-## Ключевые модули (common)
+## Key Modules (common)
 
-| Пакет | Суть |
-|-------|------|
-| `core/` | `ClassManager` — жизненный цикл (assign/tick/remove). `PlayerClass` — определение класса. `ActiveClassInstance` — кэш инстанцированных способностей |
-| `ability/` | 25 пассивных + 14 активных типов. Интерфейсы `PassiveAbility`, `ActiveAbility`. Реестр `AbilityRegistry` |
-| `condition/` | 12 типов условий + комбинаторы (And/Or/Not). `ConditionRegistry` |
-| `data/` | `PlayerClassData` — состояние игрока: класс, уровень, опыт, ресурс, кулдауны, тоглы. NBT-сериализация |
-| `network/` | 8 пакетов (ClassSelect, AbilityUse/Release, OpenClassSelection, SyncClassData, ClassAssignResult, PlayerClassSync). Серверная валидация |
-| `registry/` | `ClassRegistry` — загрузка JSON-классов из датапаков |
+| Package | Purpose |
+|---------|---------|
+| `core/` | `ClassManager` — lifecycle (assign/tick/remove). `PlayerClass` — class definition. `ActiveClassInstance` — cache of instantiated abilities |
+| `ability/` | 25 passive + 14 active types. Interfaces `PassiveAbility`, `ActiveAbility`. Registry `AbilityRegistry` |
+| `condition/` | 12 condition types + combinators (And/Or/Not). `ConditionRegistry` |
+| `data/` | `PlayerClassData` — player state: class, level, xp, resource, cooldowns, toggles. NBT serialization |
+| `network/` | 8 packets (ClassSelect, AbilityUse/Release, OpenClassSelection, SyncClassData, ClassAssignResult, PlayerClassSync). Server-side validation |
+| `registry/` | `ClassRegistry` — loads JSON classes from datapacks |
 | `gui/` | `ClassSelectionScreen`, `ClassDetailScreen`, `ClassInfoScreen`, `AbilityHudOverlay` |
 | `command/` | `/archetype set/remove/get/list/reload` |
-| `item/` | `RebirthScrollItem` — предмет смены класса |
+| `item/` | `RebirthScrollItem` — class-change item |
 
-## Жизненный цикл класса
+## Class Lifecycle
 
-1. **Assign**: атрибуты → passives.onApply() → actives создаются → ресурс init → данные → синхронизация → событие
-2. **Tick** (каждый тик): кулдауны -1 → (каждые 20 тиков) проверка условий, tick пассивок, обновление ресурса → синк
-3. **Remove**: атрибуты снять → passives.onRemove() → actives деактивировать → данные очистить → синк → событие
+1. **Assign**: apply attributes → passives.onApply() → actives instantiated → resource init → save data → sync → event
+2. **Tick** (every tick): cooldowns -1 → (every 20 ticks) check conditions, tick passives, update resource → sync
+3. **Remove**: remove attributes → passives.onRemove() → deactivate actives → clear data → sync → event
 
-## Конвенции кода
+## Code Conventions
 
-- **Язык**: Java 17, без Kotlin
-- **Нейминг**: PascalCase для классов, camelCase для методов (verb-first), UPPER_SNAKE_CASE для констант
-- **Null-safety**: `@Nullable` из org.jetbrains.annotations
-- **Комментарии**: минимум, код самодокументирующийся. Не добавлять Javadoc без запроса
-- **Логирование**: SLF4J через `Archetype.LOGGER`
-- **Mod ID**: `Archetype.MOD_ID` ("archetype"), не хардкодить строки
+- **Language**: Java 17, no Kotlin
+- **Naming**: PascalCase for classes, camelCase for methods (verb-first), UPPER_SNAKE_CASE for constants
+- **Null safety**: `@Nullable` from org.jetbrains.annotations
+- **Comments**: minimal, code is self-documenting. Do not add Javadoc unless requested
+- **Logging**: SLF4J via `Archetype.LOGGER`
+- **Mod ID**: `Archetype.MOD_ID` ("archetype"), never hardcode strings
 - **ResourceLocation**: `new ResourceLocation(Archetype.MOD_ID, "name")`
 
-## Расширяемость (API)
+## Extensibility (API)
 
 ```java
-ArchetypeAPI.registerAbilityType(id, factory);     // Новый тип активной способности
-ArchetypeAPI.registerPassiveType(id, factory);      // Новый тип пассивной способности
-ArchetypeAPI.registerConditionType(id, factory);    // Новый тип условия
-ArchetypeAPI.getPlayerClass(player);                // Получить текущий класс
-ArchetypeAPI.assignClass(serverPlayer, classId);    // Назначить класс
+ArchetypeAPI.registerAbilityType(id, factory);     // Register new active ability type
+ArchetypeAPI.registerPassiveType(id, factory);      // Register new passive ability type
+ArchetypeAPI.registerConditionType(id, factory);    // Register new condition type
+ArchetypeAPI.getPlayerClass(player);                // Get player's current class
+ArchetypeAPI.assignClass(serverPlayer, classId);    // Assign a class to a player
 ```
 
-## Релизы
+## Releases
 
-- Текст релиза — на **английском языке**
-- Прикреплять только два JAR-файла: `archetype-<version>-fabric.jar` и `archetype-<version>-forge.jar`
-- Dev-shadow и sources JAR к релизу **не прикладывать**
-- JAR-файлы брать из GitHub Actions артефактов после завершения билда
+- Release notes must be written in **English**
+- Attach only two JAR files: `archetype-<version>-fabric.jar` and `archetype-<version>-forge.jar`
+- Do **not** attach dev-shadow or sources JARs
+- Take JARs from GitHub Actions artifacts after the build completes
 
-## Локализация
+## Localization
 
-Два языка: `en_us.json`, `ru_ru.json`. Ключи по неймспейсам:
-- `class.archetype.<id>.*` — названия/описания классов
-- `ability.archetype.<id>.<ability>.*` — способности
-- `passive.archetype.<id>.<passive>.*` — пассивки
-- `gui.archetype.*` — интерфейс
-- `commands.archetype.*` — команды
+Two languages: `en_us.json`, `ru_ru.json`. Key namespaces:
+- `class.archetype.<id>.*` — class names and descriptions
+- `ability.archetype.<id>.<ability>.*` — active abilities
+- `passive.archetype.<id>.<passive>.*` — passive abilities
+- `gui.archetype.*` — interface
+- `commands.archetype.*` — commands
 
-## Зависимости
+## Dependencies
 
-Только Minecraft + Architectury API. Никаких внешних библиотек. JSR305 — compileOnly.
+Minecraft + Architectury API only. No external libraries. JSR305 — compileOnly.
