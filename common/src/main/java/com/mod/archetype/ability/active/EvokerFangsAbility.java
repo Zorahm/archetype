@@ -72,7 +72,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), pos.x, ground.getY(),
                         pos.z, 0, i * 2, player);
-                FangsDamageRegistry.DAMAGE.put(fangs, damage);
+                fangs.addTag("archetype_dmg:" + damage);
                 player.level().addFreshEntity(fangs);
             }
         }
@@ -96,7 +96,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         BlockPos centerGround = findGround(player, targetPos);
         if (centerGround != null) {
             EvokerFangs centerFangs = new EvokerFangs(player.level(), cx, centerGround.getY(), cz, 0, 0, player);
-            FangsDamageRegistry.DAMAGE.put(centerFangs, damage);
+            centerFangs.addTag("archetype_dmg:" + damage);
             player.level().addFreshEntity(centerFangs);
         }
 
@@ -115,7 +115,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(), z,
                         (float) angle, i + 1, player);
-                FangsDamageRegistry.DAMAGE.put(fangs, damage);
+                fangs.addTag("archetype_dmg:" + damage);
                 player.level().addFreshEntity(fangs);
             }
         }
@@ -134,7 +134,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(),
                         z, (float) angle, i, player);
-                FangsDamageRegistry.DAMAGE.put(fangs, damage);
+                fangs.addTag("archetype_dmg:" + damage);
                 player.level().addFreshEntity(fangs);
             }
         }

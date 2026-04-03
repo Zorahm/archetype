@@ -75,15 +75,7 @@
       "cooldown": 0,
       "resource_cost": 0,
       "unlock_level": 0,
-      "params": {
-        "knockback_scale": [
-          {"level": 0, "value": 0.4},
-          {"level": 10, "value": 0.6},
-          {"level": 20, "value": 0.8},
-          {"level": 30, "value": 0.9},
-          {"level": 40, "value": 1.0}
-        ]
-      },
+      "params": {},
       "name": "ability.archetype.ram.rage.name",
       "description": "ability.archetype.ram.rage.description",
       "icon": "archetype:textures/gui/ability/rage.png",

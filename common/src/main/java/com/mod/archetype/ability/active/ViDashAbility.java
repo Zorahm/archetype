@@ -59,7 +59,7 @@ public class ViDashAbility extends AbstractActiveAbility {
     private int charges = -1; // -1 = not initialized
     private int maxChargesBase;
     private long lastRefillTime = 0;
-    private static final int CHARGE_REFILL_TICKS_BASE = 180; // 9 seconds base
+    private static final int CHARGE_REFILL_TICKS_BASE = 140; // 7 seconds base
 
     public ViDashAbility(ActiveAbilityEntry entry) {
         super(entry);
@@ -96,6 +96,7 @@ public class ViDashAbility extends AbstractActiveAbility {
             return;
         }
         int refillTicks = computeRefillTicks(player);
+        int prevCharges = charges;
         if (charges < max && gameTime - lastRefillTime >= refillTicks) {
             int gained = (int) ((gameTime - lastRefillTime) / refillTicks);
             charges = Math.min(max, charges + gained);
@@ -103,6 +104,10 @@ public class ViDashAbility extends AbstractActiveAbility {
         }
         if (charges > max) {
             charges = max;
+        }
+        if (prevCharges == 0 && charges > 0) {
+            var data = PlayerDataAccess.INSTANCE.getClassData(player);
+            data.setCooldown(new ResourceLocation("archetype", entry.slot()), 0);
         }
     }
 
@@ -151,6 +156,10 @@ public class ViDashAbility extends AbstractActiveAbility {
 
         charges--;
         lastRefillTime = player.level().getGameTime();
+        if (charges == 0) {
+            var data = PlayerDataAccess.INSTANCE.getClassData(player);
+            data.setCooldown(new ResourceLocation("archetype", entry.slot()), computeRefillTicks(player));
+        }
 
         int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
 
@@ -163,12 +172,12 @@ public class ViDashAbility extends AbstractActiveAbility {
         // Resistance: +1 at XP 15, 30
         currentResistanceAmplifier = (classLevel >= 15 ? 1 : 0) + (classLevel >= 30 ? 1 : 0);
 
-        // Effect duration: base 1s + 1s at XP 10, 20, 30
+        // Effect duration: base 2s + 1s at XP 10, 20, 30
         int durationBonus = (classLevel >= 10 ? 1 : 0) + (classLevel >= 20 ? 1 : 0) + (classLevel >= 30 ? 1 : 0);
-        currentEffectDurationTicks = (1 + durationBonus) * 20;
+        currentEffectDurationTicks = (2 + durationBonus) * 20;
 
-        // Effect amplifier (slowness/wither): +1 at XP 20
-        currentEffectAmplifier = classLevel >= 20 ? 1 : 0;
+        // Effect amplifier (slowness/wither): base 1, +1 at XP 20
+        currentEffectAmplifier = 1 + (classLevel >= 20 ? 1 : 0);
 
         // Determine offhand modifiers
         ItemStack offhand = player.getOffhandItem();

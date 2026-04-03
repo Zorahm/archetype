@@ -1,0 +1,20 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:end_stone_bricks"
+    },
+    "title": {"translate": "advancement.archetype.enter_end_city.title"},
+    "description": {"translate": "advancement.archetype.enter_end_city.description"},
+    "frame": "task"
+  },
+  "parent": "archetype:choose_class",
+  "criteria": {
+    "enter_city": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "enter_end_city",
+        "class_id": "archetype:ru_yi"
+      }
+    }
+  }
+}

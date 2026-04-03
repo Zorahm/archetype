@@ -96,7 +96,6 @@
   "ability_stats": [
     {"name": "gui.archetype.lin_qi.stat.header_creation", "base": 0, "format": "header", "bonuses": []},
     {"name": "gui.archetype.lin_qi.stat.arrow_damage", "base": 1, "format": "int", "bonuses": [
-      {"level": 10, "value": 1},
       {"level": 20, "value": 1},
       {"level": 40, "value": 1},
       {"level": 60, "value": 1}
@@ -105,21 +104,21 @@
       {"level": 30, "value": -1},
       {"level": 60, "value": -1}
     ]},
-    {"name": "gui.archetype.lin_qi.stat.arrow_chance", "base": 30, "format": "percent", "bonuses": [
+    {"name": "gui.archetype.lin_qi.stat.arrow_chance", "base": 25, "format": "percent", "bonuses": [
       {"level": 10, "value": 5},
       {"level": 20, "value": 5},
       {"level": 30, "value": 5},
       {"level": 40, "value": 5},
       {"level": 50, "value": 5}
     ]},
-    {"name": "gui.archetype.lin_qi.stat.potion_chance", "base": 10, "format": "percent", "bonuses": [
+    {"name": "gui.archetype.lin_qi.stat.potion_chance", "base": 5, "format": "percent", "bonuses": [
       {"level": 10, "value": 5},
       {"level": 20, "value": 5},
       {"level": 30, "value": 5},
       {"level": 40, "value": 5},
       {"level": 50, "value": 5}
     ]},
-    {"name": "gui.archetype.lin_qi.stat.snowball_chance", "base": 60, "format": "percent", "bonuses": [
+    {"name": "gui.archetype.lin_qi.stat.snowball_chance", "base": 70, "format": "percent", "bonuses": [
       {"level": 10, "value": -10},
       {"level": 20, "value": -10},
       {"level": 30, "value": -10},

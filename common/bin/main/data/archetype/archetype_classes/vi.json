@@ -53,7 +53,7 @@
         "dash_speed": 1.25,
         "dash_ticks": 5,
         "no_fall_ticks": 20,
-        "damage": 2.0,
+        "damage": 1.0,
         "charges": 1
       },
       "name": "ability.archetype.vi.dash.name",
@@ -86,7 +86,7 @@
   "ability_stats": [
     {
       "name": "gui.archetype.vi.stat.dash_damage",
-      "base": 3.0,
+      "base": 2.0,
       "format": "int",
       "bonuses": [
         {"level": 10, "value": 1},

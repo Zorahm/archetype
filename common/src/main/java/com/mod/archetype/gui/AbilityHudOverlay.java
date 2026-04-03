@@ -216,14 +216,32 @@ public class AbilityHudOverlay {
         // --- Charge-based ability ---
         if (chargeInfo != null) {
             if (chargeInfo.current() == 0) {
-                // No charges — animated diagonal sweep overlay
+                // No charges — animated sweep overlay
                 float sweep = (float) ((now % 2000) / 2000.0);
                 int overlayAlpha = (int) (0x60 + Math.sin(sweep * Math.PI * 2) * 0x1A);
                 g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, (overlayAlpha << 24));
-                String zeroText = "0";
-                int zeroX = x + SLOT_SIZE / 2 - font.width(zeroText) / 2;
-                g.drawString(font, zeroText, zeroX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
-                g.drawString(font, zeroText, zeroX, y + SLOT_SIZE / 2 - 4, 0xFF5555, true);
+                if (remaining > 0) {
+                    // Show refill countdown in seconds
+                    float cdSeconds = remaining / 20f;
+                    String cdText = String.valueOf((int) Math.ceil(cdSeconds));
+                    int textColor;
+                    if (cdSeconds > 5f) {
+                        textColor = 0xFF6666;
+                    } else if (cdSeconds > 2f) {
+                        float t = (cdSeconds - 2f) / 3f;
+                        textColor = 0xFF0000 | ((int)(0xFF * (1f - t * 0.6f)) << 8) | (int)(0xFF * (1f - t * 0.6f));
+                    } else {
+                        textColor = 0xFFFFFF;
+                    }
+                    int cdTextX = x + SLOT_SIZE / 2 - font.width(cdText) / 2;
+                    g.drawString(font, cdText, cdTextX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
+                    g.drawString(font, cdText, cdTextX, y + SLOT_SIZE / 2 - 4, textColor, true);
+                } else {
+                    String zeroText = "0";
+                    int zeroX = x + SLOT_SIZE / 2 - font.width(zeroText) / 2;
+                    g.drawString(font, zeroText, zeroX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
+                    g.drawString(font, zeroText, zeroX, y + SLOT_SIZE / 2 - 4, 0xFF5555, true);
+                }
             } else {
                 // Charge count in bottom-right with green intensity based on charge ratio
                 float ratio = (float) chargeInfo.current() / chargeInfo.max();
