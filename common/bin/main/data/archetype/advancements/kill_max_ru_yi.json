@@ -1,0 +1,21 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:ender_pearl"
+    },
+    "title": {"translate": "advancement.archetype.kill_max_ru_yi.title"},
+    "description": {"translate": "advancement.archetype.kill_max_ru_yi.description"},
+    "frame": "challenge"
+  },
+  "parent": "archetype:ability_kill_player",
+  "criteria": {
+    "kill_ru_yi": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "kill_class_player",
+        "class_id": "archetype:ru_yi",
+        "min_level": 20
+      }
+    }
+  }
+}

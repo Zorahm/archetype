@@ -1,5 +1,7 @@
 package com.mod.archetype.ability;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
@@ -127,5 +129,19 @@ public abstract class AbstractActiveAbility implements ActiveAbility {
             return params.get(key).getAsBoolean();
         }
         return defaultValue;
+    }
+
+    protected float getLevelScaledFloat(String key, int classLevel, float defaultValue) {
+        if (!params.has(key) || !params.get(key).isJsonArray()) return defaultValue;
+        JsonArray array = params.getAsJsonArray(key);
+        float result = defaultValue;
+        for (JsonElement element : array) {
+            JsonObject entry = element.getAsJsonObject();
+            int level = entry.get("level").getAsInt();
+            if (classLevel >= level) {
+                result = entry.get("value").getAsFloat();
+            }
+        }
+        return result;
     }
 }

@@ -1,0 +1,146 @@
+{
+  "name": "class.archetype.ru_yi.name",
+  "description": "class.archetype.ru_yi.description",
+  "icon": "archetype:textures/gui/class/ru_yi.png",
+  "color": "8833CC",
+  "category": "DAMAGE",
+  "lore": [
+    "class.archetype.ru_yi.lore_1"
+  ],
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.max_health",
+      "operation": "ADDITION",
+      "value": -6.0
+    },
+    {
+      "attribute": "minecraft:generic.attack_speed",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.3
+    },
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "operation": "MULTIPLY_BASE",
+      "value": -0.2
+    }
+  ],
+  "passive_abilities": [
+    {
+      "type": "archetype:water_vulnerability",
+      "params": {
+        "damage_per_second": 2.0,
+        "rain_damage": false
+      },
+      "positive": false,
+      "name": "passive.archetype.ru_yi.water_damage.name",
+      "description": "passive.archetype.ru_yi.water_damage.description"
+    },
+    {
+      "type": "archetype:water_food_damage",
+      "params": {
+        "damage": 2.0,
+        "safe_foods": [
+          "minecraft:bread",
+          "minecraft:cookie",
+          "minecraft:cake",
+          "minecraft:golden_carrot",
+          "minecraft:golden_apple",
+          "minecraft:chorus_fruit",
+          "minecraft:dried_kelp",
+          "minecraft:pumpkin_pie",
+          "minecraft:enchanted_golden_apple"
+        ]
+      },
+      "positive": false,
+      "name": "passive.archetype.ru_yi.water_food.name",
+      "description": "passive.archetype.ru_yi.water_food.description"
+    },
+    {
+      "type": "archetype:potion_block",
+      "params": {
+        "damage": 10.0
+      },
+      "positive": false,
+      "name": "passive.archetype.ru_yi.potion_block.name",
+      "description": "passive.archetype.ru_yi.potion_block.description"
+    }
+  ],
+  "active_abilities": [
+    {
+      "type": "archetype:chase_teleport",
+      "slot": "ability_1",
+      "cooldown": 200,
+      "resource_cost": 0,
+      "unlock_level": 0,
+      "params": {
+        "base_damage": 1.0,
+        "self_damage": 3.0
+      },
+      "name": "ability.archetype.ru_yi.chase.name",
+      "description": "ability.archetype.ru_yi.chase.description",
+      "icon": "archetype:textures/gui/ability/chase.png",
+      "item": "minecraft:ender_eye"
+    },
+    {
+      "type": "archetype:antigravity_throw",
+      "slot": "ability_2",
+      "cooldown": 340,
+      "resource_cost": 0,
+      "unlock_level": 0,
+      "params": {
+        "levitation_duration": 40,
+        "levitation_amplifier": 2,
+        "base_damage": 2.0,
+        "self_slowness_amplifier": 2
+      },
+      "name": "ability.archetype.ru_yi.antigravity.name",
+      "description": "ability.archetype.ru_yi.antigravity.description",
+      "icon": "archetype:textures/gui/ability/antigravity.png",
+      "item": "minecraft:feather"
+    }
+  ],
+  "ability_stats": [
+    {"name": "gui.archetype.ru_yi.stat.header_chase", "base": 0, "format": "header", "bonuses": []},
+    {"name": "gui.archetype.ru_yi.stat.chase_damage", "base": 1, "format": "int", "bonuses": [
+      {"level": 20, "value": 1},
+      {"level": 40, "value": 1}
+    ]},
+    {"name": "gui.archetype.ru_yi.stat.chase_cooldown", "base": 10, "format": "seconds", "bonuses": [
+      {"level": 20, "value": -1},
+      {"level": 40, "value": -1},
+      {"level": 60, "value": -1}
+    ]},
+    {"name": "gui.archetype.ru_yi.stat.chase_self_damage", "base": 3, "format": "int", "bonuses": [
+      {"level": 20, "value": -1},
+      {"level": 40, "value": -1},
+      {"level": 60, "value": -1}
+    ]},
+    {"name": "gui.archetype.ru_yi.stat.header_antigravity", "base": 0, "format": "header", "bonuses": []},
+    {"name": "gui.archetype.ru_yi.stat.antigravity_damage", "base": 2, "format": "int", "bonuses": [
+      {"level": 10, "value": 1},
+      {"level": 30, "value": 1},
+      {"level": 60, "value": 1}
+    ]},
+    {"name": "gui.archetype.ru_yi.stat.antigravity_cooldown", "base": 17, "format": "seconds", "bonuses": [
+      {"level": 10, "value": -1},
+      {"level": 20, "value": -1},
+      {"level": 30, "value": -1},
+      {"level": 40, "value": -1},
+      {"level": 50, "value": -1},
+      {"level": 60, "value": -1}
+    ]},
+    {"name": "gui.archetype.ru_yi.stat.antigravity_slowness", "base": 3, "format": "int", "bonuses": [
+      {"level": 10, "value": -1},
+      {"level": 30, "value": -1},
+      {"level": 50, "value": -1}
+    ]}
+  ],
+  "progression": [
+    { "level": 10, "key": "progression.archetype.ru_yi.level_10" },
+    { "level": 20, "key": "progression.archetype.ru_yi.level_20" },
+    { "level": 30, "key": "progression.archetype.ru_yi.level_30" },
+    { "level": 40, "key": "progression.archetype.ru_yi.level_40" },
+    { "level": 50, "key": "progression.archetype.ru_yi.level_50" },
+    { "level": 60, "key": "progression.archetype.ru_yi.level_60" }
+  ]
+}

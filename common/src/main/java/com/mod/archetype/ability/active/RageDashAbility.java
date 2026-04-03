@@ -44,6 +44,7 @@ public class RageDashAbility extends AbstractActiveAbility {
     private float currentDamage;
     private double currentRadius;
     private int currentCooldown;
+    private float currentKnockbackReduction;
 
     public RageDashAbility(ActiveAbilityEntry entry) {
         super(entry);
@@ -73,12 +74,15 @@ public class RageDashAbility extends AbstractActiveAbility {
     }
 
     private double computeFeatherJump(int classLevel) {
-        // +1 block at XP 5, 10, 15, 20, 50
         int bonus = (classLevel >= 5 ? 1 : 0) + (classLevel >= 10 ? 1 : 0)
                 + (classLevel >= 15 ? 1 : 0) + (classLevel >= 20 ? 1 : 0)
                 + (classLevel >= 50 ? 1 : 0);
-        double blocks = 2.0 + bonus;
+        double blocks = 4.0 + bonus;
         return 0.4 * Math.sqrt(blocks);
+    }
+
+    private float computeKnockbackReduction(int classLevel) {
+        return getLevelScaledFloat("knockback_scale", classLevel, 1.0f);
     }
 
     private int computeCooldown(int classLevel) {
@@ -101,6 +105,7 @@ public class RageDashAbility extends AbstractActiveAbility {
         }
 
         int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+        float knockbackReduction = computeKnockbackReduction(classLevel);
 
         // Activation cost: 30, reduced to 20 at XP 25
         float activationCost = classLevel >= 25 ? 20.0f : ACTIVATION_COST;
@@ -113,6 +118,7 @@ public class RageDashAbility extends AbstractActiveAbility {
         currentDrain = computeDrainPerSecond(classLevel);
         currentDamage = computeDamage(classLevel);
         currentCooldown = computeCooldown(classLevel);
+        currentKnockbackReduction = knockbackReduction;
 
         // Radius: feather mode uses BASE_FEATHER_RADIUS, normal mode uses BASE_SHOCKWAVE_RADIUS
         currentRadius = featherMode
@@ -205,7 +211,7 @@ public class RageDashAbility extends AbstractActiveAbility {
             for (Entity entity : nearbyEntities) {
                 if (entity instanceof LivingEntity living) {
                     Vec3 knockDir = entity.position().subtract(player.position()).normalize();
-                    living.knockback(1.5, -knockDir.x, -knockDir.z);
+                    living.knockback(1.5f * currentKnockbackReduction, -knockDir.x, -knockDir.z);
                 }
             }
 
@@ -226,7 +232,7 @@ public class RageDashAbility extends AbstractActiveAbility {
                     entity.hurt(player.damageSources().playerAttack(player), currentDamage);
                     if (entity instanceof LivingEntity living) {
                         Vec3 knockDir = entity.position().subtract(player.position()).normalize();
-                        living.knockback(1.5, -knockDir.x, -knockDir.z);
+                        living.knockback(1.5f * currentKnockbackReduction, -knockDir.x, -knockDir.z);
                     }
                 }
             }

@@ -1,0 +1,19 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:iron_sword"
+    },
+    "title": {"translate": "advancement.archetype.ability_kill_player.title"},
+    "description": {"translate": "advancement.archetype.ability_kill_player.description"},
+    "frame": "task"
+  },
+  "parent": "archetype:choose_class",
+  "criteria": {
+    "kill_player": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "ability_kill_player"
+      }
+    }
+  }
+}

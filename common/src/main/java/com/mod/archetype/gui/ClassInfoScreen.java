@@ -288,7 +288,7 @@ public class ClassInfoScreen extends Screen {
 
         float leftViewH = contentBottom - leftScrollTop;
         if (leftContentHeight > leftViewH) {
-            renderLeftScrollbar(g, dividerX - PANEL_PADDING - SCROLLBAR_WIDTH, leftScrollTop, leftViewH, classColor);
+            renderLeftScrollbar(g, dividerX - SCROLLBAR_WIDTH / 2, leftScrollTop, leftViewH, classColor);
         }
 
         // ---- RIGHT COLUMN ----
@@ -514,22 +514,18 @@ public class ClassInfoScreen extends Screen {
     // ---- Player model ----
 
     private void renderPlayerModel(GuiGraphics g, LivingEntity entity, int x, int y, int modelScale,
-                                   int mouseX, int mouseY) {
-        // Target offset from model center to cursor
+                                    int mouseX, int mouseY) {
         float targetDx = (float) x - mouseX;
         float targetDy = (float) (y - modelScale) - mouseY;
 
-        // Smooth interpolation — slow, gentle follow
-        smoothModelDx += (targetDx - smoothModelDx) * 0.08f;
-        smoothModelDy += (targetDy - smoothModelDy) * 0.08f;
+        smoothModelDx += (targetDx - smoothModelDx) * 0.12f;
+        smoothModelDy += (targetDy - smoothModelDy) * 0.12f;
 
-        // Clamp rotation range so model doesn't spin wildly
-        float clampedDx = Mth.clamp(smoothModelDx, -80f, 80f);
-        float clampedDy = Mth.clamp(smoothModelDy, -50f, 50f);
+        float clampedDx = Mth.clamp(smoothModelDx, -40f, 40f);
+        float clampedDy = Mth.clamp(smoothModelDy, -30f, 30f);
 
-        // Reduced multipliers for gentler rotation
         Quaternionf entityPose = new Quaternionf().rotateZ((float) Math.PI);
-        Quaternionf cameraOrientation = new Quaternionf().rotateX(clampedDy * 8f * ((float) Math.PI / 180f));
+        Quaternionf cameraOrientation = new Quaternionf();
 
         float origBodyRot = entity.yBodyRot;
         float origYRot = entity.getYRot();
@@ -537,11 +533,11 @@ public class ClassInfoScreen extends Screen {
         float origHeadRotO = entity.yHeadRotO;
         float origHeadRot = entity.yHeadRot;
 
-        entity.yBodyRot = 180f + clampedDx * 8f;
-        entity.setYRot(180f + clampedDx * 12f);
-        entity.setXRot(-clampedDy * 8f);
-        entity.yHeadRot = entity.getYRot();
-        entity.yHeadRotO = entity.getYRot();
+        entity.yBodyRot = 180f + clampedDx * 1f;
+        entity.setYRot(180f + clampedDx * 2f);
+        entity.setXRot(0f);
+        entity.yHeadRot = 180f + clampedDx * 2f;
+        entity.yHeadRotO = entity.yHeadRot;
 
         InventoryScreen.renderEntityInInventory(g, x, y, modelScale, entityPose, cameraOrientation, entity);
 

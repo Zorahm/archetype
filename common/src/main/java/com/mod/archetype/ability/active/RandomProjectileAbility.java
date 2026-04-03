@@ -37,6 +37,7 @@ public class RandomProjectileAbility extends AbstractActiveAbility {
     private double getArrowDamage(int classLevel) {
         // Arrow damage = baseDamage * velocity (shoot speed 2.0), so use 0.5 per point to get 1 HP per point
         double dmg = 0.5;
+        if (classLevel >= 10) dmg += 0.5;
         if (classLevel >= 20) dmg += 0.5;
         if (classLevel >= 40) dmg += 0.5;
         if (classLevel >= 60) dmg += 0.5;
@@ -56,9 +57,9 @@ public class RandomProjectileAbility extends AbstractActiveAbility {
         int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
         int levelTier = Math.min(5, classLevel / 10);
 
-        int snowballChance = Math.max(0, 70 - levelTier * 10);
-        int arrowChance = 25 + levelTier * 5;
-        int potionChance = 5 + levelTier * 5;
+        int snowballChance = Math.max(0, 60 - levelTier * 10);
+        int arrowChance = 30 + levelTier * 5;
+        int potionChance = 10 + levelTier * 5;
         int total = snowballChance + arrowChance + potionChance;
 
         int roll = random.nextInt(total);

@@ -1,6 +1,5 @@
 package com.mod.archetype.mixin;
 
-import com.mod.archetype.ability.active.FangsDamageRegistry;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.EvokerFangs;
@@ -18,8 +17,12 @@ public class EvokerFangsMixin {
     )
     private boolean archetype_redirectDamage(LivingEntity target, DamageSource source, float originalDamage) {
         EvokerFangs self = (EvokerFangs) (Object) this;
-        Float customDamage = FangsDamageRegistry.DAMAGE.get(self);
-        float dmg = customDamage != null ? customDamage : originalDamage;
-        return target.hurt(source, dmg);
+        for (String tag : self.getTags()) {
+            if (tag.startsWith("archetype_dmg:")) {
+                float damage = Float.parseFloat(tag.substring("archetype_dmg:".length()));
+                return target.hurt(source, damage);
+            }
+        }
+        return target.hurt(source, originalDamage);
     }
 }
