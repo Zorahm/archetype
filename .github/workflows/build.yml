@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [ master, 1.20.1 ]
+    branches: [ master, 1.21.11 ]
   pull_request:
-    branches: [ master, 1.20.1 ]
+    branches: [ master, 1.21.11 ]
 
 jobs:
   build:
@@ -13,10 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -35,9 +35,3 @@ jobs:
           path: fabric/build/libs/archetype-*.jar
           if-no-files-found: error
 
-      - name: Upload Forge JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: archetype-forge
-          path: forge/build/libs/archetype-*.jar
-          if-no-files-found: error
