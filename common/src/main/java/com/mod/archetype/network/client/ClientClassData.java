@@ -1,7 +1,7 @@
 package com.mod.archetype.network.client;
 
 import com.mod.archetype.network.SyncClassDataPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
@@ -13,14 +13,14 @@ public class ClientClassData {
 
     private boolean hasClass;
     @Nullable
-    private ResourceLocation classId;
+    private Identifier classId;
     private int level;
     private int experience;
     private float resourceCurrent;
     private float resourceMax;
-    private Map<ResourceLocation, CooldownInfo> cooldowns = new HashMap<>();
-    private Map<ResourceLocation, Boolean> toggleStates = new HashMap<>();
-    private Map<ResourceLocation, ChargeInfo> charges = new HashMap<>();
+    private Map<Identifier, CooldownInfo> cooldowns = new HashMap<>();
+    private Map<Identifier, Boolean> toggleStates = new HashMap<>();
+    private Map<Identifier, ChargeInfo> charges = new HashMap<>();
 
     public static ClientClassData getInstance() {
         return INSTANCE;
@@ -59,26 +59,26 @@ public class ClientClassData {
     }
 
     public boolean hasClass() { return hasClass; }
-    @Nullable public ResourceLocation getClassId() { return classId; }
+    @Nullable public Identifier getClassId() { return classId; }
     public int getLevel() { return level; }
     public int getExperience() { return experience; }
     public float getResourceCurrent() { return resourceCurrent; }
     public float getResourceMax() { return resourceMax; }
-    public Map<ResourceLocation, CooldownInfo> getCooldowns() { return cooldowns; }
-    public Map<ResourceLocation, Boolean> getToggleStates() { return toggleStates; }
-    public Map<ResourceLocation, ChargeInfo> getCharges() { return charges; }
+    public Map<Identifier, CooldownInfo> getCooldowns() { return cooldowns; }
+    public Map<Identifier, Boolean> getToggleStates() { return toggleStates; }
+    public Map<Identifier, ChargeInfo> getCharges() { return charges; }
 
     @Nullable
-    public CooldownInfo getCooldown(ResourceLocation abilityId) {
+    public CooldownInfo getCooldown(Identifier abilityId) {
         return cooldowns.get(abilityId);
     }
 
-    public boolean isToggleActive(ResourceLocation abilityId) {
+    public boolean isToggleActive(Identifier abilityId) {
         return toggleStates.getOrDefault(abilityId, false);
     }
 
     @Nullable
-    public ChargeInfo getCharge(ResourceLocation abilityId) {
+    public ChargeInfo getCharge(Identifier abilityId) {
         return charges.get(abilityId);
     }
 

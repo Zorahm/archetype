@@ -1,14 +1,14 @@
 package com.mod.archetype.condition;
 
 import com.mod.archetype.Archetype;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
 
 public class AndCondition implements Condition {
 
-    private static final ResourceLocation TYPE = new ResourceLocation(Archetype.MOD_ID, "and");
+    private static final Identifier TYPE = Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "and");
 
     private final List<Condition> children;
 
@@ -27,7 +27,7 @@ public class AndCondition implements Condition {
     }
 
     @Override
-    public ResourceLocation getType() {
+    public Identifier getType() {
         return TYPE;
     }
 }

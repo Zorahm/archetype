@@ -5,7 +5,8 @@ import com.mod.archetype.advancement.ClassActionTrigger;
 import com.mod.archetype.condition.ConditionRegistry;
 import com.mod.archetype.network.NetworkInit;
 import com.mod.archetype.platform.NetworkHandler;
-import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ public final class Archetype {
         AbilityRegistry.getInstance().registerBuiltins();
 
         // Register advancement trigger
-        CriteriaTriggers.register(ClassActionTrigger.INSTANCE);
+        Registry.register(BuiltInRegistries.TRIGGER_TYPES, ClassActionTrigger.ID, ClassActionTrigger.INSTANCE);
 
         // Register network packets
         NetworkHandler network = NetworkHandler.INSTANCE;

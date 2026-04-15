@@ -3,7 +3,7 @@ package com.mod.archetype.mixin;
 import com.mod.archetype.network.client.ClientClassData;
 import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.Input;
+import net.minecraft.client.player.ClientInput;
 import net.minecraft.client.player.KeyboardInput;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -37,7 +37,12 @@ public class KeyboardInputMixin {
         if (hasNoSneak) {
             // Clear the sneak input BEFORE aiStep() reads it
             // This prevents both the crouching animation AND the block-edge sneak mechanic
-            ((Input) (Object) this).shiftKeyDown = false;
+            ClientInput input = (ClientInput) (Object) this;
+            input.keyPresses = new net.minecraft.world.entity.player.Input(
+                    input.keyPresses.forward(), input.keyPresses.backward(),
+                    input.keyPresses.left(), input.keyPresses.right(),
+                    input.keyPresses.jump(), false, // shift = false
+                    input.keyPresses.sprint());
         }
     }
 }

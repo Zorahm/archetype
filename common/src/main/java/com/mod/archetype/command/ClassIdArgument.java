@@ -8,13 +8,13 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-public class ClassIdArgument implements ArgumentType<ResourceLocation> {
+public class ClassIdArgument implements ArgumentType<Identifier> {
 
     private static final Collection<String> EXAMPLES = Arrays.asList("archetype:vampire", "archetype:golem");
 
@@ -22,13 +22,13 @@ public class ClassIdArgument implements ArgumentType<ResourceLocation> {
         return new ClassIdArgument();
     }
 
-    public static ResourceLocation getClassId(CommandContext<?> context, String name) {
-        return context.getArgument(name, ResourceLocation.class);
+    public static Identifier getClassId(CommandContext<?> context, String name) {
+        return context.getArgument(name, Identifier.class);
     }
 
     @Override
-    public ResourceLocation parse(StringReader reader) throws CommandSyntaxException {
-        return ResourceLocation.read(reader);
+    public Identifier parse(StringReader reader) throws CommandSyntaxException {
+        return Identifier.read(reader);
     }
 
     @Override

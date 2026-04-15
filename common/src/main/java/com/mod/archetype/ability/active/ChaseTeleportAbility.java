@@ -5,7 +5,7 @@ import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -80,7 +80,7 @@ public class ChaseTeleportAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "chase_teleport");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "chase_teleport");
     }
 }

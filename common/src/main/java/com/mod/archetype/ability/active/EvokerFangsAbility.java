@@ -6,7 +6,7 @@ import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.level.ClipContext;
@@ -34,12 +34,12 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         return Math.min(total, maxFangs);
     }
 
-    private float getDamage(ServerPlayer player) {
-        PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
-        int level = data.getClassLevel();
-        float base = getFloat("damage", 2.0f);
-        int bonus = (level >= 20 ? 1 : 0) + (level >= 40 ? 1 : 0);
-        return base + bonus;
+    // Returns Resistance amplifier to apply on hit (0 = Resistance I, 1 = II, etc.), -1 = none
+    private int getResistanceAmplifier(ServerPlayer player) {
+        int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
+        if (level < 20) return 1;  // Resistance II: -40%, ~3.6 dmg
+        if (level < 40) return 0;  // Resistance I:  -20%, ~4.8 dmg
+        return -1;                 // No resistance:         6 dmg
     }
 
     @Override
@@ -47,19 +47,19 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         if (!canActivate(player)) return ActivationResult.FAILED;
 
         int count = getFangCount(player);
-        float damage = getDamage(player);
+        int resistanceAmplifier = getResistanceAmplifier(player);
 
         switch (mode) {
-            case 1 -> spawnFangsLine(player, count, damage);
-            case 2 -> spawnFangsTargeted(player, count, damage);
-            case 3 -> spawnFangsAround(player, count, damage);
-            default -> spawnFangsLine(player, count, damage);
+            case 1 -> spawnFangsLine(player, count, resistanceAmplifier);
+            case 2 -> spawnFangsTargeted(player, count, resistanceAmplifier);
+            case 3 -> spawnFangsAround(player, count, resistanceAmplifier);
+            default -> spawnFangsLine(player, count, resistanceAmplifier);
         }
 
         return ActivationResult.SUCCESS;
     }
 
-    private void spawnFangsLine(ServerPlayer player, int count, float damage) {
+    private void spawnFangsLine(ServerPlayer player, int count, int resistanceAmplifier) {
         Vec3 look = player.getLookAngle();
         Vec3 flatLook = new Vec3(look.x, 0, look.z).normalize();
         Vec3 start = player.position().add(flatLook.scale(1.5));
@@ -67,18 +67,17 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         for (int i = 0; i < count; i++) {
             Vec3 pos = start.add(flatLook.scale(i * 1.2));
             BlockPos blockPos = BlockPos.containing(pos.x, pos.y, pos.z);
-            // Find ground level
             BlockPos ground = findGround(player, blockPos);
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), pos.x, ground.getY(),
                         pos.z, 0, i * 2, player);
-                fangs.addTag("archetype_dmg:" + damage);
+                if (resistanceAmplifier >= 0) fangs.addTag("archetype_resistance:" + resistanceAmplifier);
                 player.level().addFreshEntity(fangs);
             }
         }
     }
 
-    private void spawnFangsTargeted(ServerPlayer player, int count, float damage) {
+    private void spawnFangsTargeted(ServerPlayer player, int count, int resistanceAmplifier) {
         Vec3 eyePos = player.getEyePosition();
         Vec3 look = player.getLookAngle();
         Vec3 endPos = eyePos.add(look.scale(20));
@@ -92,17 +91,15 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
         double cy = targetPos.getY();
         double cz = targetPos.getZ() + 0.5;
 
-        // Always spawn one fang at center
         BlockPos centerGround = findGround(player, targetPos);
         if (centerGround != null) {
             EvokerFangs centerFangs = new EvokerFangs(player.level(), cx, centerGround.getY(), cz, 0, 0, player);
-            centerFangs.addTag("archetype_dmg:" + damage);
+            if (resistanceAmplifier >= 0) centerFangs.addTag("archetype_resistance:" + resistanceAmplifier);
             player.level().addFreshEntity(centerFangs);
         }
 
         if (count <= 1) return;
 
-        // Remaining fangs in a circle around center
         int circleCount = count - 1;
         double angleStep = 2 * Math.PI / circleCount;
         double radius = 1.5;
@@ -115,13 +112,13 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(), z,
                         (float) angle, i + 1, player);
-                fangs.addTag("archetype_dmg:" + damage);
+                if (resistanceAmplifier >= 0) fangs.addTag("archetype_resistance:" + resistanceAmplifier);
                 player.level().addFreshEntity(fangs);
             }
         }
     }
 
-    private void spawnFangsAround(ServerPlayer player, int count, float damage) {
+    private void spawnFangsAround(ServerPlayer player, int count, int resistanceAmplifier) {
         double angleStep = 2 * Math.PI / count;
         double radius = 2.0;
 
@@ -134,7 +131,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
             if (ground != null) {
                 EvokerFangs fangs = new EvokerFangs(player.level(), x, ground.getY(),
                         z, (float) angle, i, player);
-                fangs.addTag("archetype_dmg:" + damage);
+                if (resistanceAmplifier >= 0) fangs.addTag("archetype_resistance:" + resistanceAmplifier);
                 player.level().addFreshEntity(fangs);
             }
         }
@@ -153,7 +150,7 @@ public class EvokerFangsAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "evoker_fangs");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "evoker_fangs");
     }
 }

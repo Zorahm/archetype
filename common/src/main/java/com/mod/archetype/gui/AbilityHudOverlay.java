@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -25,8 +25,9 @@ public class AbilityHudOverlay {
     private static final int RESOURCE_BAR_HEIGHT = 8;
 
     // Animation state
-    private static final Map<ResourceLocation, Long> readyFlashTimestamps = new HashMap<>();
-    private static final Map<ResourceLocation, Integer> previousCooldowns = new HashMap<>();
+    private static final Map<Identifier, Long> readyFlashTimestamps = new HashMap<>();
+    private static final Map<Identifier, Integer> previousCooldowns = new HashMap<>();
+    private static final Map<Identifier, Long> cooldownSpinnerStartTimes = new HashMap<>();
     private static float smoothResource = -1f;
 
     public static void render(GuiGraphics graphics, float partialTick) {
@@ -73,8 +74,8 @@ public class AbilityHudOverlay {
 
         var pose = graphics.pose();
         if (hudScale != 1.0f) {
-            pose.pushPose();
-            pose.scale(hudScale, hudScale, 1.0f);
+            pose.pushMatrix();
+            pose.scale(hudScale, hudScale);
             startX = (int) (startX / hudScale);
             startY = (int) (startY / hudScale);
         }
@@ -92,7 +93,7 @@ public class AbilityHudOverlay {
         }
 
         if (hudScale != 1.0f) {
-            pose.popPose();
+            pose.popMatrix();
         }
     }
 
@@ -107,7 +108,7 @@ public class AbilityHudOverlay {
         }
 
         var ability = playerClass.getActiveAbilities().get(slotIndex);
-        ResourceLocation abilityId = new ResourceLocation(ability.type().getNamespace(), ability.slot());
+        Identifier abilityId = Identifier.fromNamespaceAndPath(ability.type().getNamespace(), ability.slot());
 
         // Determine ability state
         boolean locked = ability.unlockLevel() > data.getLevel();
@@ -124,6 +125,17 @@ public class AbilityHudOverlay {
         }
         previousCooldowns.put(abilityId, remaining);
 
+        // Spinner timing: keep a stable start time for the whole cooldown
+        if (remaining > 0) {
+            if (!cooldownSpinnerStartTimes.containsKey(abilityId)) {
+                int maxTicks = cooldownInfo != null ? cooldownInfo.maxTicks() : 20;
+                long inferredStart = now - Math.max(0L, (long) (maxTicks - remaining)) * 50L;
+                cooldownSpinnerStartTimes.put(abilityId, inferredStart);
+            }
+        } else {
+            cooldownSpinnerStartTimes.remove(abilityId);
+        }
+
         // --- Item (rendered first — below all overlays) ---
         String itemId = ability.item();
 
@@ -136,19 +148,15 @@ public class AbilityHudOverlay {
 
         if (itemId != null && !itemId.isEmpty()) {
             try {
-                var itemRL = new ResourceLocation(itemId);
-                var item = BuiltInRegistries.ITEM.get(itemRL);
-                if (item != null && item != Items.AIR) {
+                var itemRL = Identifier.parse(itemId);
+                var item = BuiltInRegistries.ITEM.getValue(itemRL);
+                if (item != Items.AIR) {
                     ItemStack stack = new ItemStack(item);
                     g.renderItem(stack, x + 2, y + 2);
                 }
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
-
-        // All remaining 2D elements rendered at z+200 to appear above the item
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 200);
 
         // --- Slot background ---
         if (locked) {
@@ -159,35 +167,39 @@ public class AbilityHudOverlay {
             g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x50000000);
         }
 
-        // --- Border ---
-        int borderColor;
+        // --- Border / spinner ---
         if (locked) {
-            borderColor = 0x30FFFFFF;
+            g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, 0x30FFFFFF);
         } else if (ready) {
             // Gentle breathing pulse on the border when ready
             float breathe = (float) (Math.sin(now * 0.003) * 0.15 + 0.55);
             int alpha = (int) (breathe * 255);
-            borderColor = (alpha << 24) | 0xBBBBBB;
-        } else {
-            // Dim border when on cooldown
-            borderColor = 0x25FFFFFF;
-        }
+            int borderColor = (alpha << 24) | 0xBBBBBB;
 
-        // "Ready" flash — bright border flash when ability comes off cooldown
-        Long flashTime = readyFlashTimestamps.get(abilityId);
-        if (flashTime != null) {
-            float elapsed = (now - flashTime) / 1000f;
-            if (elapsed < 0.6f) {
-                float flash = 1.0f - (elapsed / 0.6f);
-                flash = flash * flash; // ease-out
-                int flashAlpha = (int) (flash * 200);
-                borderColor = (Math.min(255, flashAlpha + ((borderColor >> 24) & 0xFF)) << 24) | 0xFFFFFF;
+            // Ready flash — bright border flash when ability comes off cooldown
+            Long flashTime = readyFlashTimestamps.get(abilityId);
+            if (flashTime != null) {
+                float elapsed = (now - flashTime) / 1000f;
+                if (elapsed < 0.6f) {
+                    float flash = 1.0f - (elapsed / 0.6f);
+                    flash = flash * flash; // ease-out
+                    int flashAlpha = (int) (flash * 200);
+                    borderColor = (Math.min(255, flashAlpha + ((borderColor >> 24) & 0xFF)) << 24) | 0xFFFFFF;
+                } else {
+                    readyFlashTimestamps.remove(abilityId);
+                }
+            }
+
+            g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, borderColor);
+        } else {
+            // Spinner animation on cooldown border
+            if (remaining > 0) {
+                int maxTicks = cooldownInfo != null ? cooldownInfo.maxTicks() : 20;
+                renderCooldownSpinner(g, x, y, SLOT_SIZE, abilityId, remaining, maxTicks, partialTick, now);
             } else {
-                readyFlashTimestamps.remove(abilityId);
+                g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, 0x25FFFFFF);
             }
         }
-
-        g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, borderColor);
 
         // --- Key label ---
         int keyIdx = switch (ability.slot()) {
@@ -197,7 +209,7 @@ public class AbilityHudOverlay {
             default -> -1;
         };
         if (keyIdx >= 0) {
-            int keyColor = locked ? 0x666666 : (onCooldown ? 0x999999 : 0xDDDDDD);
+            int keyColor = locked ? 0xFF666666 : (onCooldown ? 0xFF999999 : 0xFFDDDDDD);
             String keyText = ArchetypeKeybinds.getSlotKeyDisplayShort(keyIdx);
             g.drawString(font, keyText, x + 2, y + 1, 0xFF000000, false);
             g.drawString(font, keyText, x + 2, y + 1, keyColor, true);
@@ -208,8 +220,7 @@ public class AbilityHudOverlay {
             String lockText = "\uD83D\uDD12";
             int lockX = x + SLOT_SIZE / 2 - font.width(lockText) / 2;
             g.drawString(font, lockText, lockX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
-            g.drawString(font, lockText, lockX, y + SLOT_SIZE / 2 - 4, 0x888888, true);
-            g.pose().popPose();
+            g.drawString(font, lockText, lockX, y + SLOT_SIZE / 2 - 4, 0xFF888888, true);
             return;
         }
 
@@ -220,18 +231,19 @@ public class AbilityHudOverlay {
                 float sweep = (float) ((now % 2000) / 2000.0);
                 int overlayAlpha = (int) (0x60 + Math.sin(sweep * Math.PI * 2) * 0x1A);
                 g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, (overlayAlpha << 24));
+
                 if (remaining > 0) {
                     // Show refill countdown in seconds
                     float cdSeconds = remaining / 20f;
                     String cdText = String.valueOf((int) Math.ceil(cdSeconds));
                     int textColor;
                     if (cdSeconds > 5f) {
-                        textColor = 0xFF6666;
+                        textColor = 0xFFFF6666;
                     } else if (cdSeconds > 2f) {
                         float t = (cdSeconds - 2f) / 3f;
-                        textColor = 0xFF0000 | ((int)(0xFF * (1f - t * 0.6f)) << 8) | (int)(0xFF * (1f - t * 0.6f));
+                        textColor = 0xFF000000 | (0xFF << 16) | ((int) (0xFF * (1f - t * 0.6f)) << 8) | (int) (0xFF * (1f - t * 0.6f));
                     } else {
-                        textColor = 0xFFFFFF;
+                        textColor = 0xFFFFFFFF;
                     }
                     int cdTextX = x + SLOT_SIZE / 2 - font.width(cdText) / 2;
                     g.drawString(font, cdText, cdTextX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
@@ -240,7 +252,7 @@ public class AbilityHudOverlay {
                     String zeroText = "0";
                     int zeroX = x + SLOT_SIZE / 2 - font.width(zeroText) / 2;
                     g.drawString(font, zeroText, zeroX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
-                    g.drawString(font, zeroText, zeroX, y + SLOT_SIZE / 2 - 4, 0xFF5555, true);
+                    g.drawString(font, zeroText, zeroX, y + SLOT_SIZE / 2 - 4, 0xFFFF5555, true);
                 }
             } else {
                 // Charge count in bottom-right with green intensity based on charge ratio
@@ -252,14 +264,21 @@ public class AbilityHudOverlay {
                 g.drawString(font, chargeText, x + SLOT_SIZE - textWidth - 1, textY, 0xFF000000, false);
                 g.drawString(font, chargeText, x + SLOT_SIZE - textWidth - 1, textY, 0xFF000000 | (green << 8), true);
             }
-            g.pose().popPose();
             return;
         }
 
         // --- Standard cooldown overlay ---
         if (remaining > 0) {
             int maxTicks = cooldownInfo.maxTicks();
-            float smoothRemaining = remaining - partialTick;
+            // Use time-based smoothing (same start time as spinner) to avoid jumps on server sync
+            float smoothRemaining;
+            Long overlayStartTime = cooldownSpinnerStartTimes.get(abilityId);
+            if (overlayStartTime != null) {
+                float elapsedTicks = (now - overlayStartTime + partialTick * 50f) / 50f;
+                smoothRemaining = Mth.clamp(maxTicks - elapsedTicks, 0f, maxTicks);
+            } else {
+                smoothRemaining = remaining - partialTick;
+            }
             float progress = maxTicks > 0
                     ? Mth.clamp(smoothRemaining / maxTicks, 0f, 1f)
                     : 0f;
@@ -271,21 +290,20 @@ public class AbilityHudOverlay {
                 g.fillGradient(x, overlayTop, x + SLOT_SIZE, y + SLOT_SIZE, 0x50000000, 0xA0000000);
             }
 
-            // Cooldown seconds text — color shifts from red (long) → white (short)
-            float cdSeconds = smoothRemaining / 20f;
+            // Cooldown seconds text — use server value to avoid showing "0" prematurely
+            float cdSeconds = (remaining - partialTick) / 20f;
             String cdText = String.valueOf((int) Math.ceil(cdSeconds));
             int textColor;
             if (cdSeconds > 5f) {
-                textColor = 0xFF6666; // red-ish for long cooldowns
+                textColor = 0xFFFF6666;
             } else if (cdSeconds > 2f) {
-                // Interpolate red → white
                 float t = (cdSeconds - 2f) / 3f;
                 int r = 0xFF;
                 int green = (int) (0xFF * (1f - t * 0.6f));
                 int b = (int) (0xFF * (1f - t * 0.6f));
-                textColor = (r << 16) | (green << 8) | b;
+                textColor = 0xFF000000 | (r << 16) | (green << 8) | b;
             } else {
-                textColor = 0xFFFFFF; // white for almost ready
+                textColor = 0xFFFFFFFF;
             }
             int cdTextX = x + SLOT_SIZE / 2 - font.width(cdText) / 2;
             g.drawString(font, cdText, cdTextX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
@@ -293,12 +311,112 @@ public class AbilityHudOverlay {
 
             // Thin progress line at the bottom of the slot
             int lineWidth = (int) ((1f - progress) * SLOT_SIZE);
-            if (lineWidth > 0) {
-                g.fill(x, y + SLOT_SIZE - 1, x + lineWidth, y + SLOT_SIZE, 0xCC55FF55);
+            if (lineWidth >= 2) {
+                g.fill(x, y + SLOT_SIZE - 1, x + lineWidth, y + SLOT_SIZE, 0xCC88FF88);
             }
         }
+    }
 
-        g.pose().popPose();
+    private static void renderCooldownSpinner(GuiGraphics g, int x, int y, int size,
+                                              Identifier abilityId, int remaining, int maxTicks,
+                                              float partialTick, long now) {
+        // Base border
+        g.renderOutline(x, y, size, size, 0x25FFFFFF);
+
+        float progress = maxTicks > 0
+                ? Mth.clamp((remaining - partialTick) / maxTicks, 0f, 1f)
+                : 0f;
+
+        Long startTime = cooldownSpinnerStartTimes.get(abilityId);
+        if (startTime == null) {
+            startTime = now;
+            cooldownSpinnerStartTimes.put(abilityId, startTime);
+        }
+
+        int edge = size - 1;
+        float perimeter = edge * 4f;
+
+        // Stable continuous rotation based on cooldown start time.
+        // This does not reset when `remaining` changes.
+        float elapsedSeconds = (now - startTime + (long) (partialTick * 50f)) / 1000f;
+        float speed = 1.6f; // rotations per second over the perimeter
+        float phaseOffset = getStablePhaseOffset(abilityId, perimeter);
+        float head = (elapsedSeconds * speed * perimeter + phaseOffset) % perimeter;
+
+        // Trail length grows slightly while cooldown is longer
+        int trailSegments = 13;
+        int segmentLen = 3;
+        float spacing = 3.2f;
+
+        for (int i = 0; i < trailSegments; i++) {
+            float p = head - i * spacing;
+            while (p < 0f) p += perimeter;
+            p %= perimeter;
+
+            float fade = 1f - (i / (float) trailSegments);
+            float eased = fade * fade;
+            int alpha = (int) (255 * eased);
+            int segColor = (alpha << 24) | 0x88FF88;
+
+            drawPerimeterChunk(g, x, y, size, p, segmentLen, segColor);
+        }
+
+        // Subtle extra glow for very long cooldowns
+        if (progress > 0.65f) {
+            int glowAlpha = (int) (18 * progress);
+            g.renderOutline(x + 1, y + 1, size - 2, size - 2, (glowAlpha << 24) | 0x88FF88);
+        }
+    }
+
+    private static float getStablePhaseOffset(Identifier abilityId, float perimeter) {
+        int hash = abilityId.hashCode();
+        hash ^= (hash >>> 16);
+        int positive = hash & 0x7fffffff;
+        float normalized = positive / (float) Integer.MAX_VALUE;
+        return normalized * perimeter;
+    }
+
+    private static void drawPerimeterChunk(GuiGraphics g, int x, int y, int size,
+                                           float pos, int len, int color) {
+        int edge = size - 1;
+
+        // Top edge: left to right
+        if (pos < edge) {
+            int sx = x + (int) pos;
+            int ex = Math.min(x + size, sx + len);
+            g.fill(sx, y, ex, y + 1, color);
+            return;
+        }
+
+        pos -= edge;
+
+        // Right edge: top to bottom
+        if (pos < edge) {
+            int sy = y + (int) pos;
+            int ey = Math.min(y + size, sy + len);
+            g.fill(x + size - 1, sy, x + size, ey, color);
+            return;
+        }
+
+        pos -= edge;
+
+        // Bottom edge: right to left
+        if (pos < edge) {
+            int ex = x + size - 1 - (int) pos;
+            int sx = Math.max(x, ex - len + 1);
+            g.fill(sx, y + size - 1, ex + 1, y + size, color);
+            return;
+        }
+
+        pos -= edge;
+
+        // Left edge: bottom to top
+        if (pos < 0f || pos >= edge) return; // guard against float drift at boundaries
+        int ey = y + size - 1 - (int) pos;
+        int sy = Math.max(y, ey - len + 1);
+        if (sy >= y && ey < y + size) {
+            g.fill(x, sy, x + 1, ey + 1, color);
+        }
     }
 
     private static void renderResourceBar(GuiGraphics g, int x, int y,
@@ -363,7 +481,7 @@ public class AbilityHudOverlay {
 
         // Text
         String text = String.format("%.0f/%.0f", current, max);
-        int textColor = progress < 0.2f ? 0xFF8888 : 0xCCCCCC;
+        int textColor = progress < 0.2f ? 0xFFFF8888 : 0xFFCCCCCC;
         g.drawString(font, text, x + RESOURCE_BAR_WIDTH + 4, y, textColor, true);
     }
 

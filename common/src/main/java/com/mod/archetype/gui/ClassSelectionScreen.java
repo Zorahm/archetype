@@ -11,6 +11,8 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
 import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
@@ -118,11 +120,7 @@ public class ClassSelectionScreen extends Screen {
     }
 
     private void renderDimBackground(GuiGraphics g) {
-        // Красивое затемнение фона
-        g.fill(0, 0, width, height, 0xB8000000);
-        // Легкая горизонтальная виньетка
-        g.fillGradient(0, 0, width / 6, height, 0x66000000, 0x00000000);
-        g.fillGradient(width - width / 6, 0, width, height, 0x00000000, 0x66000000);
+        g.fill(0, 0, width, height, 0xFF000000);
     }
 
     private void renderTitle(GuiGraphics g) {
@@ -131,14 +129,14 @@ public class ClassSelectionScreen extends Screen {
         int titleY = (TITLE_HEIGHT - font.lineHeight) / 2 - 2;
 
         var pose = g.pose();
-        pose.pushPose();
+        pose.pushMatrix();
         float scale = 1.5f;
         int titleW = (int) (font.width(title) * scale);
         float titleX = titleCenterX - titleW / 2f;
-        pose.translate(titleX, titleY, 0);
-        pose.scale(scale, scale, 1);
-        g.drawString(font, title, 0, 0, 0xFFFFFF, true);
-        pose.popPose();
+        pose.translate(titleX, titleY);
+        pose.scale(scale, scale);
+        g.drawString(font, title, 0, 0, 0xFFFFFFFF, true);
+        pose.popMatrix();
 
         // Красивый градиентный разделитель под заголовком
         int lineY = TITLE_HEIGHT - 2;
@@ -156,10 +154,10 @@ public class ClassSelectionScreen extends Screen {
         if (transformed) {
             float cx = x + cardW / 2f;
             float cy = y + cardH / 2f;
-            pose.pushPose();
-            pose.translate(cx, cy, 0);
-            pose.scale(scale, scale, 1);
-            pose.translate(-cx, -cy, 0);
+            pose.pushMatrix();
+            pose.translate(cx, cy);
+            pose.scale(scale, scale);
+            pose.translate(-cx, -cy);
         }
 
         // Dark glass background
@@ -192,21 +190,21 @@ public class ClassSelectionScreen extends Screen {
         int iconX = x + (cardW - iconW) / 2;
         int iconY = y + cardH / 3 - iconH / 2;
 
-        pose.pushPose();
-        pose.translate(iconX, iconY, 0);
-        pose.scale(iconScale, iconScale, 1);
+        pose.pushMatrix();
+        pose.translate(iconX, iconY);
+        pose.scale(iconScale, iconScale);
         // Тень для иконки
         g.drawString(font, icon, 1, 1, 0x40000000, false);
         g.drawString(font, icon, 0, 0, 0xFF000000 | classColor, false);
-        pose.popPose();
+        pose.popMatrix();
 
         // Имя класса (с центрированием и тенью)
         Component name = Component.translatable(cls.getNameKey());
         int textY = y + cardH - font.lineHeight - 6;
-        g.drawCenteredString(font, name, x + cardW / 2, textY, 0xFFFFFF);
+        g.drawCenteredString(font, name, x + cardW / 2, textY, 0xFFFFFFFF);
 
         if (transformed) {
-            pose.popPose();
+            pose.popMatrix();
         }
     }
 
@@ -242,12 +240,12 @@ public class ClassSelectionScreen extends Screen {
         // Имя класса (Крупно)
         Component name = Component.translatable(cls.getNameKey());
         var pose = g.pose();
-        pose.pushPose();
+        pose.pushMatrix();
         float scale = 1.3f;
-        pose.translate(innerX, ty, 0);
-        pose.scale(scale, scale, 1);
+        pose.translate(innerX, ty);
+        pose.scale(scale, scale);
         g.drawString(font, name, 0, 0, textAlphaMask | (classColor & 0x00FFFFFF), true);
-        pose.popPose();
+        pose.popMatrix();
         ty += (int) (font.lineHeight * scale) + 6;
 
         // Разделитель
@@ -269,38 +267,39 @@ public class ClassSelectionScreen extends Screen {
             ty += 8;
         }
 
-        // Блок статистики (Способности и Пассивки)
+        // Компактные индикаторы способностей в одну строку
         int abilityCount = cls.getActiveAbilities().size();
         int positiveCount = (int) cls.getPassiveAbilities().stream().filter(p -> !p.hidden() && p.positive()).count();
         int negativeCount = (int) cls.getPassiveAbilities().stream().filter(p -> !p.hidden() && !p.positive()).count();
 
-        // Активные навыки
+        int rightEdge = panelX + INFO_PANEL_W - 12;
+        int gap = 10;
+        int curX = rightEdge;
+
+        // Негативные пассивки (красный)
+        if (negativeCount > 0) {
+            String negStr = "\u25BC" + negativeCount;
+            curX -= font.width(negStr);
+            g.drawString(font, negStr, curX, ty, textAlphaMask | 0xFF6666, false);
+            curX -= gap;
+        }
+
+        // Позитивные пассивки (зелёный)
+        if (positiveCount > 0) {
+            String posStr = "\u25B2" + positiveCount;
+            curX -= font.width(posStr);
+            g.drawString(font, posStr, curX, ty, textAlphaMask | 0x66FF66, false);
+            curX -= gap;
+        }
+
+        // Активные навыки (голубой)
         if (abilityCount > 0) {
-            g.drawString(font, "Активные навыки:", innerX, ty, textAlphaMask | 0x777777, false);
-            String abStr = String.valueOf(abilityCount);
-            g.drawString(font, abStr, panelX + INFO_PANEL_W - 12 - font.width(abStr), ty, textAlphaMask | 0xFFFFFF, false);
-            ty += font.lineHeight + 4;
+            String abStr = "\u26A1" + abilityCount;
+            curX -= font.width(abStr);
+            g.drawString(font, abStr, curX, ty, textAlphaMask | 0x88CCFF, false);
         }
 
-        // Пассивные черты
-        if (positiveCount > 0 || negativeCount > 0) {
-            g.drawString(font, "Пассивные черты:", innerX, ty, textAlphaMask | 0x777777, false);
-
-            String posStr = "+" + positiveCount;
-            String negStr = "-" + negativeCount;
-
-            int statX = panelX + INFO_PANEL_W - 12;
-            if (negativeCount > 0) {
-                statX -= font.width(negStr);
-                g.drawString(font, negStr, statX, ty, textAlphaMask | 0xFF5555, false);
-                statX -= 4; // отступ
-            }
-            if (positiveCount > 0) {
-                statX -= font.width(posStr);
-                g.drawString(font, posStr, statX, ty, textAlphaMask | 0x55FF55, false);
-            }
-            ty += font.lineHeight + 4;
-        }
+        ty += font.lineHeight + 4;
 
         // Подсказка в самом низу панели
         Component hint = Component.translatable("gui.archetype.click_to_view");
@@ -330,11 +329,14 @@ public class ClassSelectionScreen extends Screen {
         g.fill(bx, by, bx + 1, by + bh, 0x30FFFFFF);
         g.fill(bx + bw - 1, by, bx + bw, by + bh, 0x30FFFFFF);
 
-        g.drawCenteredString(font, text, bx + bw / 2, by + (bh - font.lineHeight) / 2 + 1, hovered ? 0xFFFFFF : 0xDDDDDD);
+        g.drawCenteredString(font, text, bx + bw / 2, by + (bh - font.lineHeight) / 2 + 1, hovered ? 0xFFFFFFFF : 0xFFDDDDDD);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0) {
             int gridAreaW = getGridAreaWidth();
             Component text = Component.literal("\u2684 ").append(Component.translatable("gui.archetype.random"));
@@ -356,11 +358,12 @@ public class ClassSelectionScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, bl);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
         if (keyCode == 256 && mode == 0) {
             return true;
         }
@@ -384,16 +387,16 @@ public class ClassSelectionScreen extends Screen {
             Minecraft.getInstance().setScreen(new ClassDetailScreen(filteredClasses.get(selectedIndex), mode));
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         int availableH = height - TITLE_HEIGHT - BOTTOM_PAD - 10;
         int gridHeight = gridRows * (cardH + cardSpacing + 16) - cardSpacing;
         int maxScroll = Math.max(0, gridHeight - availableH);
         if (maxScroll == 0) return false;
-        scrollOffset -= (int) (delta * 20);
+        scrollOffset -= (int) (deltaY * 20);
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
         return true;
     }

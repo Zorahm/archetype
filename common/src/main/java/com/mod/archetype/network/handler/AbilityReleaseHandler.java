@@ -7,7 +7,7 @@ import com.mod.archetype.core.ClassManager;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.network.AbilityReleasePacket;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 public class AbilityReleaseHandler {
@@ -38,7 +38,7 @@ public class AbilityReleaseHandler {
         ability.onRelease(player, 0); // chargeLevel managed by ability internally
 
         // Set cooldown and deduct resource
-        ResourceLocation abilityId = new ResourceLocation(ability.getType().getNamespace(), slotName);
+        Identifier abilityId = Identifier.fromNamespaceAndPath(ability.getType().getNamespace(), slotName);
         data.setCooldown(abilityId, ability.getCooldownTicks(player));
 
         if (!player.isCreative() && ability.getResourceCost() > 0) {

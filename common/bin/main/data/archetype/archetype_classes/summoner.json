@@ -9,17 +9,17 @@
   ],
   "attributes": [
     {
-      "attribute": "minecraft:generic.max_health",
+      "attribute": "minecraft:max_health",
       "operation": "ADDITION",
       "value": -4.0
     },
     {
-      "attribute": "minecraft:generic.attack_speed",
+      "attribute": "minecraft:attack_speed",
       "operation": "MULTIPLY_BASE",
       "value": -0.05
     },
     {
-      "attribute": "minecraft:generic.attack_damage",
+      "attribute": "minecraft:attack_damage",
       "operation": "MULTIPLY_BASE",
       "value": -0.3
     }
@@ -64,9 +64,9 @@
       "unlock_level": 0,
       "params": {
         "mode": 1,
-        "base_fangs": 1,
+        "base_fangs": 2,
         "max_fangs": 9,
-        "damage": 2
+        "damage": 3
       },
       "name": "ability.archetype.summoner.devour_line.name",
       "description": "ability.archetype.summoner.devour_line.description",
@@ -81,9 +81,9 @@
       "unlock_level": 0,
       "params": {
         "mode": 2,
-        "base_fangs": 1,
+        "base_fangs": 2,
         "max_fangs": 9,
-        "damage": 2
+        "damage": 3
       },
       "name": "ability.archetype.summoner.devour_target.name",
       "description": "ability.archetype.summoner.devour_target.description",
@@ -98,9 +98,9 @@
       "unlock_level": 0,
       "params": {
         "mode": 3,
-        "base_fangs": 2,
+        "base_fangs": 3,
         "max_fangs": 12,
-        "damage": 2
+        "damage": 3
       },
       "name": "ability.archetype.summoner.devour_around.name",
       "description": "ability.archetype.summoner.devour_around.description",
@@ -110,12 +110,12 @@
   ],
   "ability_stats": [
     {"name": "gui.archetype.summoner.stat.header_line", "base": 0, "format": "header", "bonuses": []},
-    {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
+    {"name": "gui.archetype.summoner.stat.damage", "base": 3, "format": "int", "bonuses": [
       {"level": 20, "value": 1},
       {"level": 40, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.cooldown_line", "base": 10, "format": "seconds", "bonuses": []},
-    {"name": "gui.archetype.summoner.stat.fangs", "base": 1, "format": "int", "bonuses": [
+    {"name": "gui.archetype.summoner.stat.fangs", "base": 2, "format": "int", "bonuses": [
       {"level": 10, "value": 1},
       {"level": 20, "value": 1},
       {"level": 30, "value": 1},
@@ -123,12 +123,12 @@
       {"level": 50, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.header_target", "base": 0, "format": "header", "bonuses": []},
-    {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
+    {"name": "gui.archetype.summoner.stat.damage", "base": 3, "format": "int", "bonuses": [
       {"level": 20, "value": 1},
       {"level": 40, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.cooldown_target", "base": 5, "format": "seconds", "bonuses": []},
-    {"name": "gui.archetype.summoner.stat.fangs", "base": 1, "format": "int", "bonuses": [
+    {"name": "gui.archetype.summoner.stat.fangs", "base": 2, "format": "int", "bonuses": [
       {"level": 10, "value": 1},
       {"level": 20, "value": 1},
       {"level": 30, "value": 1},
@@ -136,12 +136,12 @@
       {"level": 50, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.header_around", "base": 0, "format": "header", "bonuses": []},
-    {"name": "gui.archetype.summoner.stat.damage", "base": 2, "format": "int", "bonuses": [
+    {"name": "gui.archetype.summoner.stat.damage", "base": 3, "format": "int", "bonuses": [
       {"level": 20, "value": 1},
       {"level": 40, "value": 1}
     ]},
     {"name": "gui.archetype.summoner.stat.cooldown_around", "base": 5, "format": "seconds", "bonuses": []},
-    {"name": "gui.archetype.summoner.stat.fangs", "base": 2, "format": "int", "bonuses": [
+    {"name": "gui.archetype.summoner.stat.fangs", "base": 3, "format": "int", "bonuses": [
       {"level": 10, "value": 1},
       {"level": 20, "value": 1},
       {"level": 30, "value": 1},

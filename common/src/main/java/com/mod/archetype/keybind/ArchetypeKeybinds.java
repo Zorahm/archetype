@@ -101,8 +101,9 @@ public class ArchetypeKeybinds {
         LocalPlayer player = mc.player;
         float dirX = 0, dirZ = 0;
         if (player != null) {
-            float forward = player.input.forwardImpulse;
-            float strafe = player.input.leftImpulse;
+            net.minecraft.world.phys.Vec2 moveVec = player.input.getMoveVector();
+            float forward = moveVec.y;
+            float strafe = moveVec.x;
             if (forward != 0 || strafe != 0) {
                 float yRot = player.getYRot() * Mth.DEG_TO_RAD;
                 float sin = Mth.sin(yRot);

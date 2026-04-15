@@ -5,7 +5,7 @@ import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 public class MorphAbility extends AbstractActiveAbility {
@@ -72,7 +72,7 @@ public class MorphAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "morph");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "morph");
     }
 }

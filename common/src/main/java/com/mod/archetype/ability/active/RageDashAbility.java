@@ -6,7 +6,7 @@ import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -146,7 +146,7 @@ public class RageDashAbility extends AbstractActiveAbility {
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.RAVAGER_STEP, SoundSource.PLAYERS, 1.0f, 1.0f);
         } else {
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 100, 0, true, false, false));
+            player.addEffect(new MobEffectInstance(MobEffects.SPEED, 100, 0, true, false, false));
             applyForwardMovement(player);
         }
 
@@ -255,7 +255,7 @@ public class RageDashAbility extends AbstractActiveAbility {
         soundTickCounter = 0;
 
         // Remove speed effect
-        player.removeEffect(MobEffects.MOVEMENT_SPEED);
+        player.removeEffect(MobEffects.SPEED);
 
         // Explosion sound
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -270,7 +270,7 @@ public class RageDashAbility extends AbstractActiveAbility {
 
         // Set cooldown (scaled by XP level)
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
-        ResourceLocation abilityId = new ResourceLocation("archetype", entry.slot());
+        Identifier abilityId = Identifier.fromNamespaceAndPath("archetype", entry.slot());
         data.setCooldown(abilityId, currentCooldown);
     }
 
@@ -284,11 +284,11 @@ public class RageDashAbility extends AbstractActiveAbility {
         active = false;
         drainTickCounter = 0;
         soundTickCounter = 0;
-        player.removeEffect(MobEffects.MOVEMENT_SPEED);
+        player.removeEffect(MobEffects.SPEED);
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "rage_dash");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "rage_dash");
     }
 }

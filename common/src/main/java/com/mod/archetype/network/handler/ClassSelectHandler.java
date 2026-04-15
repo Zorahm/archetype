@@ -11,7 +11,7 @@ import com.mod.archetype.network.ClassSelectPacket;
 import com.mod.archetype.network.PlayerClassSyncPacket;
 import com.mod.archetype.platform.NetworkHandler;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 public class ClassSelectHandler {
@@ -20,7 +20,7 @@ public class ClassSelectHandler {
         Archetype.LOGGER.trace("Received ClassSelectPacket from {}: classId={}, viaItem={}",
                 player.getName().getString(), packet.getClassId(), packet.isViaItem());
 
-        ResourceLocation classId = packet.getClassId();
+        Identifier classId = packet.getClassId();
 
         // Validation 1: classId sanity
         if (classId == null || classId.toString().length() > 256) {
@@ -51,7 +51,7 @@ public class ClassSelectHandler {
 
         // Validation 6: incompatible classes
         if (data.hasClass()) {
-            ResourceLocation currentClassId = data.getCurrentClassId();
+            Identifier currentClassId = data.getCurrentClassId();
             if (classDef.getIncompatibleWith().contains(currentClassId)) {
                 Archetype.LOGGER.warn("Player {} tried to switch to incompatible class: {} -> {}",
                         player.getName().getString(), currentClassId, classId);
@@ -61,7 +61,7 @@ public class ClassSelectHandler {
         }
 
         // Remember previous class for rebirth detection
-        ResourceLocation previousClassId = data.hasClass() ? data.getCurrentClassId() : null;
+        Identifier previousClassId = data.hasClass() ? data.getCurrentClassId() : null;
 
         // Assign the class
         ClassManager.AssignResult result = ClassManager.getInstance().assignClass(player, classId);

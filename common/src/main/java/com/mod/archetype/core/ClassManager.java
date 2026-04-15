@@ -12,15 +12,16 @@ import com.mod.archetype.platform.NetworkHandler;
 import com.mod.archetype.platform.PlayerDataAccess;
 import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
@@ -43,7 +44,7 @@ public class ClassManager {
     // --- Registry (delegates to ClassRegistry) ---
 
     @Nullable
-    public PlayerClass getClassDefinition(ResourceLocation id) {
+    public PlayerClass getClassDefinition(Identifier id) {
         return ClassRegistry.getInstance().get(id).orElse(null);
     }
 
@@ -53,8 +54,8 @@ public class ClassManager {
 
     // --- Class Assignment ---
 
-    public AssignResult assignClass(ServerPlayer player, ResourceLocation classId) {
-        assert !player.level().isClientSide : "assignClass must be called on server";
+    public AssignResult assignClass(ServerPlayer player, Identifier classId) {
+        assert !player.level().isClientSide() : "assignClass must be called on server";
 
         PlayerClass classDef = ClassRegistry.getInstance().get(classId).orElse(null);
         if (classDef == null) {
@@ -70,6 +71,7 @@ public class ClassManager {
 
         // Apply attribute modifiers
         applyAttributes(player, classDef);
+        player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
 
         // Create passive ability instances
         List<PassiveAbility> passives = new ArrayList<>();
@@ -130,7 +132,7 @@ public class ClassManager {
     }
 
     public AssignResult removeClass(ServerPlayer player) {
-        assert !player.level().isClientSide : "removeClass must be called on server";
+        assert !player.level().isClientSide() : "removeClass must be called on server";
 
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         if (!data.hasClass()) {
@@ -170,7 +172,7 @@ public class ClassManager {
             executeCommands(player, classDef, "on_remove");
         }
 
-        ResourceLocation oldClassId = data.getCurrentClassId();
+        Identifier oldClassId = data.getCurrentClassId();
         data.setCurrentClassId(null);
 
         // Remove cached instance
@@ -288,8 +290,8 @@ public class ClassManager {
         UUID uuid = player.getUUID();
         if (player.isUsingItem()) {
             ItemStack using = player.getUseItem().copy();
-            UseAnim anim = using.getUseAnimation();
-            if (anim == UseAnim.EAT || anim == UseAnim.DRINK) {
+            ItemUseAnimation anim = using.getUseAnimation();
+            if (anim == ItemUseAnimation.EAT || anim == ItemUseAnimation.DRINK) {
                 playerUsingItem.put(uuid, using);
             }
         } else {
@@ -348,6 +350,7 @@ public class ClassManager {
 
         // Re-apply attributes (Minecraft resets them on death)
         applyAttributes(player, classDef);
+        player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
 
         // Rebuild instance (passives need to be re-created)
         rebuildInstance(player, data);
@@ -473,25 +476,24 @@ public class ClassManager {
 
     private void applyAttributes(ServerPlayer player, PlayerClass classDef) {
         for (PlayerClass.AttributeModifierEntry entry : classDef.getAttributes()) {
-            var attribute = player.level().registryAccess()
-                    .registryOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
-                    .getOptional(entry.attribute());
+            var attributeHolder = player.level().registryAccess()
+                    .lookupOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
+                    .get(entry.attribute());
 
-            if (attribute.isEmpty()) {
+            if (attributeHolder.isEmpty()) {
                 Archetype.LOGGER.warn("Unknown attribute: {}", entry.attribute());
                 continue;
             }
 
-            AttributeInstance attrInstance = player.getAttribute(attribute.get());
+            AttributeInstance attrInstance = player.getAttribute(attributeHolder.get());
             if (attrInstance == null) continue;
 
-            UUID modifierUUID = generateModifierUUID(entry.attribute());
+            Identifier modifierId = generateModifierId(entry.attribute());
             // Remove existing modifier if present
-            attrInstance.removeModifier(modifierUUID);
+            attrInstance.removeModifier(modifierId);
 
             AttributeModifier modifier = new AttributeModifier(
-                    modifierUUID,
-                    "archetype:class_" + entry.attribute(),
+                    modifierId,
                     entry.value(),
                     entry.operation()
             );
@@ -501,34 +503,34 @@ public class ClassManager {
 
     private void removeAttributes(ServerPlayer player, PlayerClass classDef) {
         for (PlayerClass.AttributeModifierEntry entry : classDef.getAttributes()) {
-            var attribute = player.level().registryAccess()
-                    .registryOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
-                    .getOptional(entry.attribute());
+            var attributeHolder = player.level().registryAccess()
+                    .lookupOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
+                    .get(entry.attribute());
 
-            if (attribute.isEmpty()) continue;
+            if (attributeHolder.isEmpty()) continue;
 
-            AttributeInstance attrInstance = player.getAttribute(attribute.get());
+            AttributeInstance attrInstance = player.getAttribute(attributeHolder.get());
             if (attrInstance == null) continue;
 
-            UUID modifierUUID = generateModifierUUID(entry.attribute());
-            attrInstance.removeModifier(modifierUUID);
+            Identifier modifierId = generateModifierId(entry.attribute());
+            attrInstance.removeModifier(modifierId);
         }
 
         // Also remove conditional attribute modifiers
         for (int i = 0; i < classDef.getConditionalAttributes().size(); i++) {
             PlayerClass.ConditionalAttributeEntry cond = classDef.getConditionalAttributes().get(i);
             for (PlayerClass.AttributeModifierEntry entry : cond.modifiers()) {
-                var attribute = player.level().registryAccess()
-                        .registryOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
-                        .getOptional(entry.attribute());
+                var attributeHolder = player.level().registryAccess()
+                        .lookupOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
+                        .get(entry.attribute());
 
-                if (attribute.isEmpty()) continue;
+                if (attributeHolder.isEmpty()) continue;
 
-                AttributeInstance attrInstance = player.getAttribute(attribute.get());
+                AttributeInstance attrInstance = player.getAttribute(attributeHolder.get());
                 if (attrInstance == null) continue;
 
-                UUID modifierUUID = generateConditionalModifierUUID(entry.attribute(), i);
-                attrInstance.removeModifier(modifierUUID);
+                Identifier modifierId = generateConditionalModifierId(entry.attribute(), i);
+                attrInstance.removeModifier(modifierId);
             }
         }
     }
@@ -560,21 +562,20 @@ public class ClassManager {
     }
 
     private void applyConditionalModifier(ServerPlayer player, PlayerClass.AttributeModifierEntry entry, int condIndex) {
-        var attribute = player.level().registryAccess()
-                .registryOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
-                .getOptional(entry.attribute());
+        var attributeHolder = player.level().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
+                .get(entry.attribute());
 
-        if (attribute.isEmpty()) return;
+        if (attributeHolder.isEmpty()) return;
 
-        AttributeInstance attrInstance = player.getAttribute(attribute.get());
+        AttributeInstance attrInstance = player.getAttribute(attributeHolder.get());
         if (attrInstance == null) return;
 
-        UUID modifierUUID = generateConditionalModifierUUID(entry.attribute(), condIndex);
-        attrInstance.removeModifier(modifierUUID);
+        Identifier modifierId = generateConditionalModifierId(entry.attribute(), condIndex);
+        attrInstance.removeModifier(modifierId);
 
         AttributeModifier modifier = new AttributeModifier(
-                modifierUUID,
-                "archetype:cond_" + condIndex + "_" + entry.attribute(),
+                modifierId,
                 entry.value(),
                 entry.operation()
         );
@@ -582,17 +583,17 @@ public class ClassManager {
     }
 
     private void removeConditionalModifier(ServerPlayer player, PlayerClass.AttributeModifierEntry entry, int condIndex) {
-        var attribute = player.level().registryAccess()
-                .registryOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
-                .getOptional(entry.attribute());
+        var attributeHolder = player.level().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ATTRIBUTE)
+                .get(entry.attribute());
 
-        if (attribute.isEmpty()) return;
+        if (attributeHolder.isEmpty()) return;
 
-        AttributeInstance attrInstance = player.getAttribute(attribute.get());
+        AttributeInstance attrInstance = player.getAttribute(attributeHolder.get());
         if (attrInstance == null) return;
 
-        UUID modifierUUID = generateConditionalModifierUUID(entry.attribute(), condIndex);
-        attrInstance.removeModifier(modifierUUID);
+        Identifier modifierId = generateConditionalModifierId(entry.attribute(), condIndex);
+        attrInstance.removeModifier(modifierId);
     }
 
     private void updateResource(ServerPlayer player, ActiveClassInstance instance, PlayerClassData data) {
@@ -639,8 +640,9 @@ public class ClassManager {
         if (!serverLevel.dimension().equals(net.minecraft.world.level.Level.END)) return;
 
         Structure endCity = serverLevel.registryAccess()
-                .registryOrThrow(Registries.STRUCTURE)
-                .get(new ResourceLocation("minecraft", "end_city"));
+                .lookupOrThrow(Registries.STRUCTURE)
+                .getOptional(Identifier.fromNamespaceAndPath("minecraft", "end_city"))
+                .orElse(null);
         if (endCity == null) return;
 
         StructureStart start = serverLevel.structureManager().getStructureAt(player.blockPosition(), endCity);
@@ -665,14 +667,14 @@ public class ClassManager {
                 ? classDef.getResource().maxValue() : 0;
 
         // Build cooldown entries
-        Map<ResourceLocation, com.mod.archetype.network.SyncClassDataPacket.CooldownEntry> cooldownEntries = new HashMap<>();
+        Map<Identifier, com.mod.archetype.network.SyncClassDataPacket.CooldownEntry> cooldownEntries = new HashMap<>();
         for (var entry : data.getCooldowns().entrySet()) {
             cooldownEntries.put(entry.getKey(),
                     new com.mod.archetype.network.SyncClassDataPacket.CooldownEntry(entry.getValue(), entry.getValue()));
         }
 
         // Build charge entries from abilities that manage their own charges
-        Map<ResourceLocation, com.mod.archetype.network.SyncClassDataPacket.ChargeEntry> chargeEntries = new HashMap<>();
+        Map<Identifier, com.mod.archetype.network.SyncClassDataPacket.ChargeEntry> chargeEntries = new HashMap<>();
         ActiveClassInstance inst = activeInstances.get(player.getUUID());
         if (inst != null) {
             for (var abilityEntry : inst.getActiveAbilities().entrySet()) {
@@ -681,7 +683,7 @@ public class ClassManager {
                     int charges = ability.getCharges(player);
                     int maxCharges = ability.getMaxCharges(player);
                     if (charges >= 0 && maxCharges >= 0) {
-                        ResourceLocation abilityId = new ResourceLocation(ability.getType().getNamespace(), abilityEntry.getKey());
+                        Identifier abilityId = Identifier.fromNamespaceAndPath(ability.getType().getNamespace(), abilityEntry.getKey());
                         chargeEntries.put(abilityId, new com.mod.archetype.network.SyncClassDataPacket.ChargeEntry(charges, maxCharges));
                     }
                 }
@@ -697,12 +699,12 @@ public class ClassManager {
                         chargeEntries));
     }
 
-    private static UUID generateModifierUUID(ResourceLocation attribute) {
-        return UUID.nameUUIDFromBytes(("archetype:class_" + attribute).getBytes());
+    private static Identifier generateModifierId(Identifier attribute) {
+        return Identifier.fromNamespaceAndPath("archetype", "class_" + attribute.getNamespace() + "_" + attribute.getPath());
     }
 
-    private static UUID generateConditionalModifierUUID(ResourceLocation attribute, int condIndex) {
-        return UUID.nameUUIDFromBytes(("archetype:cond_" + condIndex + "_" + attribute).getBytes());
+    private static Identifier generateConditionalModifierId(Identifier attribute, int condIndex) {
+        return Identifier.fromNamespaceAndPath("archetype", "cond_" + condIndex + "_" + attribute.getNamespace() + "_" + attribute.getPath());
     }
 
     // --- Command triggers ---
@@ -735,8 +737,8 @@ public class ClassManager {
                 .replace("{level}", level >= 0 ? String.valueOf(level) : String.valueOf(player.experienceLevel));
         try {
             // Run with the player as @s, but with OP-level permissions
-            var source = player.createCommandSourceStack().withPermission(4).withSuppressedOutput();
-            player.getServer().getCommands().performPrefixedCommand(source, command);
+            var source = player.createCommandSourceStack().withPermission(LevelBasedPermissionSet.ADMIN).withSuppressedOutput();
+            player.level().getServer().getCommands().performPrefixedCommand(source, command);
         } catch (Exception e) {
             Archetype.LOGGER.error("Command trigger failed for class {}: '{}' — {}", player.getName().getString(), command, e.getMessage());
         }

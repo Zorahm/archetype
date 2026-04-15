@@ -1,6 +1,19 @@
 # User-specific stuff
 .idea/
 
+# Eclipse IDE
+.classpath
+.project
+.settings/
+**/bin/
+.factorypath
+
+# Claude Code
+.claude/
+
+# Backups
+.gui_backup/
+
 *.iml
 *.ipr
 *.iws

@@ -6,14 +6,16 @@ import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.projectile.Snowball;
-import net.minecraft.world.entity.projectile.ThrownEgg;
-import net.minecraft.world.entity.projectile.ThrownEnderpearl;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Random;
@@ -55,7 +57,7 @@ public class RandomTeleportAbility extends AbstractActiveAbility {
 
         if (roll < snowballChance) {
             // Fail: snowball
-            Snowball snowball = new Snowball(player.level(), player);
+            Snowball snowball = new Snowball(player.level(), player, new ItemStack(Items.SNOWBALL));
             snowball.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
             snowball.shoot(look.x, look.y, look.z, 1.5f, 0f);
             player.level().addFreshEntity(snowball);
@@ -63,7 +65,7 @@ public class RandomTeleportAbility extends AbstractActiveAbility {
                     SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.5f, 0.4f / (random.nextFloat() * 0.4f + 0.8f));
         } else if (roll < snowballChance + pearlChance) {
             // Success: throw ender pearl as projectile
-            ThrownEnderpearl pearl = new ThrownEnderpearl(player.level(), player);
+            ThrownEnderpearl pearl = new ThrownEnderpearl(player.level(), player, new ItemStack(Items.ENDER_PEARL));
             pearl.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
             pearl.shoot(look.x, look.y, look.z, 1.5f, 0f);
             player.level().addFreshEntity(pearl);
@@ -71,7 +73,7 @@ public class RandomTeleportAbility extends AbstractActiveAbility {
                     SoundEvents.ENDER_PEARL_THROW, SoundSource.PLAYERS, 0.5f, 0.4f / (random.nextFloat() * 0.4f + 0.8f));
         } else {
             // Fail: egg
-            ThrownEgg egg = new ThrownEgg(player.level(), player);
+            ThrownEgg egg = new ThrownEgg(player.level(), player, new ItemStack(Items.EGG));
             egg.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
             egg.shoot(look.x, look.y, look.z, 1.5f, 0f);
             player.level().addFreshEntity(egg);
@@ -90,14 +92,14 @@ public class RandomTeleportAbility extends AbstractActiveAbility {
 
         // Set cooldown (scaled by class level)
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
-        ResourceLocation abilityId = new ResourceLocation("archetype", entry.slot());
+        Identifier abilityId = Identifier.fromNamespaceAndPath("archetype", entry.slot());
         data.setCooldown(abilityId, computeCooldown(data.getClassLevel()));
 
         return ActivationResult.SUCCESS;
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "random_teleport");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "random_teleport");
     }
 }

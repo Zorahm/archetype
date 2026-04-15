@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.mod.archetype.condition.Condition;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.biome.Biome;
@@ -14,7 +14,7 @@ public class InBiomeTagCondition implements Condition {
 
     public InBiomeTagCondition(JsonObject params) {
         String tag = params.has("tag") ? params.get("tag").getAsString() : "minecraft:is_ocean";
-        this.biomeTag = TagKey.create(Registries.BIOME, new ResourceLocation(tag));
+        this.biomeTag = TagKey.create(Registries.BIOME, Identifier.parse(tag));
     }
 
     @Override
@@ -24,7 +24,7 @@ public class InBiomeTagCondition implements Condition {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "in_biome_tag");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "in_biome_tag");
     }
 }

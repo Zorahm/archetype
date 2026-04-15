@@ -10,12 +10,12 @@
   ],
   "attributes": [
     {
-      "attribute": "minecraft:generic.max_health",
+      "attribute": "minecraft:max_health",
       "operation": "ADDITION",
       "value": -6.0
     },
     {
-      "attribute": "minecraft:generic.attack_speed",
+      "attribute": "minecraft:attack_speed",
       "operation": "MULTIPLY_BASE",
       "value": -0.2
     }
@@ -36,11 +36,11 @@
       "description": "passive.archetype.ram.fire_conspiracy.description"
     },
     {
-      "type": "archetype:destroy_holy_items",
+      "type": "archetype:elytra_fragility",
       "params": {},
       "positive": false,
-      "name": "passive.archetype.ram.enemy_of_angel.name",
-      "description": "passive.archetype.ram.enemy_of_angel.description"
+      "name": "passive.archetype.ram.fragile_wings.name",
+      "description": "passive.archetype.ram.fragile_wings.description"
     },
     {
       "type": "archetype:shield_block",

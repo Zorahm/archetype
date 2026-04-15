@@ -10,12 +10,12 @@
   ],
   "attributes": [
     {
-      "attribute": "minecraft:generic.max_health",
+      "attribute": "minecraft:max_health",
       "operation": "ADDITION",
       "value": -6.0
     },
     {
-      "attribute": "minecraft:generic.attack_speed",
+      "attribute": "minecraft:attack_speed",
       "operation": "MULTIPLY_BASE",
       "value": -0.2
     }
@@ -36,11 +36,11 @@
       "description": "passive.archetype.ram.fire_conspiracy.description"
     },
     {
-      "type": "archetype:destroy_holy_items",
+      "type": "archetype:elytra_fragility",
       "params": {},
       "positive": false,
-      "name": "passive.archetype.ram.enemy_of_angel.name",
-      "description": "passive.archetype.ram.enemy_of_angel.description"
+      "name": "passive.archetype.ram.fragile_wings.name",
+      "description": "passive.archetype.ram.fragile_wings.description"
     },
     {
       "type": "archetype:shield_block",
@@ -75,7 +75,15 @@
       "cooldown": 0,
       "resource_cost": 0,
       "unlock_level": 0,
-      "params": {},
+      "params": {
+        "knockback_scale": [
+          {"level": 0, "value": 0.4},
+          {"level": 10, "value": 0.6},
+          {"level": 20, "value": 0.8},
+          {"level": 30, "value": 0.9},
+          {"level": 40, "value": 1.0}
+        ]
+      },
       "name": "ability.archetype.ram.rage.name",
       "description": "ability.archetype.ram.rage.description",
       "icon": "archetype:textures/gui/ability/rage.png",

@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import com.mod.archetype.core.ClassCategory;
 import com.mod.archetype.core.PlayerClass;
 import com.mod.archetype.core.PlayerClass.*;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 import org.jetbrains.annotations.Nullable;
@@ -17,14 +17,14 @@ import java.util.Locale;
 
 public class ClassJsonParser {
 
-    public static PlayerClass parse(ResourceLocation fileId, JsonObject json) throws ClassParseException {
+    public static PlayerClass parse(Identifier fileId, JsonObject json) throws ClassParseException {
         // Required fields
         String name = requireString(json, "name", fileId);
         String description = requireString(json, "description", fileId);
         String iconStr = requireString(json, "icon", fileId);
         String colorStr = requireString(json, "color", fileId);
 
-        ResourceLocation icon = parseResourceLocation(iconStr, fileId, "icon");
+        Identifier icon = parseIdentifier(iconStr, fileId, "icon");
         int color = parseColor(colorStr, fileId);
 
         // Optional fields
@@ -83,11 +83,11 @@ public class ClassJsonParser {
         }
 
         // Incompatible with
-        List<ResourceLocation> incompatibleWith = new ArrayList<>();
+        List<Identifier> incompatibleWith = new ArrayList<>();
         if (json.has("incompatible_with") && json.get("incompatible_with").isJsonArray()) {
             JsonArray arr = json.getAsJsonArray("incompatible_with");
             for (int i = 0; i < arr.size(); i++) {
-                incompatibleWith.add(parseResourceLocation(arr.get(i).getAsString(), fileId, "incompatible_with[" + i + "]"));
+                incompatibleWith.add(parseIdentifier(arr.get(i).getAsString(), fileId, "incompatible_with[" + i + "]"));
             }
         }
 
@@ -127,12 +127,12 @@ public class ClassJsonParser {
                 extraAbilitySections, abilityStats, commands);
     }
 
-    private static List<AttributeModifierEntry> parseAttributes(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
+    private static List<AttributeModifierEntry> parseAttributes(JsonArray arr, Identifier fileId) throws ClassParseException {
         List<AttributeModifierEntry> result = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
             String attrStr = requireString(obj, "attribute", fileId, "attributes[" + i + "]");
-            ResourceLocation attribute = parseResourceLocation(attrStr, fileId, "attributes[" + i + "].attribute");
+            Identifier attribute = parseIdentifier(attrStr, fileId, "attributes[" + i + "].attribute");
             AttributeModifier.Operation operation = parseOperation(
                     requireString(obj, "operation", fileId, "attributes[" + i + "]"), fileId, "attributes[" + i + "].operation");
             double value = obj.get("value").getAsDouble();
@@ -141,7 +141,7 @@ public class ClassJsonParser {
         return result;
     }
 
-    private static List<ConditionalAttributeEntry> parseConditionalAttributes(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
+    private static List<ConditionalAttributeEntry> parseConditionalAttributes(JsonArray arr, Identifier fileId) throws ClassParseException {
         List<ConditionalAttributeEntry> result = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
@@ -155,12 +155,12 @@ public class ClassJsonParser {
         return result;
     }
 
-    private static List<PassiveAbilityEntry> parsePassives(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
+    private static List<PassiveAbilityEntry> parsePassives(JsonArray arr, Identifier fileId) throws ClassParseException {
         List<PassiveAbilityEntry> result = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
             String typeStr = requireString(obj, "type", fileId, "passive_abilities[" + i + "]");
-            ResourceLocation type = parseResourceLocation(typeStr, fileId, "passive_abilities[" + i + "].type");
+            Identifier type = parseIdentifier(typeStr, fileId, "passive_abilities[" + i + "].type");
             boolean positive = obj.has("positive") && obj.get("positive").getAsBoolean();
             String nameKey = obj.has("name") ? obj.get("name").getAsString() : "";
             String descKey = obj.has("description") ? obj.get("description").getAsString() : "";
@@ -177,12 +177,12 @@ public class ClassJsonParser {
         return result;
     }
 
-    private static List<ActiveAbilityEntry> parseActives(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
+    private static List<ActiveAbilityEntry> parseActives(JsonArray arr, Identifier fileId) throws ClassParseException {
         List<ActiveAbilityEntry> result = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
             String typeStr = requireString(obj, "type", fileId, "active_abilities[" + i + "]");
-            ResourceLocation type = parseResourceLocation(typeStr, fileId, "active_abilities[" + i + "].type");
+            Identifier type = parseIdentifier(typeStr, fileId, "active_abilities[" + i + "].type");
 
             String slot = requireString(obj, "slot", fileId, "active_abilities[" + i + "]");
             if (!slot.equals("ability_1") && !slot.equals("ability_2") && !slot.equals("ability_3")) {
@@ -203,7 +203,7 @@ public class ClassJsonParser {
             String nameKey = obj.has("name") ? obj.get("name").getAsString() : "";
             String descKey = obj.has("description") ? obj.get("description").getAsString() : "";
             String iconStr = obj.has("icon") ? obj.get("icon").getAsString() : "archetype:textures/gui/abilities/default.png";
-            ResourceLocation icon = parseResourceLocation(iconStr, fileId, "active_abilities[" + i + "].icon");
+            Identifier icon = parseIdentifier(iconStr, fileId, "active_abilities[" + i + "].icon");
 
             String item = obj.has("item") ? obj.get("item").getAsString() : null;
 
@@ -214,7 +214,7 @@ public class ClassJsonParser {
         return result;
     }
 
-    private static ResourceDefinition parseResource(JsonObject obj, ResourceLocation fileId) throws ClassParseException {
+    private static ResourceDefinition parseResource(JsonObject obj, Identifier fileId) throws ClassParseException {
         String typeKey = obj.has("type") ? obj.get("type").getAsString() : "resource.archetype.generic";
         int max = obj.has("max") ? obj.get("max").getAsInt() : 100;
         if (max <= 0) {
@@ -230,12 +230,12 @@ public class ClassJsonParser {
         }
 
         String iconStr = obj.has("icon") ? obj.get("icon").getAsString() : "archetype:textures/gui/resource/default.png";
-        ResourceLocation icon = parseResourceLocation(iconStr, fileId, "resource.icon");
+        Identifier icon = parseIdentifier(iconStr, fileId, "resource.icon");
 
         return new ResourceDefinition(typeKey, max, start, drain, regen, color, icon);
     }
 
-    static ConditionDefinition parseCondition(JsonObject obj, ResourceLocation fileId, String fieldPath) throws ClassParseException {
+    static ConditionDefinition parseCondition(JsonObject obj, Identifier fileId, String fieldPath) throws ClassParseException {
         if (!obj.has("type")) {
             throw new ClassParseException(fileId, fieldPath, "Condition missing 'type' field");
         }
@@ -274,7 +274,7 @@ public class ClassJsonParser {
         return new ConditionDefinition(type, params);
     }
 
-    private static List<PlayerClass.ExtraAbilitySection> parseExtraAbilitySections(JsonArray arr, ResourceLocation fileId) {
+    private static List<PlayerClass.ExtraAbilitySection> parseExtraAbilitySections(JsonArray arr, Identifier fileId) {
         List<PlayerClass.ExtraAbilitySection> result = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
@@ -297,7 +297,7 @@ public class ClassJsonParser {
         return result;
     }
 
-    private static List<PlayerClass.AbilityStatEntry> parseAbilityStats(JsonArray arr, ResourceLocation fileId) {
+    private static List<PlayerClass.AbilityStatEntry> parseAbilityStats(JsonArray arr, Identifier fileId) {
         List<PlayerClass.AbilityStatEntry> result = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
@@ -323,7 +323,7 @@ public class ClassJsonParser {
     private static final java.util.Set<String> VALID_TRIGGERS = java.util.Set.of(
             "on_assign", "on_remove", "on_tick", "on_death", "on_respawn", "on_level_up");
 
-    private static List<PlayerClass.CommandTrigger> parseCommands(JsonArray arr, ResourceLocation fileId) throws ClassParseException {
+    private static List<PlayerClass.CommandTrigger> parseCommands(JsonArray arr, Identifier fileId) throws ClassParseException {
         List<PlayerClass.CommandTrigger> result = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
@@ -344,11 +344,11 @@ public class ClassJsonParser {
 
     // --- Utility methods ---
 
-    private static String requireString(JsonObject obj, String key, ResourceLocation fileId) throws ClassParseException {
+    private static String requireString(JsonObject obj, String key, Identifier fileId) throws ClassParseException {
         return requireString(obj, key, fileId, null);
     }
 
-    private static String requireString(JsonObject obj, String key, ResourceLocation fileId, @Nullable String parentField) throws ClassParseException {
+    private static String requireString(JsonObject obj, String key, Identifier fileId, @Nullable String parentField) throws ClassParseException {
         String field = parentField != null ? parentField + "." + key : key;
         if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
             throw new ClassParseException(fileId, field, "Required field '" + key + "' is missing or not a string");
@@ -356,15 +356,15 @@ public class ClassJsonParser {
         return obj.get(key).getAsString();
     }
 
-    private static ResourceLocation parseResourceLocation(String value, ResourceLocation fileId, String field) throws ClassParseException {
+    private static Identifier parseIdentifier(String value, Identifier fileId, String field) throws ClassParseException {
         try {
-            return new ResourceLocation(value);
+            return Identifier.parse(value);
         } catch (Exception e) {
-            throw new ClassParseException(fileId, field, "Invalid ResourceLocation: " + value, e);
+            throw new ClassParseException(fileId, field, "Invalid Identifier: " + value, e);
         }
     }
 
-    private static int parseColor(String hex, ResourceLocation fileId) throws ClassParseException {
+    private static int parseColor(String hex, Identifier fileId) throws ClassParseException {
         try {
             String clean = hex.startsWith("#") ? hex.substring(1) : hex;
             return Integer.parseInt(clean, 16);
@@ -373,11 +373,11 @@ public class ClassJsonParser {
         }
     }
 
-    private static AttributeModifier.Operation parseOperation(String op, ResourceLocation fileId, String field) throws ClassParseException {
+    private static AttributeModifier.Operation parseOperation(String op, Identifier fileId, String field) throws ClassParseException {
         return switch (op.toLowerCase(Locale.ROOT)) {
-            case "addition" -> AttributeModifier.Operation.ADDITION;
-            case "multiply_base" -> AttributeModifier.Operation.MULTIPLY_BASE;
-            case "multiply_total" -> AttributeModifier.Operation.MULTIPLY_TOTAL;
+            case "addition" -> AttributeModifier.Operation.ADD_VALUE;
+            case "multiply_base" -> AttributeModifier.Operation.ADD_MULTIPLIED_BASE;
+            case "multiply_total" -> AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL;
             default -> throw new ClassParseException(fileId, field, "Invalid operation: " + op + ". Must be addition, multiply_base, or multiply_total");
         };
     }

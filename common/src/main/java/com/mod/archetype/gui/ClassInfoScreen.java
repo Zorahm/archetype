@@ -16,11 +16,12 @@ import com.google.gson.JsonObject;
 import org.joml.Quaternionf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 
+import net.minecraft.client.input.MouseButtonEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,7 +72,7 @@ public class ClassInfoScreen extends Screen {
         renderDimBackground(g);
 
         if (playerClass == null) {
-            g.drawCenteredString(font, Component.translatable("gui.archetype.no_class"), width / 2, height / 2, 0xFF5555);
+            g.drawCenteredString(font, Component.translatable("gui.archetype.no_class"), width / 2, height / 2, 0xFFFF5555);
             super.render(g, mouseX, mouseY, partialTick);
             return;
         }
@@ -105,10 +106,10 @@ public class ClassInfoScreen extends Screen {
         var pose = g.pose();
         if (openAlpha < 1f) {
             float scale = 0.95f + 0.05f * openAlpha;
-            pose.pushPose();
-            pose.translate(width / 2f, height / 2f, 0);
-            pose.scale(scale, scale, 1f);
-            pose.translate(-width / 2f, -height / 2f, 0);
+            pose.pushMatrix();
+            pose.translate(width / 2f, height / 2f);
+            pose.scale(scale, scale);
+            pose.translate(-width / 2f, -height / 2f);
         }
 
         renderPanel(g, panelX, panelY, panelW, panelH, classColor);
@@ -137,7 +138,7 @@ public class ClassInfoScreen extends Screen {
         int ly = contentTop;
 
         // 3D player model — smoothly follows cursor
-        int modelSpaceH = 70;
+        int modelSpaceH = 80;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             int modelCenterX = leftX + leftWidth / 2;
@@ -147,15 +148,15 @@ public class ClassInfoScreen extends Screen {
         ly += modelSpaceH + 8;
 
         // Class name
-        pose.pushPose();
+        pose.pushMatrix();
         float nameScale = 1.6f;
         Component name = Component.translatable(playerClass.getNameKey());
         int namePixelW = (int) (font.width(name) * nameScale);
         float nameX = leftX + (leftWidth - namePixelW) / 2f;
-        pose.translate(nameX, ly, 0);
-        pose.scale(nameScale, nameScale, 1);
+        pose.translate(nameX, ly);
+        pose.scale(nameScale, nameScale);
         g.drawString(font, name, 0, 0, 0xFF000000 | classColor, false);
-        pose.popPose();
+        pose.popMatrix();
         ly += (int) (font.lineHeight * nameScale) + 8;
 
         // Lore
@@ -165,7 +166,7 @@ public class ClassInfoScreen extends Screen {
             List<FormattedCharSequence> loreLines = font.split(lore, leftWidth);
             for (FormattedCharSequence line : loreLines) {
                 int lw = font.width(line);
-                g.drawString(font, line, leftX + (leftWidth - lw) / 2, ly, 0x707070, false);
+                g.drawString(font, line, leftX + (leftWidth - lw) / 2, ly, 0xFF707070, false);
                 ly += font.lineHeight + 1;
             }
             ly += 8;
@@ -185,7 +186,7 @@ public class ClassInfoScreen extends Screen {
         if (Math.abs(smoothLevelProgress - xpProgress) < 0.005f) smoothLevelProgress = xpProgress;
 
         Component levelText = Component.translatable("gui.archetype.level", level);
-        g.drawString(font, levelText, leftX, ly, 0xFFCC88, false);
+        g.drawString(font, levelText, leftX, ly, 0xFFFFCC88, false);
         ly += 12;
 
         int barW = leftWidth;
@@ -264,19 +265,19 @@ public class ClassInfoScreen extends Screen {
                 String statValue = stat.formatValue(level);
                 int valueColor;
                 if ("boolean".equals(stat.format())) {
-                    valueColor = stat.computeValue(level) > 0 ? 0x44CC44 : 0xCC4444;
+                    valueColor = stat.computeValue(level) > 0 ? 0xFF44CC44 : 0xFFCC4444;
                 } else {
-                    valueColor = 0xCCCCCC;
+                    valueColor = 0xFFCCCCCC;
                 }
                 int nameW = font.width(statName);
                 int valueW = font.width(statValue);
                 if (nameW + valueW + 6 > leftWidth) {
-                    g.drawString(font, statName, leftX, ly, 0x999999, false);
+                    g.drawString(font, statName, leftX, ly, 0xFF999999, false);
                     ly += font.lineHeight + 1;
                     g.drawString(font, statValue, leftX + leftWidth - valueW, ly, valueColor, false);
                     ly += font.lineHeight + 1;
                 } else {
-                    g.drawString(font, statName, leftX, ly, 0x999999, false);
+                    g.drawString(font, statName, leftX, ly, 0xFF999999, false);
                     g.drawString(font, statValue, leftX + leftWidth - valueW, ly, valueColor, false);
                     ly += 11;
                 }
@@ -311,8 +312,8 @@ public class ClassInfoScreen extends Screen {
         g.fill(tab1X, tabY, tab1X + tabW, tabY + tabHeaderHeight,
                 selectedTab == 1 ? 0x30FFFFFF : (hoverTab1 ? 0x20FFFFFF : 0x10FFFFFF));
 
-        int tab0Color = selectedTab == 0 ? (0xFF000000 | classColor) : (hoverTab0 ? 0xBBBBBB : 0x888888);
-        int tab1Color = selectedTab == 1 ? (0xFF000000 | classColor) : (hoverTab1 ? 0xBBBBBB : 0x888888);
+        int tab0Color = selectedTab == 0 ? (0xFF000000 | classColor) : (hoverTab0 ? 0xFFBBBBBB : 0xFF888888);
+        int tab1Color = selectedTab == 1 ? (0xFF000000 | classColor) : (hoverTab1 ? 0xFFBBBBBB : 0xFF888888);
         g.drawCenteredString(font, abilitiesTab, tab0X + tabW / 2, tabY + (tabHeaderHeight - font.lineHeight) / 2, tab0Color);
         g.drawCenteredString(font, passivesTab, tab1X + tabW / 2, tabY + (tabHeaderHeight - font.lineHeight) / 2, tab1Color);
 
@@ -341,7 +342,7 @@ public class ClassInfoScreen extends Screen {
         }
 
         if (openAlpha < 1f) {
-            pose.popPose();
+            pose.popMatrix();
         }
 
         super.render(g, mouseX, mouseY, partialTick);
@@ -402,29 +403,29 @@ public class ClassInfoScreen extends Screen {
             int badgeBg = locked ? 0x60333333 : (0xB0000000 | (classColor & 0x00FFFFFF));
             g.fill(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH, badgeBg);
             g.fill(badgeX, badgeY, badgeX + badgeW, badgeY + 1, 0x20FFFFFF); // top highlight
-            int keyColor = locked ? 0x666666 : 0xEEEEEE;
+            int keyColor = locked ? 0xFF666666 : 0xFFEEEEEE;
             g.drawString(font, key, badgeX + 4, badgeY + 2, keyColor, false);
 
             // Ability name
             int nameX = badgeX + badgeW + 6;
-            int nameColor = locked ? 0x666666 : 0xFFFFFF;
+            int nameColor = locked ? 0xFF666666 : 0xFFFFFFFF;
             g.drawString(font, Component.translatable(ability.nameKey()), nameX, badgeY + 2, nameColor, false);
 
             // Lock indicator on the right
             if (locked) {
                 Component lockText = Component.translatable("gui.archetype.locked", ability.unlockLevel());
                 int lockW = font.width(lockText);
-                g.drawString(font, lockText, cardRight - lockW - 6, badgeY + 2, 0x555555, false);
+                g.drawString(font, lockText, cardRight - lockW - 6, badgeY + 2, 0xFF555555, false);
             }
 
             // Slot label (small, top-right)
             String slotLabel = ability.slot().replace("ability_", "#");
             int slotLabelW = font.width(slotLabel);
-            g.drawString(font, slotLabel, cardRight - slotLabelW - 6, badgeY + 2, 0x404050, false);
+            g.drawString(font, slotLabel, cardRight - slotLabelW - 6, badgeY + 2, 0xFF404050, false);
 
             // Description
             int descY = badgeY + badgeH + 4;
-            int descColor = locked ? 0x555555 : 0x999999;
+            int descColor = locked ? 0xFF555555 : 0xFF999999;
             for (FormattedCharSequence line : descLines) {
                 g.drawString(font, line, cardLeft + 10, descY, descColor, false);
                 descY += font.lineHeight + 1;
@@ -459,7 +460,7 @@ public class ClassInfoScreen extends Screen {
 
         for (PassiveAbilityEntry passive : sorted) {
             boolean positive = passive.positive();
-            int accentColor = positive ? 0x44CC44 : 0xCC4444;
+            int accentColor = positive ? 0xFF44CC44 : 0xFFCC4444;
 
             Component pDesc = Component.translatable(passive.descriptionKey());
             List<FormattedCharSequence> descLines = font.split(pDesc, rw - 28);
@@ -501,7 +502,7 @@ public class ClassInfoScreen extends Screen {
             // Description
             int descY = iconY + font.lineHeight + 4;
             for (FormattedCharSequence line : descLines) {
-                g.drawString(font, line, cardLeft + 10, descY, 0x999999, false);
+                g.drawString(font, line, cardLeft + 10, descY, 0xFF999999, false);
                 descY += font.lineHeight + 1;
             }
 
@@ -513,45 +514,41 @@ public class ClassInfoScreen extends Screen {
 
     // ---- Player model ----
 
-    private void renderPlayerModel(GuiGraphics g, LivingEntity entity, int x, int y, int modelScale,
-                                    int mouseX, int mouseY) {
-        float targetDx = (float) x - mouseX;
-        float targetDy = (float) (y - modelScale) - mouseY;
+    private void renderPlayerModel(GuiGraphics g, LivingEntity entity, int centerX, int bottomY, int modelScale,
+                                   int mouseX, int mouseY) {
+        int left = centerX - modelScale;
+        int top = bottomY - (modelScale * 2);
+        int right = centerX + modelScale;
+        int bottom = bottomY + 8; // extra room so feet aren't clipped
 
-        smoothModelDx += (targetDx - smoothModelDx) * 0.12f;
-        smoothModelDy += (targetDy - smoothModelDy) * 0.12f;
+        // Freeze walk animation to show idle pose regardless of player movement
+        float savedSpeed = entity.walkAnimation.speed();
+        entity.walkAnimation.stop();
 
-        float clampedDx = Mth.clamp(smoothModelDx, -40f, 40f);
-        float clampedDy = Mth.clamp(smoothModelDy, -30f, 30f);
+        InventoryScreen.renderEntityInInventoryFollowsMouse(
+                g,
+                left,
+                top,
+                right,
+                bottom,
+                modelScale,
+                0.0F,
+                (float) mouseX,
+                (float) mouseY,
+                entity
+        );
 
-        Quaternionf entityPose = new Quaternionf().rotateZ((float) Math.PI);
-        Quaternionf cameraOrientation = new Quaternionf();
-
-        float origBodyRot = entity.yBodyRot;
-        float origYRot = entity.getYRot();
-        float origXRot = entity.getXRot();
-        float origHeadRotO = entity.yHeadRotO;
-        float origHeadRot = entity.yHeadRot;
-
-        entity.yBodyRot = 180f + clampedDx * 1f;
-        entity.setYRot(180f + clampedDx * 2f);
-        entity.setXRot(0f);
-        entity.yHeadRot = 180f + clampedDx * 2f;
-        entity.yHeadRotO = entity.yHeadRot;
-
-        InventoryScreen.renderEntityInInventory(g, x, y, modelScale, entityPose, cameraOrientation, entity);
-
-        entity.yBodyRot = origBodyRot;
-        entity.setYRot(origYRot);
-        entity.setXRot(origXRot);
-        entity.yHeadRotO = origHeadRotO;
-        entity.yHeadRot = origHeadRot;
+        // Restore speed so the next game tick resumes the animation correctly
+        entity.walkAnimation.setSpeed(savedSpeed);
     }
 
     // ---- Input ----
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && mouseX >= cachedRightX && mouseX < cachedRightX + cachedRightWidth
                 && mouseY >= cachedContentTop && mouseY < cachedContentTop + cachedTabHeaderHeight) {
             int newTab = (mouseX < cachedRightX + cachedRightWidth / 2) ? 0 : 1;
@@ -563,18 +560,18 @@ public class ClassInfoScreen extends Screen {
             }
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, bl);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (mouseX >= cachedLeftX && mouseX < cachedDividerX) {
             float leftViewH = cachedContentBottom - cachedLeftScrollTop;
-            leftScrollOffset -= (float) (delta * 20);
+            leftScrollOffset -= (float) (deltaY * 20);
             leftScrollOffset = Mth.clamp(leftScrollOffset, 0, Math.max(0, leftContentHeight - leftViewH));
         } else {
             float viewH = cachedContentBottom - cachedContentTop;
-            scrollOffset -= (float) (delta * 20);
+            scrollOffset -= (float) (deltaY * 20);
             scrollOffset = Mth.clamp(scrollOffset, 0, Math.max(0, contentHeight - viewH));
         }
         return true;
@@ -622,7 +619,7 @@ public class ClassInfoScreen extends Screen {
 
     private void renderSectionLabel(GuiGraphics g, String titleKey, int x, int y, int w) {
         Component title = Component.translatable(titleKey).withStyle(Style.EMPTY.withColor(0x909090));
-        g.drawString(font, title, x, y, 0x909090, false);
+        g.drawString(font, title, x, y, 0xFF909090, false);
         int tw = font.width(title);
         g.fill(x + tw + 6, y + font.lineHeight / 2, x + w, y + font.lineHeight / 2 + 1, 0x1CFFFFFF);
     }
@@ -675,7 +672,7 @@ public class ClassInfoScreen extends Screen {
 
             Component lockMsg = Component.translatable("gui.archetype.locked", section.unlockLevel());
             int lockMsgW = font.width(lockMsg);
-            g.drawString(font, lockMsg, centerX - lockMsgW / 2, cardTop + entryH / 2 - font.lineHeight / 2, 0x555555, false);
+            g.drawString(font, lockMsg, centerX - lockMsgW / 2, cardTop + entryH / 2 - font.lineHeight / 2, 0xFF555555, false);
 
             y = cardBottom + 4;
         } else {
@@ -693,11 +690,11 @@ public class ClassInfoScreen extends Screen {
                 g.fill(x + 4, y - 2, x + contentWidth - 12, y + totalH, (bgAlpha << 24) | (classColor & 0x00FFFFFF));
                 g.fill(x + 4, y - 2, x + 7, y + totalH, 0x40000000 | classColor);
 
-                g.drawString(font, entryName, x + 12, y, 0xDDDDDD, false);
+                g.drawString(font, entryName, x + 12, y, 0xFFDDDDDD, false);
                 y += font.lineHeight + 1;
 
                 for (FormattedCharSequence line : descLines) {
-                    g.drawString(font, line, x + 12, y, 0x888888, false);
+                    g.drawString(font, line, x + 12, y, 0xFF888888, false);
                     y += font.lineHeight + 1;
                 }
                 y += 4;
@@ -824,14 +821,14 @@ public class ClassInfoScreen extends Screen {
                 textY += 4;
                 continue;
             }
-            g.drawString(font, seq, tipX + 6, textY, 0xFFFFFF, false);
+            g.drawString(font, seq, tipX + 6, textY, 0xFFFFFFFF, false);
             textY += lineH;
         }
     }
 
     // ---- Data helpers ----
 
-    private double getXpScalingBonus(ResourceLocation attributeId, int classLevel) {
+    private double getXpScalingBonus(Identifier attributeId, int classLevel) {
         double totalBonus = 0;
         for (PlayerClass.PassiveAbilityEntry passive : playerClass.getPassiveAbilities()) {
             if (passive.type().getPath().equals("xp_attribute_scaling")) {

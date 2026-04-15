@@ -2,24 +2,9 @@
 
 ## Overview
 
-A class system mod for Minecraft 1.20.1. Multi-loader (Forge + Fabric) via Architectury. Java 17, Official Mojang Mappings.
+A Fabric class system mod for Minecraft 1.21.11. Java 21, Official Mojang Mappings.
 
 **Core principle:** balance through compromise — every bonus is offset by a penalty.
-
-## Branch Workflow
-
-The repository has two active branches: **`master`** and **`1.20.1`**.
-
-**All commits and changes MUST be applied to both branches.** We are actively developing for Minecraft 1.20.1, so both branches must stay in sync at all times.
-
-```bash
-# After committing to master, switch and cherry-pick (or merge) to 1.20.1
-git checkout 1.20.1
-git cherry-pick <commit-hash>
-git checkout master
-```
-
-Never leave changes only in one branch — both must always reflect the latest state.
 
 ## Project Structure
 
@@ -27,10 +12,9 @@ Never leave changes only in one branch — both must always reflect the latest s
 archetype/
 ├── common/    # ~95% of code. Core, abilities, conditions, network, GUI, commands
 ├── fabric/    # Fabric layer: Data Attachments, Fabric Networking API, events
-├── forge/     # Forge layer: Capabilities, SimpleChannel, events
 ```
 
-Package: `com.mod.archetype` (common), `com.mod.archetype.fabric`, `com.mod.archetype.forge`.
+Package: `com.mod.archetype` (common), `com.mod.archetype.fabric`.
 
 ## Build
 
@@ -38,13 +22,13 @@ Package: `com.mod.archetype` (common), `com.mod.archetype.fabric`, `com.mod.arch
 ./gradlew build
 ```
 
-Artifacts: `fabric/build/libs/*.jar`, `forge/build/libs/*.jar`.
+Artifacts: `fabric/build/libs/*.jar`.
 
-Shadow JAR includes common in each platform module.
+Shadow JAR includes common in the fabric module.
 
 ## Architectural Decisions
 
-- **Platform abstraction via ServiceLoader**: `NetworkHandler`, `PlayerDataAccess`, `PlatformHelper` — interfaces in `platform/`, implementations in forge/fabric modules
+- **Platform abstraction via ServiceLoader**: `NetworkHandler`, `PlayerDataAccess`, `PlatformHelper` — interfaces in `platform/`, implementations in fabric module
 - **Singleton + private constructor**: `ClassManager.getInstance()`, `AbilityRegistry.getInstance()`, `ConditionRegistry.getInstance()`
 - **Factory pattern**: `PassiveAbilityFactory`, `ActiveAbilityFactory`, `ConditionFactory` — create instances from JSON parameters
 - **Immutable records**: `PlayerClass`, `AttributeModifierEntry`, `ConditionalAttributeEntry`, `ResourceDefinition`, `ConditionDefinition`
@@ -72,7 +56,7 @@ Shadow JAR includes common in each platform module.
 
 ## Code Conventions
 
-- **Language**: Java 17, no Kotlin
+- **Language**: Java 21, no Kotlin
 - **Naming**: PascalCase for classes, camelCase for methods (verb-first), UPPER_SNAKE_CASE for constants
 - **Null safety**: `@Nullable` from org.jetbrains.annotations
 - **Comments**: minimal, code is self-documenting. Do not add Javadoc unless requested
@@ -93,7 +77,7 @@ ArchetypeAPI.assignClass(serverPlayer, classId);    // Assign a class to a playe
 ## Releases
 
 - Release notes must be written in **English**
-- Attach only two JAR files: `archetype-<version>-fabric.jar` and `archetype-<version>-forge.jar`
+- Attach only one JAR file: `archetype-<version>-fabric.jar`
 - Do **not** attach dev-shadow or sources JARs
 - Take JARs from GitHub Actions artifacts after the build completes
 
@@ -108,4 +92,4 @@ Two languages: `en_us.json`, `ru_ru.json`. Key namespaces:
 
 ## Dependencies
 
-Minecraft + Architectury API only. No external libraries. JSR305 — compileOnly.
+Minecraft + Fabric API only. No external libraries. JSR305 — compileOnly.

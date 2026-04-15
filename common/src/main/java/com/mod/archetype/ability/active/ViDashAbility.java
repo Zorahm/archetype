@@ -7,7 +7,7 @@ import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -107,7 +107,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         }
         if (prevCharges == 0 && charges > 0) {
             var data = PlayerDataAccess.INSTANCE.getClassData(player);
-            data.setCooldown(new ResourceLocation("archetype", entry.slot()), 0);
+            data.setCooldown(Identifier.fromNamespaceAndPath("archetype", entry.slot()), 0);
         }
     }
 
@@ -158,7 +158,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         lastRefillTime = player.level().getGameTime();
         if (charges == 0) {
             var data = PlayerDataAccess.INSTANCE.getClassData(player);
-            data.setCooldown(new ResourceLocation("archetype", entry.slot()), computeRefillTicks(player));
+            data.setCooldown(Identifier.fromNamespaceAndPath("archetype", entry.slot()), computeRefillTicks(player));
         }
 
         int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
@@ -183,7 +183,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         ItemStack offhand = player.getOffhandItem();
         currentFireTrail = offhand.is(Items.BLAZE_POWDER) && classLevel >= 20;
         currentWitherTrail = offhand.is(Items.WITHER_ROSE);
-        currentSnowSlow = offhand.is(Items.SNOW_BLOCK);
+        currentSnowSlow = offhand.is(Items.SNOWBALL);
 
         // Consume offhand item
         if (currentFireTrail || currentWitherTrail || currentSnowSlow) {
@@ -203,7 +203,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         hitEntities.clear();
 
         // Resistance during dash
-        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, currentResistanceAmplifier, true, false, false));
+        player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 20, currentResistanceAmplifier, true, false, false));
 
         // Sound effect
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -211,7 +211,8 @@ public class ViDashAbility extends AbstractActiveAbility {
 
         // Dragon breath particle
         if (player.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.DRAGON_BREATH,
+            serverLevel.sendParticles(
+                    net.minecraft.core.particles.PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0f),
                     player.getX(), player.getY() + 1, player.getZ(),
                     15, 0.2, 0.5, 0.2, 0.1);
         }
@@ -255,7 +256,7 @@ public class ViDashAbility extends AbstractActiveAbility {
                     living.addEffect(new MobEffectInstance(MobEffects.WITHER, currentEffectDurationTicks, currentEffectAmplifier));
                 }
                 if (currentSnowSlow && entity instanceof LivingEntity living) {
-                    living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, currentEffectDurationTicks, currentEffectAmplifier));
+                    living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, currentEffectDurationTicks, currentEffectAmplifier));
                 }
             }
 
@@ -307,7 +308,7 @@ public class ViDashAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "vi_dash");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "vi_dash");
     }
 }

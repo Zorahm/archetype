@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.mod.archetype.Archetype;
 import com.mod.archetype.core.PlayerClass;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -20,8 +20,8 @@ public class ConfigClassLoader {
     private static final String CONFIG_SUBDIR = "archetype/classes";
 
     public record LoadResult(
-        Map<ResourceLocation, PlayerClass> classes,
-        Map<ResourceLocation, String> rawJson
+        Map<Identifier, PlayerClass> classes,
+        Map<Identifier, String> rawJson
     ) {}
 
     public static LoadResult load(Path configDir) {
@@ -30,14 +30,14 @@ public class ConfigClassLoader {
             return new LoadResult(Map.of(), Map.of());
         }
 
-        Map<ResourceLocation, PlayerClass> classes = new HashMap<>();
-        Map<ResourceLocation, String> rawJson = new HashMap<>();
+        Map<Identifier, PlayerClass> classes = new HashMap<>();
+        Map<Identifier, String> rawJson = new HashMap<>();
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(classesDir, "*.json")) {
             for (Path file : stream) {
                 String fileName = file.getFileName().toString();
                 String id = fileName.substring(0, fileName.length() - 5);
-                ResourceLocation loc = new ResourceLocation(Archetype.MOD_ID, id);
+                Identifier loc = Identifier.fromNamespaceAndPath(Archetype.MOD_ID, id);
                 try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
                     JsonObject json = GSON.fromJson(reader, JsonObject.class);
                     PlayerClass cls = ClassJsonParser.parse(loc, json);

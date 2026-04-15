@@ -3,7 +3,7 @@ package com.mod.archetype.ability.passive;
 import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -26,17 +26,17 @@ public class JumpBoostPassive extends AbstractPassiveAbility {
         if (player.level().isClientSide()) return;
 
         player.addEffect(new MobEffectInstance(
-                MobEffects.JUMP, 40, amplifier, true, false, false
+                MobEffects.JUMP_BOOST, 40, amplifier, true, false, false
         ));
     }
 
     @Override
     public void onRemove(ServerPlayer player) {
-        player.removeEffect(MobEffects.JUMP);
+        player.removeEffect(MobEffects.JUMP_BOOST);
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "jump_boost");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "jump_boost");
     }
 }

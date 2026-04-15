@@ -32,8 +32,8 @@ public class FabricPlayerDataAccess implements PlayerDataAccess {
 
     public static void onPlayerJoin(ServerPlayer player, CompoundTag savedData) {
         PlayerClassData data = new PlayerClassData();
-        if (savedData != null && savedData.contains("archetype")) {
-            data.load(savedData.getCompound("archetype"));
+        if (savedData != null) {
+            savedData.getCompound("archetype").ifPresent(data::load);
         }
         PLAYER_DATA.put(player.getUUID(), data);
     }

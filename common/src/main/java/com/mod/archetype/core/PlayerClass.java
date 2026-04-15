@@ -1,7 +1,7 @@
 package com.mod.archetype.core;
 
 import com.google.gson.JsonObject;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 import org.jetbrains.annotations.Nullable;
@@ -10,10 +10,10 @@ import java.util.List;
 
 public final class PlayerClass {
 
-    private final ResourceLocation id;
+    private final Identifier id;
     private final String nameKey;
     private final String descriptionKey;
-    private final ResourceLocation icon;
+    private final Identifier icon;
     private final int color;
     private final ClassCategory category;
     private final List<String> loreKeys;
@@ -28,14 +28,14 @@ public final class PlayerClass {
     private final ResourceDefinition resource;
     @Nullable
     private final Float sizeModifier;
-    private final List<ResourceLocation> incompatibleWith;
+    private final List<Identifier> incompatibleWith;
     private final List<LevelMilestone> progression;
     private final List<ExtraAbilitySection> extraAbilitySections;
     private final List<AbilityStatEntry> abilityStats;
     private final List<CommandTrigger> commands;
 
-    public PlayerClass(ResourceLocation id, String nameKey, String descriptionKey,
-                       ResourceLocation icon, int color, ClassCategory category,
+    public PlayerClass(Identifier id, String nameKey, String descriptionKey,
+                       Identifier icon, int color, ClassCategory category,
                        List<String> loreKeys,
                        List<AttributeModifierEntry> attributes,
                        List<ConditionalAttributeEntry> conditionalAttributes,
@@ -43,7 +43,7 @@ public final class PlayerClass {
                        List<ActiveAbilityEntry> activeAbilities,
                        @Nullable ResourceDefinition resource,
                        @Nullable Float sizeModifier,
-                       List<ResourceLocation> incompatibleWith,
+                       List<Identifier> incompatibleWith,
                        List<LevelMilestone> progression,
                        List<ExtraAbilitySection> extraAbilitySections,
                        List<AbilityStatEntry> abilityStats,
@@ -68,10 +68,10 @@ public final class PlayerClass {
         this.commands = List.copyOf(commands);
     }
 
-    public ResourceLocation getId() { return id; }
+    public Identifier getId() { return id; }
     public String getNameKey() { return nameKey; }
     public String getDescriptionKey() { return descriptionKey; }
-    public ResourceLocation getIcon() { return icon; }
+    public Identifier getIcon() { return icon; }
     public int getColor() { return color; }
     public ClassCategory getCategory() { return category; }
     public List<String> getLoreKeys() { return loreKeys; }
@@ -81,7 +81,7 @@ public final class PlayerClass {
     public List<ActiveAbilityEntry> getActiveAbilities() { return activeAbilities; }
     @Nullable public ResourceDefinition getResource() { return resource; }
     @Nullable public Float getSizeModifier() { return sizeModifier; }
-    public List<ResourceLocation> getIncompatibleWith() { return incompatibleWith; }
+    public List<Identifier> getIncompatibleWith() { return incompatibleWith; }
     public List<LevelMilestone> getProgression() { return progression; }
     public List<ExtraAbilitySection> getExtraAbilitySections() { return extraAbilitySections; }
     public List<AbilityStatEntry> getAbilityStats() { return abilityStats; }
@@ -90,7 +90,7 @@ public final class PlayerClass {
     // --- Nested records ---
 
     public record AttributeModifierEntry(
-            ResourceLocation attribute,
+            Identifier attribute,
             AttributeModifier.Operation operation,
             double value
     ) {}
@@ -101,7 +101,7 @@ public final class PlayerClass {
     ) {}
 
     public record PassiveAbilityEntry(
-            ResourceLocation type,
+            Identifier type,
             JsonObject params,
             @Nullable ConditionDefinition activationCondition,
             boolean positive,
@@ -111,7 +111,7 @@ public final class PlayerClass {
     ) {}
 
     public record ActiveAbilityEntry(
-            ResourceLocation type,
+            Identifier type,
             String slot,
             int cooldownTicks,
             int resourceCost,
@@ -119,7 +119,7 @@ public final class PlayerClass {
             JsonObject params,
             String nameKey,
             String descriptionKey,
-            ResourceLocation icon,
+            Identifier icon,
             @Nullable String item
     ) {}
 
@@ -130,7 +130,7 @@ public final class PlayerClass {
             float drainPerSecond,
             float regenPerSecond,
             int color,
-            ResourceLocation icon
+            Identifier icon
     ) {}
 
     public record LevelMilestone(int level, String descriptionKey) {}

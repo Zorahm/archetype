@@ -1,7 +1,7 @@
 package com.mod.archetype.platform;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
@@ -23,12 +23,12 @@ public interface NetworkHandler {
 
     <T> void sendToTracking(Entity entity, T packet);
 
-    <T> void registerServerReceiver(ResourceLocation id, Class<T> packetClass,
+    <T> void registerServerReceiver(Identifier id, Class<T> packetClass,
                                      BiConsumer<T, FriendlyByteBuf> encoder,
                                      Function<FriendlyByteBuf, T> decoder,
                                      ServerPacketHandler<T> handler);
 
-    <T> void registerClientReceiver(ResourceLocation id, Class<T> packetClass,
+    <T> void registerClientReceiver(Identifier id, Class<T> packetClass,
                                      BiConsumer<T, FriendlyByteBuf> encoder,
                                      Function<FriendlyByteBuf, T> decoder,
                                      ClientPacketHandler<T> handler);

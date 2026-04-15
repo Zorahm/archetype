@@ -4,7 +4,7 @@ import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -87,7 +87,7 @@ public class DashAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "dash");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "dash");
     }
 }

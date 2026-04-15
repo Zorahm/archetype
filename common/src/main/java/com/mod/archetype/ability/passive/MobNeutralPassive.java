@@ -4,7 +4,7 @@ import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -33,7 +33,7 @@ public class MobNeutralPassive extends AbstractPassiveAbility {
 
         List<EntityType<?>> targetTypes = new ArrayList<>();
         for (String typeStr : mobTypes) {
-            ResourceLocation typeId = new ResourceLocation(typeStr);
+            Identifier typeId = Identifier.parse(typeStr);
             BuiltInRegistries.ENTITY_TYPE.getOptional(typeId).ifPresent(targetTypes::add);
         }
 
@@ -52,7 +52,7 @@ public class MobNeutralPassive extends AbstractPassiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "mob_neutral");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "mob_neutral");
     }
 }

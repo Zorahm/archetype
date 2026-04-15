@@ -5,7 +5,8 @@ import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 
@@ -16,7 +17,7 @@ public class SelfHealAbility extends AbstractActiveAbility {
 
     private final float amount;
     private final float percent;
-    private final List<ResourceLocation> removeEffects;
+    private final List<Identifier> removeEffects;
 
     public SelfHealAbility(ActiveAbilityEntry entry) {
         super(entry);
@@ -26,7 +27,7 @@ public class SelfHealAbility extends AbstractActiveAbility {
         if (params.has("remove_effects") && params.get("remove_effects").isJsonArray()) {
             JsonArray arr = params.getAsJsonArray("remove_effects");
             for (int i = 0; i < arr.size(); i++) {
-                removeEffects.add(new ResourceLocation(arr.get(i).getAsString()));
+                removeEffects.add(Identifier.parse(arr.get(i).getAsString()));
             }
         }
     }
@@ -36,15 +37,14 @@ public class SelfHealAbility extends AbstractActiveAbility {
         if (!canActivate(player)) return ActivationResult.FAILED;
         float healAmount = amount > 0 ? amount : player.getMaxHealth() * percent;
         player.heal(healAmount);
-        for (ResourceLocation effectId : removeEffects) {
-            MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(effectId);
-            if (effect != null) player.removeEffect(effect);
+        for (Identifier effectId : removeEffects) {
+            BuiltInRegistries.MOB_EFFECT.get(effectId).ifPresent(player::removeEffect);
         }
         return ActivationResult.SUCCESS;
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "self_heal");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "self_heal");
     }
 }

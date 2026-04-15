@@ -1,10 +1,6 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
-}
-
-architectury {
-    platformSetupLoomIde()
-    fabric()
+    id "fabric-loom"
+    id "com.gradleup.shadow" version "8.3.5"
 }
 
 configurations {
@@ -16,12 +12,14 @@ configurations {
 }
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
     modApi "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
-    modApi "dev.architectury:architectury-fabric:${rootProject.architectury_version}"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "namedElements")) { transitive false }
 }
 
 processResources {
@@ -33,7 +31,6 @@ processResources {
 }
 
 shadowJar {
-    exclude "architectury.common.json"
     configurations = [project.configurations.shadowCommon]
     archiveClassifier = "dev-shadow"
 }
@@ -42,6 +39,8 @@ remapJar {
     inputFile.set shadowJar.archiveFile
     dependsOn shadowJar
     archiveClassifier = null
+    archiveBaseName.set("archetype")
+    archiveVersion.set("${project.version}+mc${rootProject.minecraft_version}")
 }
 
 jar {

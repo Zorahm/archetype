@@ -4,7 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
@@ -15,23 +15,23 @@ import java.util.Set;
 public class PlayerClassData {
 
     @Nullable
-    private ResourceLocation currentClassId;
+    private Identifier currentClassId;
     private long classAssignedTime;
     private int classLevel = 0;
     private int classExperience;
     private float resourceCurrent;
-    private Map<ResourceLocation, Integer> cooldowns = new HashMap<>();
+    private Map<Identifier, Integer> cooldowns = new HashMap<>();
     private Set<Integer> activeConditionalSets = new HashSet<>();
-    private Map<ResourceLocation, Boolean> toggleStates = new HashMap<>();
+    private Map<Identifier, Boolean> toggleStates = new HashMap<>();
     private long lastClassChangeTime;
-    private Set<ResourceLocation> triedClasses = new HashSet<>();
+    private Set<Identifier> triedClasses = new HashSet<>();
 
     @Nullable
-    public ResourceLocation getCurrentClassId() {
+    public Identifier getCurrentClassId() {
         return currentClassId;
     }
 
-    public void setCurrentClassId(@Nullable ResourceLocation classId) {
+    public void setCurrentClassId(@Nullable Identifier classId) {
         this.currentClassId = classId;
     }
 
@@ -71,15 +71,15 @@ public class PlayerClassData {
         this.resourceCurrent = value;
     }
 
-    public Map<ResourceLocation, Integer> getCooldowns() {
+    public Map<Identifier, Integer> getCooldowns() {
         return cooldowns;
     }
 
-    public int getCooldown(ResourceLocation abilityId) {
+    public int getCooldown(Identifier abilityId) {
         return cooldowns.getOrDefault(abilityId, 0);
     }
 
-    public void setCooldown(ResourceLocation abilityId, int ticks) {
+    public void setCooldown(Identifier abilityId, int ticks) {
         if (ticks <= 0) {
             cooldowns.remove(abilityId);
         } else {
@@ -87,11 +87,11 @@ public class PlayerClassData {
         }
     }
 
-    public boolean isOnCooldown(ResourceLocation abilityId) {
+    public boolean isOnCooldown(Identifier abilityId) {
         return cooldowns.containsKey(abilityId) && cooldowns.get(abilityId) > 0;
     }
 
-    public int getRemainingCooldown(ResourceLocation abilityId) {
+    public int getRemainingCooldown(Identifier abilityId) {
         return cooldowns.getOrDefault(abilityId, 0);
     }
 
@@ -132,15 +132,15 @@ public class PlayerClassData {
         return activeConditionalSets;
     }
 
-    public Map<ResourceLocation, Boolean> getToggleStates() {
+    public Map<Identifier, Boolean> getToggleStates() {
         return toggleStates;
     }
 
-    public boolean getToggleState(ResourceLocation abilityId) {
+    public boolean getToggleState(Identifier abilityId) {
         return toggleStates.getOrDefault(abilityId, false);
     }
 
-    public void setToggleState(ResourceLocation abilityId, boolean state) {
+    public void setToggleState(Identifier abilityId, boolean state) {
         toggleStates.put(abilityId, state);
     }
 
@@ -152,15 +152,15 @@ public class PlayerClassData {
         this.lastClassChangeTime = time;
     }
 
-    public Set<ResourceLocation> getTriedClasses() {
+    public Set<Identifier> getTriedClasses() {
         return triedClasses;
     }
 
-    public boolean hasTriedClass(ResourceLocation classId) {
+    public boolean hasTriedClass(Identifier classId) {
         return triedClasses.contains(classId);
     }
 
-    public void addTriedClass(ResourceLocation classId) {
+    public void addTriedClass(Identifier classId) {
         triedClasses.add(classId);
     }
 
@@ -196,48 +196,48 @@ public class PlayerClassData {
     public void load(CompoundTag tag) {
         if (tag.contains("ClassId")) {
             try {
-                currentClassId = new ResourceLocation(tag.getString("ClassId"));
+                currentClassId = Identifier.parse(tag.getStringOr("ClassId", ""));
             } catch (Exception e) {
                 currentClassId = null;
             }
         } else {
             currentClassId = null;
         }
-        classAssignedTime = tag.getLong("AssignedTime");
-        classLevel = tag.getInt("Level");
-        classExperience = tag.getInt("Experience");
-        resourceCurrent = tag.getFloat("Resource");
-        lastClassChangeTime = tag.getLong("LastChangeTime");
+        classAssignedTime = tag.getLongOr("AssignedTime", 0L);
+        classLevel = tag.getIntOr("Level", 0);
+        classExperience = tag.getIntOr("Experience", 0);
+        resourceCurrent = tag.getFloatOr("Resource", 0f);
+        lastClassChangeTime = tag.getLongOr("LastChangeTime", 0L);
 
         cooldowns.clear();
-        CompoundTag cooldownTag = tag.getCompound("Cooldowns");
-        for (String key : cooldownTag.getAllKeys()) {
+        CompoundTag cooldownTag = tag.getCompoundOrEmpty("Cooldowns");
+        for (String key : cooldownTag.keySet()) {
             try {
-                cooldowns.put(new ResourceLocation(key), cooldownTag.getInt(key));
+                cooldowns.put(Identifier.parse(key), cooldownTag.getIntOr(key, 0));
             } catch (Exception ignored) {
             }
         }
 
         activeConditionalSets.clear();
-        int[] conditionalArray = tag.getIntArray("ActiveCondSets");
+        int[] conditionalArray = tag.getIntArray("ActiveCondSets").orElse(new int[0]);
         for (int i : conditionalArray) {
             activeConditionalSets.add(i);
         }
 
         toggleStates.clear();
-        CompoundTag toggleTag = tag.getCompound("Toggles");
-        for (String key : toggleTag.getAllKeys()) {
+        CompoundTag toggleTag = tag.getCompoundOrEmpty("Toggles");
+        for (String key : toggleTag.keySet()) {
             try {
-                toggleStates.put(new ResourceLocation(key), toggleTag.getBoolean(key));
+                toggleStates.put(Identifier.parse(key), toggleTag.getBooleanOr(key, false));
             } catch (Exception ignored) {
             }
         }
 
         triedClasses.clear();
-        ListTag triedTag = tag.getList("TriedClasses", 8);
+        ListTag triedTag = tag.getListOrEmpty("TriedClasses");
         for (int i = 0; i < triedTag.size(); i++) {
             try {
-                triedClasses.add(new ResourceLocation(triedTag.getString(i)));
+                triedClasses.add(Identifier.parse(triedTag.getStringOr(i, "")));
             } catch (Exception ignored) {
             }
         }
@@ -246,20 +246,20 @@ public class PlayerClassData {
     public void writeSyncData(FriendlyByteBuf buf) {
         buf.writeBoolean(hasClass());
         if (hasClass()) {
-            buf.writeResourceLocation(currentClassId);
+            buf.writeIdentifier(currentClassId);
             buf.writeVarInt(classLevel);
             buf.writeVarInt(classExperience);
             buf.writeFloat(resourceCurrent);
 
             buf.writeVarInt(cooldowns.size());
             cooldowns.forEach((id, ticks) -> {
-                buf.writeResourceLocation(id);
+                buf.writeIdentifier(id);
                 buf.writeVarInt(ticks);
             });
 
             buf.writeVarInt(toggleStates.size());
             toggleStates.forEach((id, state) -> {
-                buf.writeResourceLocation(id);
+                buf.writeIdentifier(id);
                 buf.writeBoolean(state);
             });
         }
@@ -268,7 +268,7 @@ public class PlayerClassData {
     public void readSyncData(FriendlyByteBuf buf) {
         boolean has = buf.readBoolean();
         if (has) {
-            currentClassId = buf.readResourceLocation();
+            currentClassId = buf.readIdentifier();
             classLevel = buf.readVarInt();
             classExperience = buf.readVarInt();
             resourceCurrent = buf.readFloat();
@@ -276,13 +276,13 @@ public class PlayerClassData {
             cooldowns.clear();
             int cooldownCount = buf.readVarInt();
             for (int i = 0; i < cooldownCount; i++) {
-                cooldowns.put(buf.readResourceLocation(), buf.readVarInt());
+                cooldowns.put(buf.readIdentifier(), buf.readVarInt());
             }
 
             toggleStates.clear();
             int toggleCount = buf.readVarInt();
             for (int i = 0; i < toggleCount; i++) {
-                toggleStates.put(buf.readResourceLocation(), buf.readBoolean());
+                toggleStates.put(buf.readIdentifier(), buf.readBoolean());
             }
         } else {
             currentClassId = null;

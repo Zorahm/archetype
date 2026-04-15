@@ -4,13 +4,11 @@ import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class EffectImmunityPassive extends AbstractPassiveAbility {
 
@@ -26,18 +24,17 @@ public class EffectImmunityPassive extends AbstractPassiveAbility {
         if (player.level().isClientSide()) return;
 
         for (String effectIdStr : effectIds) {
-            ResourceLocation effectId = new ResourceLocation(effectIdStr);
-            Optional<MobEffect> effectOpt = BuiltInRegistries.MOB_EFFECT.getOptional(effectId);
-            effectOpt.ifPresent(effect -> {
-                if (player.hasEffect(effect)) {
-                    player.removeEffect(effect);
+            Identifier effectId = Identifier.parse(effectIdStr);
+            BuiltInRegistries.MOB_EFFECT.get(effectId).ifPresent(effectHolder -> {
+                if (player.hasEffect(effectHolder)) {
+                    player.removeEffect(effectHolder);
                 }
             });
         }
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "effect_immunity");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "effect_immunity");
     }
 }
