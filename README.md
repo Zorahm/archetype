@@ -9,10 +9,9 @@
 
 ### Class System for Minecraft
 
-![MC](https://img.shields.io/badge/Minecraft-1.20.1-62b447?style=flat-square&logo=minecraft&logoColor=white)
-![Forge](https://img.shields.io/badge/Forge-multiloader-e07a33?style=flat-square)
-![Fabric](https://img.shields.io/badge/Fabric-multiloader-c9b88a?style=flat-square)
-![Java](https://img.shields.io/badge/Java-17-f89820?style=flat-square&logo=openjdk&logoColor=white)
+![MC](https://img.shields.io/badge/Minecraft-1.21.11-62b447?style=flat-square&logo=minecraft&logoColor=white)
+![Fabric](https://img.shields.io/badge/Fabric-c9b88a?style=flat-square)
+![Java](https://img.shields.io/badge/Java-21-f89820?style=flat-square&logo=openjdk&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 *Every bonus is compensated by a penalty. There is no perfect class — only your choice.*
@@ -42,12 +41,11 @@ Classes are defined via JSON files — server owners can add custom classes via 
 
 ## Architecture
 
-A multiloader project powered by [Architectury](https://github.com/architectury/architectury-api) — featuring a shared core module and platform-specific layers:
+A Fabric mod featuring a shared core module and a thin platform-specific layer:
 
 ```
 archetype/
 ├── common/     95% of code — core logic, abilities, networking, GUI, commands
-├── forge/      Forge implementation: Capabilities, SimpleChannel, events
 └── fabric/     Fabric implementation: Data Attachments, Networking API, events
 ```
 
@@ -115,9 +113,9 @@ ArchetypeAPI.assignClass(serverPlayer, classId);
 ./gradlew build
 ```
 
-Artifacts are found in: `forge/build/libs/` · `fabric/build/libs/`
+Artifacts are found in: `fabric/build/libs/`
 
-**Dependencies:** Minecraft 1.20.1 · Architectury API · Fabric API (for Fabric build) · Java 17
+**Dependencies:** Minecraft 1.21.11 · Fabric API · Java 21
 
 ---
 

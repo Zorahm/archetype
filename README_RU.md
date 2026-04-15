@@ -9,10 +9,9 @@
 
 ### Система классов для Minecraft
 
-![MC](https://img.shields.io/badge/Minecraft-1.20.1-62b447?style=flat-square&logo=minecraft&logoColor=white)
-![Forge](https://img.shields.io/badge/Forge-multiloader-e07a33?style=flat-square)
-![Fabric](https://img.shields.io/badge/Fabric-multiloader-c9b88a?style=flat-square)
-![Java](https://img.shields.io/badge/Java-17-f89820?style=flat-square&logo=openjdk&logoColor=white)
+![MC](https://img.shields.io/badge/Minecraft-1.21.11-62b447?style=flat-square&logo=minecraft&logoColor=white)
+![Fabric](https://img.shields.io/badge/Fabric-c9b88a?style=flat-square)
+![Java](https://img.shields.io/badge/Java-21-f89820?style=flat-square&logo=openjdk&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 *Каждый бонус компенсирован штрафом. Нет идеального класса — только твой выбор.*
@@ -42,12 +41,11 @@ Archetype добавляет систему классов, которая ме�
 
 ## Архитектура
 
-Мультилоадерный проект на [Architectury](https://github.com/architectury/architectury-api) — один общий модуль, два платформенных слоя:
+Fabric-мод с общим ядром и тонким платформо-специфичным слоем:
 
 ```
 archetype/
 ├── common/     95% кода — ядро, способности, сеть, GUI, команды
-├── forge/      Forge: Capabilities, SimpleChannel, события
 └── fabric/     Fabric: Data Attachments, Networking API, события
 ```
 
@@ -115,9 +113,9 @@ ArchetypeAPI.assignClass(serverPlayer, classId);
 ./gradlew build
 ```
 
-Артефакты: `forge/build/libs/` · `fabric/build/libs/`
+Артефакты: `fabric/build/libs/`
 
-**Зависимости:** Minecraft 1.20.1 · Architectury API · Fabric API (только для Fabric-сборки) · Java 17
+**Зависимости:** Minecraft 1.21.11 · Fabric API · Java 21
 
 ---
 
