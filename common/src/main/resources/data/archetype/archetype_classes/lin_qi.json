@@ -22,6 +22,11 @@
       "attribute": "minecraft:attack_damage",
       "operation": "MULTIPLY_BASE",
       "value": -0.15
+    },
+    {
+      "attribute": "minecraft:scale",
+      "operation": "ADDITION",
+      "value": -0.1
     }
   ],
   "passive_abilities": [

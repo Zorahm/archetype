@@ -159,38 +159,18 @@ public class AbilityHudOverlay {
         }
 
         // --- Slot background ---
+        // Затемнение только на перезарядке (ниже, в блоке cooldown).
         if (locked) {
             g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x40000000);
-        } else if (ready) {
-            g.fillGradient(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x40101010, 0x60181818);
-        } else {
-            g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x50000000);
         }
 
         // --- Border / spinner ---
         if (locked) {
-            g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, 0x30FFFFFF);
+            g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, 0xAA000000);
         } else if (ready) {
-            // Gentle breathing pulse on the border when ready
-            float breathe = (float) (Math.sin(now * 0.003) * 0.15 + 0.55);
-            int alpha = (int) (breathe * 255);
-            int borderColor = (alpha << 24) | 0xBBBBBB;
-
-            // Ready flash — bright border flash when ability comes off cooldown
-            Long flashTime = readyFlashTimestamps.get(abilityId);
-            if (flashTime != null) {
-                float elapsed = (now - flashTime) / 1000f;
-                if (elapsed < 0.6f) {
-                    float flash = 1.0f - (elapsed / 0.6f);
-                    flash = flash * flash; // ease-out
-                    int flashAlpha = (int) (flash * 200);
-                    borderColor = (Math.min(255, flashAlpha + ((borderColor >> 24) & 0xFF)) << 24) | 0xFFFFFF;
-                } else {
-                    readyFlashTimestamps.remove(abilityId);
-                }
-            }
-
-            g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, borderColor);
+            // Static border when ready
+            g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, 0xCC222222);
+            readyFlashTimestamps.remove(abilityId);
         } else {
             // Spinner animation on cooldown border
             if (remaining > 0) {
@@ -227,10 +207,8 @@ public class AbilityHudOverlay {
         // --- Charge-based ability ---
         if (chargeInfo != null) {
             if (chargeInfo.current() == 0) {
-                // No charges — animated sweep overlay
-                float sweep = (float) ((now % 2000) / 2000.0);
-                int overlayAlpha = (int) (0x60 + Math.sin(sweep * Math.PI * 2) * 0x1A);
-                g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, (overlayAlpha << 24));
+                // No charges — static overlay
+                g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x60000000);
 
                 if (remaining > 0) {
                     // Show refill countdown in seconds
@@ -269,26 +247,8 @@ public class AbilityHudOverlay {
 
         // --- Standard cooldown overlay ---
         if (remaining > 0) {
-            int maxTicks = cooldownInfo.maxTicks();
-            // Use time-based smoothing (same start time as spinner) to avoid jumps on server sync
-            float smoothRemaining;
-            Long overlayStartTime = cooldownSpinnerStartTimes.get(abilityId);
-            if (overlayStartTime != null) {
-                float elapsedTicks = (now - overlayStartTime + partialTick * 50f) / 50f;
-                smoothRemaining = Mth.clamp(maxTicks - elapsedTicks, 0f, maxTicks);
-            } else {
-                smoothRemaining = remaining - partialTick;
-            }
-            float progress = maxTicks > 0
-                    ? Mth.clamp(smoothRemaining / maxTicks, 0f, 1f)
-                    : 0f;
-            int overlayHeight = Math.min(SLOT_SIZE, (int) (SLOT_SIZE * progress));
-
-            // Cooldown overlay with gradient — darker at the bottom (remaining), lighter at the edge
-            int overlayTop = y + SLOT_SIZE - overlayHeight;
-            if (overlayHeight > 0) {
-                g.fillGradient(x, overlayTop, x + SLOT_SIZE, y + SLOT_SIZE, 0x50000000, 0xA0000000);
-            }
+            // Static dim overlay during cooldown
+            g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x80000000);
 
             // Cooldown seconds text — use server value to avoid showing "0" prematurely
             float cdSeconds = (remaining - partialTick) / 20f;
@@ -308,12 +268,6 @@ public class AbilityHudOverlay {
             int cdTextX = x + SLOT_SIZE / 2 - font.width(cdText) / 2;
             g.drawString(font, cdText, cdTextX, y + SLOT_SIZE / 2 - 4, 0xFF000000, false);
             g.drawString(font, cdText, cdTextX, y + SLOT_SIZE / 2 - 4, textColor, true);
-
-            // Thin progress line at the bottom of the slot
-            int lineWidth = (int) ((1f - progress) * SLOT_SIZE);
-            if (lineWidth >= 2) {
-                g.fill(x, y + SLOT_SIZE - 1, x + lineWidth, y + SLOT_SIZE, 0xCC88FF88);
-            }
         }
     }
 
@@ -321,7 +275,7 @@ public class AbilityHudOverlay {
                                               Identifier abilityId, int remaining, int maxTicks,
                                               float partialTick, long now) {
         // Base border
-        g.renderOutline(x, y, size, size, 0x25FFFFFF);
+        g.renderOutline(x, y, size, size, 0xAA000000);
 
         float progress = maxTicks > 0
                 ? Mth.clamp((remaining - partialTick) / maxTicks, 0f, 1f)

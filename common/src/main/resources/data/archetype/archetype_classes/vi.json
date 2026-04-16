@@ -33,6 +33,15 @@
       "positive": false,
       "name": "passive.archetype.ram.fragile_world.name",
       "description": "passive.archetype.ram.fragile_world.description"
+    },
+    {
+      "type": "archetype:totem_offhand_damage",
+      "params": {
+        "damage_per_second": 8.0
+      },
+      "positive": false,
+      "name": "passive.archetype.vi.totem_aversion.name",
+      "description": "passive.archetype.vi.totem_aversion.description"
     }
   ],
   "active_abilities": [

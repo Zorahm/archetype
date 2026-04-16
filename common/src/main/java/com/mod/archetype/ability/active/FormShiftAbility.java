@@ -9,6 +9,7 @@ import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -103,8 +104,19 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
         applyFormModifiers(player, matchedForm);
         playFormSound(player, matchedForm.formId);
+        spawnFormParticles(player, "minecraft:trial_spawner_detection");
 
         return ActivationResult.SUCCESS;
+    }
+
+    private void spawnFormParticles(ServerPlayer player, String particleId) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) return;
+        var particleType = BuiltInRegistries.PARTICLE_TYPE.getValue(Identifier.parse(particleId));
+        if (particleType instanceof ParticleOptions options) {
+            serverLevel.sendParticles(options,
+                    player.getX(), player.getY() + 0.1, player.getZ(),
+                    5, 0.3, 0.0, 0.3, 0.1);
+        }
     }
 
     private void playFormSound(ServerPlayer player, String formId) {
@@ -283,6 +295,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
     @Override
     public void forceDeactivate(ServerPlayer player) {
+        if (currentForm != null) {
+            spawnFormParticles(player, "minecraft:trial_omen");
+        }
         removeFormModifiers(player);
         currentForm = null;
         active = false;

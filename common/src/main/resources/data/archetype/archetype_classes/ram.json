@@ -18,6 +18,11 @@
       "attribute": "minecraft:attack_speed",
       "operation": "MULTIPLY_BASE",
       "value": -0.2
+    },
+    {
+      "attribute": "minecraft:scale",
+      "operation": "ADDITION",
+      "value": 0.2
     }
   ],
   "passive_abilities": [

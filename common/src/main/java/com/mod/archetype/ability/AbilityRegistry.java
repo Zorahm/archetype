@@ -33,6 +33,7 @@ import com.mod.archetype.ability.passive.VillagerRejectionPassive;
 import com.mod.archetype.ability.passive.WaterFoodDamagePassive;
 import com.mod.archetype.ability.passive.PotionBlockPassive;
 import com.mod.archetype.ability.passive.FormlessDebuffPassive;
+import com.mod.archetype.ability.passive.TotemOffhandDamagePassive;
 import com.mod.archetype.ability.active.AntigravityThrowAbility;
 import com.mod.archetype.ability.active.AreaAttackAbility;
 import com.mod.archetype.ability.active.BloodDrainAbility;
@@ -115,6 +116,7 @@ public class AbilityRegistry {
         registerPassive(Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "natural_regeneration_disabled"), NaturalRegenDisabledPassive::new);
         registerPassive(Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "undead_type"), UndeadTypePassive::new);
         registerPassive(Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "water_vulnerability"), WaterVulnerabilityPassive::new);
+        registerPassive(Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "totem_offhand_damage"), TotemOffhandDamagePassive::new);
         registerPassive(Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "sink_in_water"), SinkInWaterPassive::new);
         registerPassive(Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "no_fall_damage"), NoFallDamagePassive::new);
         registerPassive(Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "fire_immunity"), FireImmunityPassive::new);

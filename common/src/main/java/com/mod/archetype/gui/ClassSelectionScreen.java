@@ -6,10 +6,14 @@ import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -182,20 +186,27 @@ public class ClassSelectionScreen extends Screen {
         g.fill(x, y, x + 1, y + cardH, borderColor);
         g.fill(x + cardW - 1, y, x + cardW, y + cardH, borderColor);
 
-        // Иконка
-        String icon = "\u2726"; // Более изящная иконка (четырехконечная звезда)
-        float iconScale = 2.0f;
-        int iconW = (int) (font.width(icon) * iconScale);
-        int iconH = (int) (font.lineHeight * iconScale);
-        int iconX = x + (cardW - iconW) / 2;
-        int iconY = y + cardH / 3 - iconH / 2;
+        // Арт персонажа — иконка первого активного скилла, увеличенная
+        String artItemId = !cls.getActiveAbilities().isEmpty() ? cls.getActiveAbilities().get(0).item() : null;
+        net.minecraft.world.item.Item artItem = null;
+        if (artItemId != null && !artItemId.isEmpty()) {
+            try {
+                artItem = BuiltInRegistries.ITEM.getValue(Identifier.parse(artItemId));
+            } catch (Exception ignored) {
+            }
+        }
+        if (artItem == null || artItem == Items.AIR) {
+            artItem = Items.PAPER;
+        }
+        float artScale = Math.max(2.0f, cardW / 40f);
+        int artPx = (int) (16 * artScale);
+        int artX = x + (cardW - artPx) / 2;
+        int artY = y + cardH / 3 - artPx / 2;
 
         pose.pushMatrix();
-        pose.translate(iconX, iconY);
-        pose.scale(iconScale, iconScale);
-        // Тень для иконки
-        g.drawString(font, icon, 1, 1, 0x40000000, false);
-        g.drawString(font, icon, 0, 0, 0xFF000000 | classColor, false);
+        pose.translate(artX, artY);
+        pose.scale(artScale, artScale);
+        g.renderItem(new ItemStack(artItem), 0, 0);
         pose.popMatrix();
 
         // Имя класса (с центрированием и тенью)

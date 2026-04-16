@@ -53,6 +53,8 @@
   "ability.archetype.vi.dash.description": "Dashes forward dealing damage to all enemies in the path.",
   "passive.archetype.vi.fragile_wings.name": "Fragile Wings",
   "passive.archetype.vi.fragile_wings.description": "Elytra durability drains twice as fast while worn.",
+  "passive.archetype.vi.totem_aversion.name": "Angelic Aversion",
+  "passive.archetype.vi.totem_aversion.description": "Holding a Totem of Undying in the offhand deals 8 damage per second.",
   "gui.archetype.vi.elemental_dash": "Elemental Dash",
   "gui.archetype.vi.elemental_dash.snow.name": "Snowball",
   "gui.archetype.vi.elemental_dash.snow.desc": "Dash applies slowness.",
