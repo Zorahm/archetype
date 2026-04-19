@@ -5,6 +5,7 @@
 .classpath
 .project
 .settings/
+bin/
 **/bin/
 .factorypath
 
@@ -130,3 +131,27 @@ runs/
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
+
+# Logs and Minecraft runtime
+logs/
+**/logs/
+*.log
+*.log.*
+latest-log.txt
+crash-reports/
+debug.log
+
+# Environment and local configuration
+.env
+.env.local
+settings.local.json
+
+# IDE cache and temporary files
+.vscode/
+.vscode-insiders/
+*.swp
+*.swo
+*~
+
+# Node modules (if used in any tooling)
+node_modules/
