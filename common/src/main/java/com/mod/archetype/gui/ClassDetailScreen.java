@@ -56,7 +56,6 @@ public class ClassDetailScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // Dark vignette background
         renderDimBackground(g);
 
         barAnimProgress = Math.min(1.0f, barAnimProgress + partialTick * 0.02f);
@@ -153,12 +152,7 @@ public class ClassDetailScreen extends Screen {
     }
 
     private void renderDimBackground(GuiGraphics g) {
-        g.fill(0, 0, width, height, 0xCC000000);
-        // Vignette gradients
-        g.fillGradient(0, 0, width / 4, height, 0x88000000, 0x00000000);
-        g.fillGradient(width * 3 / 4, 0, width, height, 0x00000000, 0x88000000);
-        g.fillGradient(0, 0, width, height / 4, 0x88000000, 0x00000000);
-        g.fillGradient(0, height * 3 / 4, width, height, 0x00000000, 0x88000000);
+        g.fill(0, 0, width, height, 0xFF000000);
     }
 
     private void renderPanel(GuiGraphics g, int x, int y, int w, int h, int classColor) {

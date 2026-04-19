@@ -3,6 +3,9 @@ package com.mod.archetype.registry;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mod.archetype.Archetype;
+import com.mod.archetype.ability.AbilityRegistry;
+import com.mod.archetype.condition.ConditionRegistry;
 import com.mod.archetype.core.ClassCategory;
 import com.mod.archetype.core.PlayerClass;
 import com.mod.archetype.core.PlayerClass.*;
@@ -12,8 +15,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class ClassJsonParser {
 
@@ -161,6 +166,10 @@ public class ClassJsonParser {
             JsonObject obj = arr.get(i).getAsJsonObject();
             String typeStr = requireString(obj, "type", fileId, "passive_abilities[" + i + "]");
             Identifier type = parseIdentifier(typeStr, fileId, "passive_abilities[" + i + "].type");
+            if (!AbilityRegistry.getInstance().hasPassiveFactory(type)) {
+                Archetype.LOGGER.warn("Class '{}' field 'passive_abilities[{}].type': unknown passive ability type '{}' — this entry will be skipped at runtime. See DATAPACK.md for built-in types.",
+                        fileId, i, type);
+            }
             boolean positive = obj.has("positive") && obj.get("positive").getAsBoolean();
             String nameKey = obj.has("name") ? obj.get("name").getAsString() : "";
             String descKey = obj.has("description") ? obj.get("description").getAsString() : "";
@@ -179,14 +188,23 @@ public class ClassJsonParser {
 
     private static List<ActiveAbilityEntry> parseActives(JsonArray arr, Identifier fileId) throws ClassParseException {
         List<ActiveAbilityEntry> result = new ArrayList<>();
+        Set<String> usedSlots = new HashSet<>();
         for (int i = 0; i < arr.size(); i++) {
             JsonObject obj = arr.get(i).getAsJsonObject();
             String typeStr = requireString(obj, "type", fileId, "active_abilities[" + i + "]");
             Identifier type = parseIdentifier(typeStr, fileId, "active_abilities[" + i + "].type");
+            if (!AbilityRegistry.getInstance().hasActiveFactory(type)) {
+                Archetype.LOGGER.warn("Class '{}' field 'active_abilities[{}].type': unknown active ability type '{}' — this entry will be skipped at runtime. See DATAPACK.md for built-in types.",
+                        fileId, i, type);
+            }
 
             String slot = requireString(obj, "slot", fileId, "active_abilities[" + i + "]");
             if (!slot.equals("ability_1") && !slot.equals("ability_2") && !slot.equals("ability_3")) {
                 throw new ClassParseException(fileId, "active_abilities[" + i + "].slot", "Invalid slot: " + slot + ". Must be ability_1, ability_2, or ability_3");
+            }
+            if (!usedSlots.add(slot)) {
+                throw new ClassParseException(fileId, "active_abilities[" + i + "].slot",
+                        "Slot '" + slot + "' is already used by another active ability in this class");
             }
 
             int cooldown = obj.has("cooldown") ? obj.get("cooldown").getAsInt() : 0;
@@ -240,9 +258,10 @@ public class ClassJsonParser {
             throw new ClassParseException(fileId, fieldPath, "Condition missing 'type' field");
         }
         String type = obj.get("type").getAsString();
+        String normalized = normalizeCompoundType(type);
 
-        // Handle compound conditions (and/or/not)
-        if ("and".equals(type) || "or".equals(type)) {
+        // Handle compound conditions (and/or/not), accepting bare or "archetype:" prefixed forms
+        if ("and".equals(normalized) || "or".equals(normalized)) {
             if (!obj.has("conditions") || !obj.get("conditions").isJsonArray()) {
                 throw new ClassParseException(fileId, fieldPath, "Compound condition '" + type + "' requires 'conditions' array");
             }
@@ -251,16 +270,23 @@ public class ClassJsonParser {
             for (int i = 0; i < condArr.size(); i++) {
                 children.add(parseCondition(condArr.get(i).getAsJsonObject(), fileId, fieldPath + ".conditions[" + i + "]"));
             }
-            return new ConditionDefinition(type, null, children);
+            return new ConditionDefinition(normalized, null, children);
         }
 
-        if ("not".equals(type)) {
+        if ("not".equals(normalized)) {
             if (!obj.has("condition") || !obj.get("condition").isJsonObject()) {
                 throw new ClassParseException(fileId, fieldPath, "'not' condition requires 'condition' object");
             }
             List<ConditionDefinition> children = new ArrayList<>();
             children.add(parseCondition(obj.getAsJsonObject("condition"), fileId, fieldPath + ".condition"));
-            return new ConditionDefinition(type, null, children);
+            return new ConditionDefinition(normalized, null, children);
+        }
+
+        // Validate registered condition type
+        Identifier typeId = parseIdentifier(type, fileId, fieldPath + ".type");
+        if (!ConditionRegistry.getInstance().hasFactory(typeId)) {
+            Archetype.LOGGER.warn("Class '{}' field '{}.type': unknown condition type '{}' — condition will evaluate to false at runtime. See DATAPACK.md for built-in types.",
+                    fileId, fieldPath, typeId);
         }
 
         // Extract params (everything except "type")
@@ -272,6 +298,15 @@ public class ClassJsonParser {
         }
 
         return new ConditionDefinition(type, params);
+    }
+
+    private static String normalizeCompoundType(String type) {
+        return switch (type) {
+            case "and", "archetype:and" -> "and";
+            case "or",  "archetype:or"  -> "or";
+            case "not", "archetype:not" -> "not";
+            default -> type;
+        };
     }
 
     private static List<PlayerClass.ExtraAbilitySection> parseExtraAbilitySections(JsonArray arr, Identifier fileId) {

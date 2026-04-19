@@ -26,6 +26,9 @@ public class ConditionRegistry {
 
     public Condition create(ConditionDefinition definition) {
         String type = definition.type();
+        if ("archetype:and".equals(type)) type = "and";
+        else if ("archetype:or".equals(type)) type = "or";
+        else if ("archetype:not".equals(type)) type = "not";
 
         if ("and".equals(type)) {
             List<Condition> children = new ArrayList<>();

@@ -71,24 +71,34 @@ archetype/
 
 ## Формат класса (JSON)
 
-Новый класс — один файл в `data/<namespace>/archetype_classes/`:
+Новый класс — один файл в `data/<namespace>/archetype_classes/<class_id>.json`. ID класса — `<namespace>:<имя_файла>`.
 
 ```json
 {
-  "id": "archetype:my_class",
-  "color": "#8B0000",
-  "icon": "archetype:textures/gui/icons/my_class.png",
+  "name": "class.mypack.warrior.name",
+  "description": "class.mypack.warrior.description",
+  "icon": "mypack:textures/gui/class/warrior.png",
+  "color": "8B0000",
+  "category": "DAMAGE",
   "attributes": [
-    { "attribute": "generic.max_health", "amount": 4.0, "operation": "addition" }
+    { "attribute": "minecraft:max_health", "operation": "ADDITION", "value": 4.0 }
   ],
-  "passives": [
-    { "type": "archetype:regen", "params": { "amount": 0.5, "interval": 20 } }
+  "passive_abilities": [
+    { "type": "archetype:lifesteal", "positive": true, "params": { "fraction": 0.1 },
+      "name": "passive.mypack.warrior.lifesteal.name",
+      "description": "passive.mypack.warrior.lifesteal.description" }
   ],
-  "actives": [
-    { "type": "archetype:dash", "cooldown": 100, "params": { "power": 1.5 } }
+  "active_abilities": [
+    { "type": "archetype:dash", "slot": "ability_1", "cooldown": 100,
+      "params": { "dash_speed": 1.5, "damage": 4.0 },
+      "name": "ability.mypack.warrior.dash.name",
+      "description": "ability.mypack.warrior.dash.description",
+      "icon": "mypack:textures/gui/ability/dash.png" }
   ]
 }
 ```
+
+Полная схема, список встроенных типов способностей/условий и правила валидации: [DATAPACK.md](DATAPACK.md).
 
 ---
 

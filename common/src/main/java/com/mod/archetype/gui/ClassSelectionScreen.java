@@ -6,6 +6,7 @@ import com.mod.archetype.registry.ClassRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -38,7 +39,7 @@ public class ClassSelectionScreen extends Screen {
     private int gridCols, gridRows, cardW, cardH, gridStartX, gridStartY, cardSpacing;
 
     // Layout constants
-    private static final int INFO_PANEL_W = 200; // Чуть шире для красивого текста
+    private static final int INFO_PANEL_W = 200;
     private static final int INFO_PANEL_MARGIN = 16;
     private static final int TITLE_HEIGHT = 40;
     private static final int BOTTOM_PAD = 50;
@@ -164,15 +165,18 @@ public class ClassSelectionScreen extends Screen {
             pose.translate(-cx, -cy);
         }
 
-        // Dark glass background
         int bgAlpha = hovered ? 0xDD : 0xAA;
         g.fill(x, y, x + cardW, y + cardH, (bgAlpha << 24) | 0x111118);
 
-        // Градиент от прозрачного к цвету класса (Сделан более насыщенным)
+        Identifier classIcon = cls.getIcon();
+        int artSize = Math.min((int)(cardW * 1.6f), cardH - 14);
+        int artX = x + (cardW - artSize) / 2;
+        int artY = y + cardH - artSize - 10;
+        g.blit(RenderPipelines.GUI_TEXTURED, classIcon, artX, artY, 0f, 0f, artSize, artSize, 1024, 1024, 1024, 1024);
+
         int gradientTop = y + cardH / 2;
         g.fillGradient(x, gradientTop, x + cardW, y + cardH, 0x00000000, 0xDD000000 | classColor);
 
-        // Рамки
         int borderColor;
         if (isSelected) {
             borderColor = 0xFFFFFFFF; // Яркая белая рамка при выборе с клавиатуры
@@ -185,29 +189,6 @@ public class ClassSelectionScreen extends Screen {
         g.fill(x, y + cardH - 1, x + cardW, y + cardH, borderColor);
         g.fill(x, y, x + 1, y + cardH, borderColor);
         g.fill(x + cardW - 1, y, x + cardW, y + cardH, borderColor);
-
-        // Арт персонажа — иконка первого активного скилла, увеличенная
-        String artItemId = !cls.getActiveAbilities().isEmpty() ? cls.getActiveAbilities().get(0).item() : null;
-        net.minecraft.world.item.Item artItem = null;
-        if (artItemId != null && !artItemId.isEmpty()) {
-            try {
-                artItem = BuiltInRegistries.ITEM.getValue(Identifier.parse(artItemId));
-            } catch (Exception ignored) {
-            }
-        }
-        if (artItem == null || artItem == Items.AIR) {
-            artItem = Items.PAPER;
-        }
-        float artScale = Math.max(2.0f, cardW / 40f);
-        int artPx = (int) (16 * artScale);
-        int artX = x + (cardW - artPx) / 2;
-        int artY = y + cardH / 3 - artPx / 2;
-
-        pose.pushMatrix();
-        pose.translate(artX, artY);
-        pose.scale(artScale, artScale);
-        g.renderItem(new ItemStack(artItem), 0, 0);
-        pose.popMatrix();
 
         // Имя класса (с центрированием и тенью)
         Component name = Component.translatable(cls.getNameKey());
@@ -438,7 +419,7 @@ public class ClassSelectionScreen extends Screen {
         gridCols = Math.min(count, 4);
         while (gridCols > 1) {
             int computedW = (gridAreaW - (gridCols - 1) * cardSpacing) / gridCols;
-            if (computedW >= 60) break; // Увеличил минимальную ширину карточки до 60
+            if (computedW >= 60) break;
             gridCols--;
         }
 

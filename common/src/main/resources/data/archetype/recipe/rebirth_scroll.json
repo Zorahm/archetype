@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:magma_cream",
+    "minecraft:totem_of_undying",
+    "minecraft:wind_charge",
+    "minecraft:end_crystal",
+    "minecraft:eye_armor_trim_smithing_template",
+    "minecraft:ender_eye",
+    "minecraft:wither_rose",
+    "minecraft:dragon_breath",
+    {
+      "fabric:type": "fabric:components",
+      "base": "minecraft:enchanted_book",
+      "components": {
+        "minecraft:stored_enchantments": {
+          "minecraft:vanishing_curse": 1
+        }
+      }
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "archetype:rebirth_scroll"
+  }
+}

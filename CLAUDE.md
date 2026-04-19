@@ -77,7 +77,7 @@ ArchetypeAPI.assignClass(serverPlayer, classId);    // Assign a class to a playe
 ## Releases
 
 - Release notes must be written in **English**
-- Attach only one JAR file: `archetype-<version>-fabric.jar`
+- Attach only one JAR file: `archetype-<version>+mc<version>.jar`
 - Do **not** attach dev-shadow or sources JARs
 - Take JARs from GitHub Actions artifacts after the build completes
 
