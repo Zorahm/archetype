@@ -53,6 +53,8 @@
   "ability.archetype.vi.dash.description": "Совершает рывок наносящий урон всем врагам на пути.",
   "passive.archetype.vi.fragile_wings.name": "Хрупкие крылья",
   "passive.archetype.vi.fragile_wings.description": "Элитры изнашиваются в два раза быстрее.",
+  "passive.archetype.vi.totem_aversion.name": "Ангельское отвращение",
+  "passive.archetype.vi.totem_aversion.description": "Держа тотем бессмертия во второй руке, вы получаете 8 ед. урона в секунду.",
   "gui.archetype.vi.elemental_dash": "Элементальный рывок",
   "gui.archetype.vi.elemental_dash.snow.name": "Снежок",
   "gui.archetype.vi.elemental_dash.snow.desc": "Рывок накладывает замедление.",

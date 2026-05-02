@@ -23,7 +23,7 @@ import java.util.*;
 
 public class ClassSelectionScreen extends Screen {
 
-    private final int mode; // 0=first, 1=rebirth
+    private final int mode;
     private List<PlayerClass> allClasses;
     private List<PlayerClass> filteredClasses;
     private int hoveredIndex = -1;
@@ -38,7 +38,6 @@ public class ClassSelectionScreen extends Screen {
 
     private int gridCols, gridRows, cardW, cardH, gridStartX, gridStartY, cardSpacing;
 
-    // Layout constants
     private static final int INFO_PANEL_W = 200;
     private static final int INFO_PANEL_MARGIN = 16;
     private static final int TITLE_HEIGHT = 40;
@@ -65,24 +64,20 @@ public class ClassSelectionScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // 1. Background (Полупрозрачный с легкой виньеткой)
         renderDimBackground(graphics);
 
-        // 2. Title
         renderTitle(graphics);
 
-        // 3. Scissor for card grid
         int gridAreaW = getGridAreaWidth();
         graphics.enableScissor(0, TITLE_HEIGHT, gridAreaW, height - BOTTOM_PAD);
 
-        // 4. Cards — update hover state and lerp scales
         hoveredIndex = -1;
         hoveredClass = null;
         for (int i = 0; i < filteredClasses.size(); i++) {
             int row = i / gridCols;
             int col = i % gridCols;
             int x = gridStartX + col * (cardW + cardSpacing);
-            int y = gridStartY + row * (cardH + cardSpacing + 16) - scrollOffset; // Чуть больше отступ по вертикали
+            int y = gridStartY + row * (cardH + cardSpacing + 16) - scrollOffset;
 
             if (y + cardH < TITLE_HEIGHT || y > height - BOTTOM_PAD) continue;
 
@@ -105,22 +100,18 @@ public class ClassSelectionScreen extends Screen {
 
         graphics.disableScissor();
 
-        // 5. Lerp hoverPanelAlpha
         float alphaTarget = hoveredClass != null ? 1.0f : 0.0f;
         hoverPanelAlpha = Mth.lerp(0.18f, hoverPanelAlpha, alphaTarget);
         if (hoveredClass != null) {
             lastHoveredClass = hoveredClass;
         }
 
-        // 6. Info panel
         if (hoverPanelAlpha > 0.01f && lastHoveredClass != null) {
             renderInfoPanel(graphics, lastHoveredClass, mouseX, mouseY);
         }
 
-        // 7. Random button
         renderRandomButton(graphics, mouseX, mouseY);
 
-        // 8. Super
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 

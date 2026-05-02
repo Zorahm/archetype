@@ -31,12 +31,10 @@ public class ClassDetailScreen extends Screen {
     private float barAnimProgress = 0;
     private int selectBtnX, selectBtnY, selectBtnWidth, selectBtnHeight;
 
-    // Hovered ability slot tracking (set during render, used after scissor)
     private int hoveredAbilitySlot = -1;
     private int tooltipMouseX = 0;
     private int tooltipMouseY = 0;
 
-    // Layout constants
     private static final int PANEL_PADDING = 16;
     private static final int SECTION_GAP = 14;
     private static final int ITEM_GAP = 4;
@@ -78,18 +76,14 @@ public class ClassDetailScreen extends Screen {
 
         int y = scissorTop - (int) scrollOffset;
 
-        // Reset hovered ability slot each frame
         hoveredAbilitySlot = -1;
 
-        // Header
         y = renderHeader(g, contentX, y, innerWidth, classColor);
         y += SECTION_GAP;
 
-        // Separator line in class color
         renderColoredSeparator(g, contentX, y, innerWidth, classColor);
         y += SECTION_GAP;
 
-        // Attributes
         if (!playerClass.getAttributes().isEmpty()) {
             y = renderSectionTitle(g, "gui.archetype.attributes", contentX, y, innerWidth, classColor);
             y += 6;
@@ -97,7 +91,6 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Active abilities
         if (!playerClass.getActiveAbilities().isEmpty()) {
             y = renderSectionTitle(g, "gui.archetype.abilities", contentX, y, innerWidth, classColor);
             y += 6;
@@ -105,7 +98,6 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Passive abilities
         if (!playerClass.getPassiveAbilities().isEmpty()) {
             y = renderSectionTitle(g, "gui.archetype.passives", contentX, y, innerWidth, classColor);
             y += 6;
@@ -113,7 +105,6 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Resource
         if (playerClass.getResource() != null) {
             y = renderSectionTitle(g, "gui.archetype.resource", contentX, y, innerWidth, classColor);
             y += 6;
@@ -121,26 +112,22 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Select button
         y = renderSelectButton(g, contentX, y, innerWidth, mouseX, mouseY, classColor);
 
         contentHeight = y + scrollOffset - scissorTop + PANEL_PADDING;
 
         g.disableScissor();
 
-        // Ability slot tooltip (rendered after disableScissor)
         if (hoveredAbilitySlot >= 0 && hoveredAbilitySlot < playerClass.getActiveAbilities().size()) {
             renderAbilityTooltip(g, playerClass.getActiveAbilities().get(hoveredAbilitySlot),
                     tooltipMouseX, tooltipMouseY, innerWidth, classColor);
         }
 
-        // Scrollbar
         float viewHeight = scissorBottom - scissorTop;
         if (contentHeight > viewHeight) {
             renderScrollbar(g, panelX + panelWidth - SCROLLBAR_WIDTH - 4, scissorTop, viewHeight, classColor);
         }
 
-        // Back button (rendered outside scissor)
         renderBackButton(g, panelX + PANEL_PADDING, viewBottom - 4, mouseX, mouseY);
 
         // Render widgets (vanilla buttons)

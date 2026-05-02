@@ -30,9 +30,7 @@ import java.util.Set;
 public class ViDashAbility extends AbstractActiveAbility {
 
     private final int dashTicks;
-    private final int noFallTicks;
     private int remainingDashTicks;
-    private int remainingNoFall;
     private final Set<Integer> hitEntities = new HashSet<>();
     private Vec3 dashDirection = Vec3.ZERO;
 
@@ -64,7 +62,6 @@ public class ViDashAbility extends AbstractActiveAbility {
     public ViDashAbility(ActiveAbilityEntry entry) {
         super(entry);
         this.dashTicks = getInt("dash_ticks", 5);
-        this.noFallTicks = getInt("no_fall_ticks", 20);
         this.maxChargesBase = getInt("charges", 1);
     }
 
@@ -194,11 +191,10 @@ public class ViDashAbility extends AbstractActiveAbility {
         dashDirection = computeDashDirection(player);
 
         currentDashSpeed = getFloat("dash_speed", 2.0f);
-        player.setDeltaMovement(dashDirection.scale(currentDashSpeed));
+        player.setDeltaMovement(dashDirection.x * currentDashSpeed, player.getDeltaMovement().y, dashDirection.z * currentDashSpeed);
         player.hurtMarked = true;
         active = true;
         remainingDashTicks = dashTicks;
-        remainingNoFall = noFallTicks;
         remainingFireImmunityTicks = currentFireTrail ? 20 : 0;
         hitEntities.clear();
 
@@ -227,8 +223,8 @@ public class ViDashAbility extends AbstractActiveAbility {
     @Override
     public void tickActive(ServerPlayer player) {
         if (remainingDashTicks > 0) {
-            // Force movement along dash direction
-            player.setDeltaMovement(dashDirection.scale(currentDashSpeed));
+            // Force movement along dash direction, preserve vertical velocity
+            player.setDeltaMovement(dashDirection.x * currentDashSpeed, player.getDeltaMovement().y, dashDirection.z * currentDashSpeed);
             player.hurtMarked = true;
             remainingDashTicks--;
 
@@ -265,8 +261,8 @@ public class ViDashAbility extends AbstractActiveAbility {
                 placeFireAlongPath(player, currentPos, projectedPos);
             }
 
-            // Stop horizontal movement when dash ends
-            if (remainingDashTicks <= 0) {
+            // Stop horizontal movement when dash ends (only on ground)
+            if (remainingDashTicks <= 0 && player.getDeltaMovement().y >= 0) {
                 player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
                 player.hurtMarked = true;
             }
@@ -278,13 +274,7 @@ public class ViDashAbility extends AbstractActiveAbility {
             remainingFireImmunityTicks--;
         }
 
-        // No-fall protection continues after dash movement ends
-        if (remainingNoFall > 0) {
-            player.fallDistance = 0;
-            remainingNoFall--;
-        }
-
-        if (remainingDashTicks <= 0 && remainingNoFall <= 0 && remainingFireImmunityTicks <= 0) {
+        if (remainingDashTicks <= 0 && remainingFireImmunityTicks <= 0) {
             active = false;
             hitEntities.clear();
         }
