@@ -133,7 +133,7 @@ public final class PlayerClass {
             Identifier icon
     ) {}
 
-    public record LevelMilestone(int level, String descriptionKey) {}
+    public record LevelMilestone(int level, String ability, String descriptionKey) {}
 
     public record ExtraAbilitySection(
             String parentSlot,

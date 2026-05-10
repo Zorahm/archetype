@@ -103,8 +103,9 @@ public class ClassJsonParser {
             for (int i = 0; i < progArr.size(); i++) {
                 JsonObject obj = progArr.get(i).getAsJsonObject();
                 int level = obj.get("level").getAsInt();
+                String ability = requireString(obj, "ability", fileId, "progression[" + i + "]");
                 String key = obj.get("key").getAsString();
-                progression.add(new PlayerClass.LevelMilestone(level, key));
+                progression.add(new PlayerClass.LevelMilestone(level, ability, key));
             }
         }
 
