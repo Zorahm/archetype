@@ -10,11 +10,6 @@
   ],
   "attributes": [
     {
-      "attribute": "minecraft:max_health",
-      "operation": "ADDITION",
-      "value": -6.0
-    },
-    {
       "attribute": "minecraft:attack_speed",
       "operation": "MULTIPLY_BASE",
       "value": -0.2
@@ -111,12 +106,12 @@
   "ability_stats": [
     {
       "name": "gui.archetype.ram.stat.rage_damage",
-      "base": 1.0,
+      "base": 6.0,
       "format": "int",
       "bonuses": [
-        {"level": 10, "value": 1},
-        {"level": 20, "value": 1},
-        {"level": 30, "value": 1}
+        {"level": 10, "value": 2},
+        {"level": 20, "value": 2},
+        {"level": 30, "value": 2}
       ]
     },
     {
@@ -165,14 +160,18 @@
     }
   ],
   "progression": [
-    { "level": 5, "key": "progression.archetype.ram.level_5" },
-    { "level": 10, "key": "progression.archetype.ram.level_10" },
-    { "level": 15, "key": "progression.archetype.ram.level_15" },
-    { "level": 20, "key": "progression.archetype.ram.level_20" },
-    { "level": 25, "key": "progression.archetype.ram.level_25" },
-    { "level": 30, "key": "progression.archetype.ram.level_30" },
-    { "level": 40, "key": "progression.archetype.ram.level_40" },
-    { "level": 50, "key": "progression.archetype.ram.level_50" }
+    {"level": 5,  "ability": "rage",    "key": "progression.archetype.ram.rage.5"},
+    {"level": 10, "ability": "rage",    "key": "progression.archetype.ram.rage.10"},
+    {"level": 10, "ability": "feather", "key": "progression.archetype.ram.feather.10"},
+    {"level": 15, "ability": "rage",    "key": "progression.archetype.ram.rage.15"},
+    {"level": 15, "ability": "feather", "key": "progression.archetype.ram.feather.15"},
+    {"level": 20, "ability": "rage",    "key": "progression.archetype.ram.rage.20"},
+    {"level": 20, "ability": "feather", "key": "progression.archetype.ram.feather.20"},
+    {"level": 25, "ability": "rage",    "key": "progression.archetype.ram.rage.25"},
+    {"level": 30, "ability": "rage",    "key": "progression.archetype.ram.rage.30"},
+    {"level": 40, "ability": "rage",    "key": "progression.archetype.ram.rage.40"},
+    {"level": 50, "ability": "rage",    "key": "progression.archetype.ram.rage.50"},
+    {"level": 50, "ability": "feather", "key": "progression.archetype.ram.feather.50"}
   ],
   "resource": {
     "type": "resource.archetype.rage",
