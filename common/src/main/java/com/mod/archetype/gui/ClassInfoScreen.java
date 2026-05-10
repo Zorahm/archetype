@@ -761,21 +761,32 @@ public class ClassInfoScreen extends Screen {
         }
 
         if (!progression.isEmpty()) {
-            PlayerClass.LevelMilestone nextMilestone = null;
+            int nextLevel = -1;
             for (PlayerClass.LevelMilestone milestone : progression) {
                 if (milestone.level() > level) {
-                    nextMilestone = milestone;
+                    nextLevel = milestone.level();
                     break;
                 }
             }
-            if (nextMilestone != null) {
+            if (nextLevel >= 0) {
                 lines.add(Component.empty());
                 lines.add(Component.translatable("gui.archetype.next_level")
                         .withStyle(Style.EMPTY.withColor(0xFFCC88)));
-                lines.add(Component.translatable("gui.archetype.level_unlock", nextMilestone.level())
+                lines.add(Component.translatable("gui.archetype.level_unlock", nextLevel)
                         .withStyle(Style.EMPTY.withColor(0x888888)));
-                Component desc = Component.translatable(nextMilestone.descriptionKey());
-                lines.add(desc.copy().withStyle(Style.EMPTY.withColor(0xAAAAAA)));
+                String classPath = data.getClassId().getPath();
+                String lastAbility = null;
+                for (PlayerClass.LevelMilestone milestone : progression) {
+                    if (milestone.level() != nextLevel) continue;
+                    if (!milestone.ability().equals(lastAbility)) {
+                        lines.add(Component.translatable(
+                                "progression.archetype." + classPath + "." + milestone.ability() + ".header"
+                        ).withStyle(Style.EMPTY.withColor(0xCCCCFF)));
+                        lastAbility = milestone.ability();
+                    }
+                    lines.add(Component.translatable(milestone.descriptionKey())
+                            .withStyle(Style.EMPTY.withColor(0xAAAAAA)));
+                }
             }
         }
 
