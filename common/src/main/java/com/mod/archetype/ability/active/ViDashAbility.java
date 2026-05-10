@@ -79,8 +79,8 @@ public class ViDashAbility extends AbstractActiveAbility {
 
     private int computeMaxCharges(ServerPlayer player) {
         int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
-        // +1 charge at XP 20, +1 at XP 40
-        int extra = (classLevel >= 20 ? 1 : 0) + (classLevel >= 40 ? 1 : 0);
+        // +1 charge at XP 15, +1 at XP 30
+        int extra = (classLevel >= 15 ? 1 : 0) + (classLevel >= 30 ? 1 : 0);
         return maxChargesBase + extra;
     }
 

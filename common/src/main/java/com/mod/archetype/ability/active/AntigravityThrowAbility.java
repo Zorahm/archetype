@@ -34,7 +34,9 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
     private float getEffectiveDamage(int level) {
         float dmg = baseDamage;
         if (level >= 10) dmg += 1.0f;
+        if (level >= 20) dmg += 1.0f;
         if (level >= 30) dmg += 1.0f;
+        if (level >= 40) dmg += 1.0f;
         if (level >= 60) dmg += 1.0f;
         return dmg;
     }

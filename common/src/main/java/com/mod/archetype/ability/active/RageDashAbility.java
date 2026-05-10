@@ -28,7 +28,7 @@ public class RageDashAbility extends AbstractActiveAbility {
     private static final float ACTIVATION_COST = 30.0f;
     private static final float CANCEL_COST = 0.0f;
     private static final int BASE_COOLDOWN_TICKS = 200; // 10 seconds
-    private static final float BASE_COLLISION_DAMAGE = 1.0f;
+    private static final float BASE_COLLISION_DAMAGE = 6.0f;
     private static final double BASE_SHOCKWAVE_RADIUS = 1.0;
     private static final double BASE_FEATHER_RADIUS = 2.0;
     private static final double BASE_FEATHER_JUMP = 0.5; // ~1 block
