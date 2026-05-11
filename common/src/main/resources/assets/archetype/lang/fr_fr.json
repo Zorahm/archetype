@@ -153,6 +153,8 @@
   "class.archetype.summoner.name": "Invocateur",
   "class.archetype.summoner.description": "Un bandit exilé qui s'est tourné vers la magie d'invocation après avoir été chassé de sa famille.",
   "class.archetype.summoner.lore_1": "Exilé de sa famille, il s'est tourné vers l'art sombre de l'invocation...",
+  "passive.archetype.summoner.illager_peace.name": "Trêve avec les Pillagers",
+  "passive.archetype.summoner.illager_peace.description": "Les Pillagers ne vous attaquent pas. Ils vous reconnaissent comme l'un des leurs.",
   "passive.archetype.summoner.villager_rejection.name": "Paria",
   "passive.archetype.summoner.villager_rejection.description": "Les villageois refusent de commercer sans l'effet Héros du village.",
   "passive.archetype.summoner.meat_diet.name": "Carnivore",

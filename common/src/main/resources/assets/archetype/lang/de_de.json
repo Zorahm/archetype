@@ -153,6 +153,8 @@
   "class.archetype.summoner.name": "Summoner",
   "class.archetype.summoner.description": "Ein verbannter Bandit, der sich nach dem Ausschluss aus seiner Familie der dunklen Beschwörungsmagie zuwandte.",
   "class.archetype.summoner.lore_1": "Aus seiner Familie verstoßen, wandte er sich der dunklen Kunst der Beschwörung zu...",
+  "passive.archetype.summoner.illager_peace.name": "Waffenruhe mit Pillagern",
+  "passive.archetype.summoner.illager_peace.description": "Pillager greifen dich nicht an. Sie erkennen dich als einen der ihren.",
   "passive.archetype.summoner.villager_rejection.name": "Ausgestoßener",
   "passive.archetype.summoner.villager_rejection.description": "Dorfbewohner weigern sich mit dir zu handeln, außer du hast den Effekt 'Held des Dorfes'.",
   "passive.archetype.summoner.meat_diet.name": "Fleischfresser",

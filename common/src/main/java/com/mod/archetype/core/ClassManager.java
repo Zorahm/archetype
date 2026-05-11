@@ -413,6 +413,20 @@ public class ClassManager {
         return false;
     }
 
+    public float getFallDamageMultiplier(ServerPlayer player) {
+        ActiveClassInstance instance = activeInstances.get(player.getUUID());
+        if (instance == null) return 1.0f;
+
+        for (ActiveAbility ability : instance.getActiveAbilities().values()) {
+            if (ability instanceof com.mod.archetype.ability.active.FormShiftAbility formShift) {
+                if (formShift.isFormActive()) {
+                    return formShift.getFallDamageMultiplier();
+                }
+            }
+        }
+        return 1.0f;
+    }
+
     public void onPlayerHurt(ServerPlayer player, DamageSource source, float amount) {
         ActiveClassInstance instance = activeInstances.get(player.getUUID());
         if (instance == null) return;

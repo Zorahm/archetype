@@ -76,6 +76,11 @@ public class FormShiftAbility extends AbstractActiveAbility {
         return active && currentForm != null;
     }
 
+    public float getFallDamageMultiplier() {
+        if (currentForm == null) return 1.0f;
+        return currentForm.fallDamageMultiplier;
+    }
+
     @Override
     public ActivationResult activate(ServerPlayer player) {
         if (active) {
@@ -97,7 +102,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
         if (matchedForm == null) return ActivationResult.FAILED;
 
-        held.shrink(1);
+        if (matchedForm.consumesItem) {
+            held.shrink(1);
+        }
 
         currentForm = matchedForm;
         active = true;
@@ -332,6 +339,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
         final float baseNightAttackDamage;
         final float baseNightAttackSpeed;
 
+        final float fallDamageMultiplier;
+
+        final boolean consumesItem;
         final JsonArray progression;
 
         FormDefinition(JsonObject json) {
@@ -356,6 +366,9 @@ public class FormShiftAbility extends AbstractActiveAbility {
             this.baseNightAttackDamage = json.has("night_attack_damage_modifier") ? json.get("night_attack_damage_modifier").getAsFloat() : 0;
             this.baseNightAttackSpeed = json.has("night_attack_speed_modifier") ? json.get("night_attack_speed_modifier").getAsFloat() : 0;
 
+            this.fallDamageMultiplier = json.has("fall_damage_multiplier") ? json.get("fall_damage_multiplier").getAsFloat() : 1.0f;
+
+            this.consumesItem = !json.has("consumes_item") || json.get("consumes_item").getAsBoolean();
             this.progression = json.has("progression") ? json.getAsJsonArray("progression") : new JsonArray();
         }
 
@@ -482,7 +495,14 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
         float getEffectiveHealthModifier(int level) {
             if ("zombie".equals(formId)) {
-                return 0;
+                float bonus = 0;
+                for (JsonElement elem : progression) {
+                    JsonObject p = elem.getAsJsonObject();
+                    if (p.has("level") && p.has("health_modifier") && level >= p.get("level").getAsInt()) {
+                        bonus = p.get("health_modifier").getAsFloat();
+                    }
+                }
+                return bonus;
             }
             return maxHealthModifier;
         }

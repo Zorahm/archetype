@@ -72,6 +72,16 @@ public class FabricEventTranslator {
                     return false;
                 }
                 ClassManager.getInstance().onPlayerHurt(serverPlayer, source, amount);
+
+                // Apply fall damage multiplier for morph forms
+                if (source.is(net.minecraft.world.damagesource.DamageTypes.FALL)) {
+                    float multiplier = ClassManager.getInstance().getFallDamageMultiplier(serverPlayer);
+                    if (multiplier < 1.0f) {
+                        float reducedDamage = amount * multiplier;
+                        serverPlayer.hurt(source, reducedDamage);
+                        return false;
+                    }
+                }
             }
             return true;
         });

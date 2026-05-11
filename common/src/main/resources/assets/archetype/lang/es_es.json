@@ -153,6 +153,8 @@
   "class.archetype.summoner.name": "Invocador",
   "class.archetype.summoner.description": "Un bandido exiliado que tomó la magia de invocación tras ser expulsado de su familia.",
   "class.archetype.summoner.lore_1": "Exiliado de su familia, se volvió hacia el oscuro arte de la invocación...",
+  "passive.archetype.summoner.illager_peace.name": "Tregua con Pillagers",
+  "passive.archetype.summoner.illager_peace.description": "Los Pillagers no te atacan. Te reconocen como uno de los suyos.",
   "passive.archetype.summoner.villager_rejection.name": "Marginado",
   "passive.archetype.summoner.villager_rejection.description": "Los aldeanos se niegan a comerciar sin el efecto Héroe de la Aldea.",
   "passive.archetype.summoner.meat_diet.name": "Carnívoro",

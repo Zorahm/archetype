@@ -153,6 +153,8 @@
   "class.archetype.summoner.name": "サモナー",
   "class.archetype.summoner.description": "一族から追放され、召喚魔術に手を染めた元山賊。",
   "class.archetype.summoner.lore_1": "一族を追放され、禁忌の召喚術に手を染めた...",
+  "passive.archetype.summoner.illager_peace.name": "略奪者の休戦",
+  "passive.archetype.summoner.illager_peace.description": "略奪者はあなたを攻撃しない。彼らはあなたを仲間と認める。",
   "passive.archetype.summoner.villager_rejection.name": "追放者",
   "passive.archetype.summoner.villager_rejection.description": "村の英雄の効果がない限り、村人は取引を拒否する。",
   "passive.archetype.summoner.meat_diet.name": "肉食主義",

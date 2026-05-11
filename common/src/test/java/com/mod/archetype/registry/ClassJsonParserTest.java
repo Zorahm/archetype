@@ -589,7 +589,7 @@ class ClassJsonParserTest {
     @Test
     void progression_parsed() throws ClassParseException {
         String raw = minimal().replace("\"color\": \"FF0000\"",
-                "\"color\": \"FF0000\", \"progression\": [{\"level\": 10, \"key\": \"prog.key.10\"}, {\"level\": 20, \"key\": \"prog.key.20\"}]");
+                "\"color\": \"FF0000\", \"progression\": [{\"level\": 10, \"ability\": \"test\", \"key\": \"prog.key.10\"}, {\"level\": 20, \"ability\": \"test\", \"key\": \"prog.key.20\"}]");
         PlayerClass pc = parseJson(raw);
         assertEquals(2, pc.getProgression().size());
         assertEquals(10, pc.getProgression().get(0).level());

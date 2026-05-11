@@ -9,11 +9,6 @@
   ],
   "attributes": [
     {
-      "attribute": "minecraft:max_health",
-      "operation": "ADDITION",
-      "value": -6.0
-    },
-    {
       "attribute": "minecraft:attack_damage",
       "operation": "MULTIPLY_BASE",
       "value": 0.1
@@ -51,12 +46,12 @@
             "item": "minecraft:gunpowder",
             "form_id": "creeper",
             "on_hit_type": "explosion",
-            "on_hit_damage": 1,
+            "on_hit_damage": 3,
             "on_hit_radius": 0,
             "attack_damage_modifier": -0.3,
             "progression": [
-              {"level": 30, "on_hit_radius": 1},
-              {"level": 60, "on_hit_damage": 2}
+              {"level": 15, "on_hit_radius": 1},
+              {"level": 30, "on_hit_radius": 2}
             ]
           },
           {
@@ -64,12 +59,12 @@
             "form_id": "snowman",
             "on_hit_type": "effect",
             "on_hit_effect": "minecraft:slowness",
-            "on_hit_effect_duration": 20,
-            "on_hit_effect_amplifier": 0,
+            "on_hit_effect_duration": 60,
+            "on_hit_effect_amplifier": 2,
             "max_health_modifier": -2,
             "attack_speed_modifier": -0.3,
             "progression": [
-              {"level_interval": 10, "on_hit_effect_amplifier_growth": 1, "max_amplifier": 6}
+              {"level_interval": 10, "on_hit_effect_duration_growth": 20}
             ]
           },
           {
@@ -77,28 +72,28 @@
             "form_id": "wither_skeleton",
             "on_hit_type": "effect",
             "on_hit_effect": "minecraft:wither",
-            "on_hit_effect_duration": 40,
+            "on_hit_effect_duration": 80,
             "on_hit_effect_amplifier": 0,
             "attack_damage_modifier": 0.05,
-            "max_health_modifier": -4,
+            "consumes_item": false,
             "progression": [
-              {"level": 20, "on_hit_effect_amplifier": 1},
-              {"level": 30, "on_hit_effect_duration": 40},
-              {"level": 60, "on_hit_effect_amplifier": 2, "on_hit_effect_duration": 60}
+              {"level": 10, "on_hit_effect_amplifier": 2},
+              {"level": 20, "on_hit_effect_duration": 100},
+              {"level": 30, "on_hit_effect_amplifier": 3},
+              {"level": 40, "on_hit_effect_duration": 120}
             ]
           },
           {
             "item": "minecraft:blaze_powder",
             "form_id": "blaze",
             "on_hit_type": "fire",
-            "on_hit_fire_duration": 20,
+            "on_hit_fire_duration": 60,
             "max_health_modifier": 2,
-            "fire_damage_multiplier": 2.0,
-            "fall_damage_multiplier": 2.0,
+            "fall_damage_multiplier": 0.5,
             "progression": [
-              {"level": 10, "on_hit_fire_duration": 40},
-              {"level": 30, "on_hit_fire_duration": 60},
-              {"level": 50, "on_hit_fire_duration": 80}
+              {"level": 10, "on_hit_fire_duration": 80},
+              {"level": 30, "on_hit_fire_duration": 100},
+              {"level": 50, "on_hit_fire_duration": 120}
             ]
           },
           {
@@ -111,11 +106,12 @@
             "night_attack_damage_modifier": 0.0,
             "night_attack_speed_modifier": 0.0,
             "progression": [
-              {"level": 10, "night_vision": true},
-              {"level": 20, "night_attack_damage": 0.05},
-              {"level": 40, "night_attack_damage": 0.10, "night_attack_speed": 0.05},
-              {"level": 50, "remove_sun_damage": true},
-              {"level": 60, "night_attack_damage": 0.15, "night_attack_speed": 0.10}
+              {"level": 10, "night_vision": true, "night_attack_damage": 0.10},
+              {"level": 20, "night_attack_damage": 0.25},
+              {"level": 30, "remove_sun_damage": true},
+              {"level": 40, "night_attack_speed": 0.20},
+              {"level": 50, "health_modifier": 4},
+              {"level": 60, "night_attack_damage": 0.35}
             ]
           }
         ]
@@ -168,141 +164,61 @@
     }
   ],
   "ability_stats": [
-    {
-      "name": "gui.archetype.morph.stat.zombie_header",
-      "base": 0,
-      "format": "header",
-      "bonuses": []
-    },
-    {
-      "name": "gui.archetype.morph.stat.zombie_night_damage",
-      "base": 0,
-      "format": "percent",
-      "bonuses": [
-        {"level": 20, "value": 5},
-        {"level": 40, "value": 5},
-        {"level": 60, "value": 5}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.zombie_night_speed",
-      "base": 0,
-      "format": "percent",
-      "bonuses": [
-        {"level": 40, "value": 5},
-        {"level": 60, "value": 5}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.zombie_night_vision",
-      "base": 0,
-      "format": "boolean",
-      "bonuses": [
-        {"level": 10, "value": 1}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.zombie_sun_burn",
-      "base": 1,
-      "format": "boolean",
-      "bonuses": [
-        {"level": 50, "value": -1}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.creeper_header",
-      "base": 0,
-      "format": "header",
-      "bonuses": []
-    },
-    {
-      "name": "gui.archetype.morph.stat.creeper_radius",
-      "base": 0,
-      "format": "int",
-      "bonuses": [
-        {"level": 30, "value": 1}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.creeper_damage",
-      "base": 1,
-      "format": "int",
-      "bonuses": [
-        {"level": 60, "value": 1}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.snowman_header",
-      "base": 0,
-      "format": "header",
-      "bonuses": []
-    },
-    {
-      "name": "gui.archetype.morph.stat.snowman_effect_duration",
-      "base": 1,
-      "format": "seconds",
-      "bonuses": []
-    },
-    {
-      "name": "gui.archetype.morph.stat.snowman_effect_level",
-      "base": 1,
-      "format": "int",
-      "bonuses": [
-        {"level": 10, "value": 1},
-        {"level": 20, "value": 1},
-        {"level": 30, "value": 1},
-        {"level": 40, "value": 1},
-        {"level": 50, "value": 1},
-        {"level": 60, "value": 1}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.blaze_header",
-      "base": 0,
-      "format": "header",
-      "bonuses": []
-    },
-    {
-      "name": "gui.archetype.morph.stat.blaze_fire_duration",
-      "base": 1,
-      "format": "seconds",
-      "bonuses": [
-        {"level": 10, "value": 1},
-        {"level": 30, "value": 1},
-        {"level": 50, "value": 1}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.wither_header",
-      "base": 0,
-      "format": "header",
-      "bonuses": []
-    },
-    {
-      "name": "gui.archetype.morph.stat.wither_effect_duration",
-      "base": 1,
-      "format": "seconds",
-      "bonuses": [
-        {"level": 30, "value": 1},
-        {"level": 60, "value": 1}
-      ]
-    },
-    {
-      "name": "gui.archetype.morph.stat.wither_effect_level",
-      "base": 1,
-      "format": "int",
-      "bonuses": [
-        {"level": 20, "value": 1},
-        {"level": 60, "value": 1}
-      ]
-    }
+    {"name": "gui.archetype.morph.stat.zombie_header",      "base": 0, "format": "header",  "bonuses": []},
+    {"name": "gui.archetype.morph.stat.zombie_night_damage","base": 0, "format": "percent", "bonuses": [
+      {"level": 10, "value": 10}, {"level": 20, "value": 15},
+      {"level": 60, "value": 10}
+    ]},
+    {"name": "gui.archetype.morph.stat.zombie_night_speed", "base": 0, "format": "percent", "bonuses": [
+      {"level": 40, "value": 20}
+    ]},
+    {"name": "gui.archetype.morph.stat.zombie_health_bonus","base": 0, "format": "int",     "bonuses": [
+      {"level": 50, "value": 4}
+    ]},
+    {"name": "gui.archetype.morph.stat.zombie_night_vision","base": 0, "format": "boolean", "bonuses": [{"level": 10, "value": 1}]},
+    {"name": "gui.archetype.morph.stat.zombie_sun_burn",    "base": 1, "format": "boolean", "bonuses": [{"level": 30, "value": -1}]},
+    {"name": "gui.archetype.morph.stat.creeper_header",     "base": 0, "format": "header",  "bonuses": []},
+    {"name": "gui.archetype.morph.stat.creeper_radius",     "base": 0, "format": "int",     "bonuses": [{"level": 15, "value": 1}, {"level": 30, "value": 1}]},
+    {"name": "gui.archetype.morph.stat.creeper_damage",     "base": 3, "format": "int",     "bonuses": []},
+    {"name": "gui.archetype.morph.stat.snowman_header",     "base": 0, "format": "header",  "bonuses": []},
+    {"name": "gui.archetype.morph.stat.snowman_effect_level","base": 3, "format": "int",    "bonuses": []},
+    {"name": "gui.archetype.morph.stat.snowman_effect_duration","base": 3, "format": "seconds", "bonuses": [
+      {"level": 10, "value": 1}, {"level": 20, "value": 1}, {"level": 30, "value": 1},
+      {"level": 40, "value": 1}, {"level": 50, "value": 1}, {"level": 60, "value": 1}
+    ]},
+    {"name": "gui.archetype.morph.stat.blaze_header",       "base": 0, "format": "header",  "bonuses": []},
+    {"name": "gui.archetype.morph.stat.blaze_fire_duration","base": 3, "format": "seconds", "bonuses": [
+      {"level": 10, "value": 1}, {"level": 30, "value": 1}, {"level": 50, "value": 1}
+    ]},
+    {"name": "gui.archetype.morph.stat.wither_header",      "base": 0, "format": "header",  "bonuses": []},
+    {"name": "gui.archetype.morph.stat.wither_effect_level","base": 1, "format": "int",     "bonuses": [
+      {"level": 10, "value": 1}, {"level": 30, "value": 1}
+    ]},
+    {"name": "gui.archetype.morph.stat.wither_effect_duration","base": 4, "format": "seconds", "bonuses": [
+      {"level": 20, "value": 1}, {"level": 40, "value": 1}
+    ]}
   ],
   "progression": [
-    { "level": 10, "key": "progression.archetype.morph.level_10" },
-    { "level": 20, "key": "progression.archetype.morph.level_20" },
-    { "level": 30, "key": "progression.archetype.morph.level_30" },
-    { "level": 40, "key": "progression.archetype.morph.level_40" },
-    { "level": 50, "key": "progression.archetype.morph.level_50" },
-    { "level": 60, "key": "progression.archetype.morph.level_60" }
+    {"level": 10, "ability": "zombie",  "key": "progression.archetype.morph.zombie.10"},
+    {"level": 10, "ability": "snowman", "key": "progression.archetype.morph.snowman.10"},
+    {"level": 10, "ability": "blaze",   "key": "progression.archetype.morph.blaze.10"},
+    {"level": 10, "ability": "wither",  "key": "progression.archetype.morph.wither.10"},
+    {"level": 15, "ability": "creeper", "key": "progression.archetype.morph.creeper.15"},
+    {"level": 20, "ability": "zombie",  "key": "progression.archetype.morph.zombie.20"},
+    {"level": 20, "ability": "snowman", "key": "progression.archetype.morph.snowman.20"},
+    {"level": 20, "ability": "wither",  "key": "progression.archetype.morph.wither.20"},
+    {"level": 30, "ability": "zombie",  "key": "progression.archetype.morph.zombie.30"},
+    {"level": 30, "ability": "snowman", "key": "progression.archetype.morph.snowman.30"},
+    {"level": 30, "ability": "blaze",   "key": "progression.archetype.morph.blaze.30"},
+    {"level": 30, "ability": "creeper", "key": "progression.archetype.morph.creeper.30"},
+    {"level": 30, "ability": "wither",  "key": "progression.archetype.morph.wither.30"},
+    {"level": 40, "ability": "zombie",  "key": "progression.archetype.morph.zombie.40"},
+    {"level": 40, "ability": "snowman", "key": "progression.archetype.morph.snowman.40"},
+    {"level": 40, "ability": "wither",  "key": "progression.archetype.morph.wither.40"},
+    {"level": 50, "ability": "zombie",  "key": "progression.archetype.morph.zombie.50"},
+    {"level": 50, "ability": "snowman", "key": "progression.archetype.morph.snowman.50"},
+    {"level": 50, "ability": "blaze",   "key": "progression.archetype.morph.blaze.50"},
+    {"level": 60, "ability": "zombie",  "key": "progression.archetype.morph.zombie.60"},
+    {"level": 60, "ability": "snowman", "key": "progression.archetype.morph.snowman.60"}
   ]
 }

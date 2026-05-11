@@ -153,6 +153,8 @@
   "class.archetype.summoner.name": "Invocador",
   "class.archetype.summoner.description": "Um bandido exilado que se dedicou à magia de invocação após ser expulso de sua família.",
   "class.archetype.summoner.lore_1": "Exilado de sua família, ele se voltou para a arte sombria da invocação...",
+  "passive.archetype.summoner.illager_peace.name": "Trégua com Pillagers",
+  "passive.archetype.summoner.illager_peace.description": "Pillagers não te atacam. Eles te reconhecem como um deles.",
   "passive.archetype.summoner.villager_rejection.name": "Pária",
   "passive.archetype.summoner.villager_rejection.description": "Aldeões se recusam a negociar sem o efeito Herói da Vila.",
   "passive.archetype.summoner.meat_diet.name": "Carnívoro",
