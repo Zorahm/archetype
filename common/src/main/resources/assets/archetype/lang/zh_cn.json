@@ -153,6 +153,8 @@
   "class.archetype.summoner.name": "召唤师",
   "class.archetype.summoner.description": "被家族驱逐后走上召唤魔法之路的流放强盗。",
   "class.archetype.summoner.lore_1": "被家族驱逐后，他转向了召唤的黑暗艺术……",
+  "passive.archetype.summoner.illager_peace.name": "掠夺者休战",
+  "passive.archetype.summoner.illager_peace.description": "掠夺者不会攻击你。他们视你为自己人。",
   "passive.archetype.summoner.villager_rejection.name": "被遗弃者",
   "passive.archetype.summoner.villager_rejection.description": "没有村庄英雄效果时，村民拒绝交易。",
   "passive.archetype.summoner.meat_diet.name": "肉食者",

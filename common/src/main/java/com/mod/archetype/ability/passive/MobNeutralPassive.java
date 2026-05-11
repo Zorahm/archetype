@@ -18,18 +18,20 @@ public class MobNeutralPassive extends AbstractPassiveAbility {
     private final List<String> mobTypes;
     private final boolean blacklist;
     private final float radius;
+    private final boolean preventTargeting;
 
     public MobNeutralPassive(PassiveAbilityEntry entry) {
         super(entry);
         this.mobTypes = getStringList("mob_types");
         this.blacklist = "blacklist".equalsIgnoreCase(getString("mode", "whitelist"));
         this.radius = getFloat("radius", 16.0f);
+        this.preventTargeting = getBool("prevent_targeting", false);
     }
 
     @Override
     public void tick(ServerPlayer player) {
         if (player.level().isClientSide()) return;
-        if (player.tickCount % 10 != 0) return;
+        if (!preventTargeting && player.tickCount % 10 != 0) return;
 
         List<EntityType<?>> targetTypes = new ArrayList<>();
         for (String typeStr : mobTypes) {

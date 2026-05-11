@@ -177,8 +177,8 @@ All milestones rendered grouped by ability, with a section header per ability, e
 "resistance_amplifier": [
   {"level": 0,  "value": 0},
   {"level": 10, "value": 1},
-  {"level": 30, "value": 3},
-  {"level": 50, "value": 4}
+  {"level": 30, "value": 2},
+  {"level": 50, "value": 3}
 ],
 "resistance_duration_ticks": [
   {"level": 0,  "value": 60},
@@ -187,10 +187,10 @@ All milestones rendered grouped by ability, with a section header per ability, e
   {"level": 60, "value": 120}
 ]
 ```
-_(resistance level 1→2→4→5 maps to amplifier 0→1→3→4; duration 3s→4s→5s→6s)_
+_(resistance level 1→2→3→4 maps to amplifier 0→1→2→3; duration 3s→4s→5s→6s)_
 
 **New ability_stats for Circle:**
-- `resistance_level`: base 1, bonuses at 10(+1), 30(+2), 50(+1)
+- `resistance_level`: base 1, bonuses at 10(+1), 30(+1), 50(+1)
 - `resistance_duration`: base 3s, bonuses at 20(+1s), 40(+1s), 60(+1s)
 
 **Code — `EvokerFangsAbility` (mode=3):**
