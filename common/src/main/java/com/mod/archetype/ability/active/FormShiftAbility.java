@@ -76,6 +76,11 @@ public class FormShiftAbility extends AbstractActiveAbility {
         return active && currentForm != null;
     }
 
+    public float getFallDamageMultiplier() {
+        if (currentForm == null) return 1.0f;
+        return currentForm.fallDamageMultiplier;
+    }
+
     @Override
     public ActivationResult activate(ServerPlayer player) {
         if (active) {
@@ -334,6 +339,8 @@ public class FormShiftAbility extends AbstractActiveAbility {
         final float baseNightAttackDamage;
         final float baseNightAttackSpeed;
 
+        final float fallDamageMultiplier;
+
         final boolean consumesItem;
         final JsonArray progression;
 
@@ -358,6 +365,8 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
             this.baseNightAttackDamage = json.has("night_attack_damage_modifier") ? json.get("night_attack_damage_modifier").getAsFloat() : 0;
             this.baseNightAttackSpeed = json.has("night_attack_speed_modifier") ? json.get("night_attack_speed_modifier").getAsFloat() : 0;
+
+            this.fallDamageMultiplier = json.has("fall_damage_multiplier") ? json.get("fall_damage_multiplier").getAsFloat() : 1.0f;
 
             this.consumesItem = !json.has("consumes_item") || json.get("consumes_item").getAsBoolean();
             this.progression = json.has("progression") ? json.getAsJsonArray("progression") : new JsonArray();

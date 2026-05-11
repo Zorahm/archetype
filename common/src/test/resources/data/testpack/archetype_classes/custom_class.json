@@ -84,8 +84,8 @@
     "archetype:ram"
   ],
   "progression": [
-    { "level": 5, "key": "progression.testpack.custom.level_5" },
-    { "level": 10, "key": "progression.testpack.custom.level_10" }
+    { "level": 5, "ability": "blink", "key": "progression.testpack.custom.level_5" },
+    { "level": 10, "ability": "blink", "key": "progression.testpack.custom.level_10" }
   ],
   "ability_stats": [
     {

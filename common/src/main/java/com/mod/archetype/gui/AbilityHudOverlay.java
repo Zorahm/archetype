@@ -36,7 +36,12 @@ public class AbilityHudOverlay {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.screen != null) return;
-        if (mc.player == null || mc.player.isDeadOrDying() || mc.player.isSpectator()) return;
+        if (mc.player == null || mc.player.isSpectator()) return;
+
+        float deathAlpha = 1.0f;
+        if (mc.player.isDeadOrDying()) {
+            deathAlpha = 0.3f;
+        }
 
         PlayerClass playerClass = data.getClassId() != null
                 ? ClassRegistry.getInstance().get(data.getClassId()).orElse(null)
@@ -83,7 +88,7 @@ public class AbilityHudOverlay {
         // Render only slots used by the class
         for (int i = 0; i < slotCount; i++) {
             int slotX = startX + i * (SLOT_SIZE + SLOT_SPACING);
-            renderAbilitySlot(graphics, slotX, startY, i, data, playerClass, partialTick);
+            renderAbilitySlot(graphics, slotX, startY, i, data, playerClass, partialTick, deathAlpha);
         }
 
         // Resource bar
@@ -98,7 +103,8 @@ public class AbilityHudOverlay {
     }
 
     private static void renderAbilitySlot(GuiGraphics g, int x, int y, int slotIndex,
-                                          ClientClassData data, PlayerClass playerClass, float partialTick) {
+                                           ClientClassData data, PlayerClass playerClass, float partialTick,
+                                           float deathAlpha) {
         Font font = Minecraft.getInstance().font;
         long now = System.currentTimeMillis();
 
@@ -153,6 +159,10 @@ public class AbilityHudOverlay {
                 if (item != Items.AIR) {
                     ItemStack stack = new ItemStack(item);
                     g.renderItem(stack, x + 2, y + 2);
+                    if (deathAlpha < 1.0f) {
+                        int alpha = (int) (deathAlpha * 255);
+                        g.fill(x + 2, y + 2, x + 18, y + 18, (alpha << 24) | 0x000000);
+                    }
                 }
             } catch (Exception ignored) {
             }
