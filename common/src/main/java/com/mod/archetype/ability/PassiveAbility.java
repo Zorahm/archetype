@@ -1,7 +1,7 @@
 package com.mod.archetype.ability;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -30,7 +30,7 @@ public interface PassiveAbility {
 
     default boolean onEntityInteract(ServerPlayer player, Entity entity) { return false; }
 
-    ResourceLocation getType();
+    Identifier getType();
 
     boolean isPositive();
 

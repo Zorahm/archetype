@@ -3,25 +3,24 @@ package com.mod.archetype.condition.types;
 import com.google.gson.JsonObject;
 import com.mod.archetype.condition.Condition;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public class HasItemCondition implements Condition {
-    private final ResourceLocation itemId;
+    private final Identifier itemId;
     private final String slot;
 
     public HasItemCondition(JsonObject params) {
         String item = params.has("item") ? params.get("item").getAsString() : "minecraft:air";
-        this.itemId = new ResourceLocation(item);
+        this.itemId = Identifier.parse(item);
         this.slot = params.has("slot") ? params.get("slot").getAsString() : "any";
     }
 
     @Override
     public boolean test(Player player) {
-        Item targetItem = BuiltInRegistries.ITEM.get(itemId);
+        var targetItem = BuiltInRegistries.ITEM.getValue(itemId);
         return switch (slot) {
             case "mainhand" -> player.getMainHandItem().is(targetItem);
             case "offhand" -> player.getOffhandItem().is(targetItem);
@@ -33,7 +32,7 @@ public class HasItemCondition implements Condition {
         };
     }
 
-    private boolean hasItemAnywhere(Player player, Item targetItem) {
+    private boolean hasItemAnywhere(Player player, net.minecraft.world.item.Item targetItem) {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack.is(targetItem)) return true;
@@ -42,7 +41,7 @@ public class HasItemCondition implements Condition {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "has_item");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "has_item");
     }
 }

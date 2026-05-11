@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 public abstract class AbstractActiveAbility implements ActiveAbility {
@@ -26,7 +26,7 @@ public abstract class AbstractActiveAbility implements ActiveAbility {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
 
         // Check cooldown
-        ResourceLocation abilityId = new ResourceLocation(entry.type().getNamespace(), entry.slot());
+        Identifier abilityId = Identifier.fromNamespaceAndPath(entry.type().getNamespace(), entry.slot());
         if (data.getCooldown(abilityId) > 0) {
             return false;
         }
@@ -90,7 +90,7 @@ public abstract class AbstractActiveAbility implements ActiveAbility {
     }
 
     @Override
-    public ResourceLocation getIcon() {
+    public Identifier getIcon() {
         return entry.icon();
     }
 

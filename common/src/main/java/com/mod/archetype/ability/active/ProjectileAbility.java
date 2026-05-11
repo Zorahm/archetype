@@ -4,7 +4,7 @@ import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.entity.ArchetypeProjectile;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
@@ -41,7 +41,7 @@ public class ProjectileAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "projectile");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "projectile");
     }
 }

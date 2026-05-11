@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mod.archetype.core.ClassCategory;
 import com.mod.archetype.core.PlayerClass;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ClassJsonParserTest {
 
-    private static final ResourceLocation TEST_ID = new ResourceLocation("testpack", "test_class");
+    private static final Identifier TEST_ID = Identifier.fromNamespaceAndPath("testpack", "test_class");
 
     // --- Helpers ---
 
@@ -49,7 +49,7 @@ class ClassJsonParserTest {
         assertEquals(TEST_ID, pc.getId());
         assertEquals("class.test.name", pc.getNameKey());
         assertEquals("class.test.desc", pc.getDescriptionKey());
-        assertEquals(new ResourceLocation("testpack", "textures/gui/class/test.png"), pc.getIcon());
+        assertEquals(Identifier.fromNamespaceAndPath("testpack", "textures/gui/class/test.png"), pc.getIcon());
         assertEquals(0xFF0000, pc.getColor());
         assertEquals(ClassCategory.DAMAGE, pc.getCategory()); // default
         assertTrue(pc.getPassiveAbilities().isEmpty());
@@ -157,9 +157,9 @@ class ClassJsonParserTest {
                 }""";
         PlayerClass pc = parseJson(raw);
         assertEquals(3, pc.getAttributes().size());
-        assertEquals(AttributeModifier.Operation.ADDITION, pc.getAttributes().get(0).operation());
-        assertEquals(AttributeModifier.Operation.MULTIPLY_BASE, pc.getAttributes().get(1).operation());
-        assertEquals(AttributeModifier.Operation.MULTIPLY_TOTAL, pc.getAttributes().get(2).operation());
+        assertEquals(AttributeModifier.Operation.ADD_VALUE, pc.getAttributes().get(0).operation());
+        assertEquals(AttributeModifier.Operation.ADD_MULTIPLIED_BASE, pc.getAttributes().get(1).operation());
+        assertEquals(AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, pc.getAttributes().get(2).operation());
         assertEquals(4.0, pc.getAttributes().get(0).value());
     }
 
@@ -198,7 +198,7 @@ class ClassJsonParserTest {
         PlayerClass pc = parseJson(raw);
         assertEquals(1, pc.getPassiveAbilities().size());
         PlayerClass.PassiveAbilityEntry p = pc.getPassiveAbilities().get(0);
-        assertEquals(new ResourceLocation("archetype", "speed_boost"), p.type());
+        assertEquals(Identifier.fromNamespaceAndPath("archetype", "speed_boost"), p.type());
         assertTrue(p.positive());
         assertFalse(p.hidden());
         assertNull(p.activationCondition());
@@ -582,14 +582,14 @@ class ClassJsonParserTest {
                 "\"color\": \"FF0000\", \"incompatible_with\": [\"archetype:ram\", \"archetype:vi\"]");
         PlayerClass pc = parseJson(raw);
         assertEquals(2, pc.getIncompatibleWith().size());
-        assertEquals(new ResourceLocation("archetype", "ram"), pc.getIncompatibleWith().get(0));
-        assertEquals(new ResourceLocation("archetype", "vi"), pc.getIncompatibleWith().get(1));
+        assertEquals(Identifier.fromNamespaceAndPath("archetype", "ram"), pc.getIncompatibleWith().get(0));
+        assertEquals(Identifier.fromNamespaceAndPath("archetype", "vi"), pc.getIncompatibleWith().get(1));
     }
 
     @Test
     void progression_parsed() throws ClassParseException {
         String raw = minimal().replace("\"color\": \"FF0000\"",
-                "\"color\": \"FF0000\", \"progression\": [{\"level\": 10, \"key\": \"prog.key.10\"}, {\"level\": 20, \"key\": \"prog.key.20\"}]");
+                "\"color\": \"FF0000\", \"progression\": [{\"level\": 10, \"ability\": \"test\", \"key\": \"prog.key.10\"}, {\"level\": 20, \"ability\": \"test\", \"key\": \"prog.key.20\"}]");
         PlayerClass pc = parseJson(raw);
         assertEquals(2, pc.getProgression().size());
         assertEquals(10, pc.getProgression().get(0).level());
@@ -644,7 +644,7 @@ class ClassJsonParserTest {
             assertNotNull(is, "Builtin class file not found: " + path);
             JsonObject jsonObj = JsonParser.parseReader(
                     new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
-            ResourceLocation id = new ResourceLocation("archetype", classId);
+            Identifier id = Identifier.fromNamespaceAndPath("archetype", classId);
             PlayerClass pc = ClassJsonParser.parse(id, jsonObj);
             assertEquals(id, pc.getId());
             assertNotNull(pc.getNameKey());
@@ -661,7 +661,7 @@ class ClassJsonParserTest {
             assertNotNull(is, "Custom class file not found: " + path);
             JsonObject jsonObj = JsonParser.parseReader(
                     new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
-            ResourceLocation id = new ResourceLocation("testpack", "custom_class");
+            Identifier id = Identifier.fromNamespaceAndPath("testpack", "custom_class");
             PlayerClass pc = ClassJsonParser.parse(id, jsonObj);
 
             assertEquals(id, pc.getId());
@@ -678,7 +678,7 @@ class ClassJsonParserTest {
             assertNotNull(pc.getSizeModifier());
             assertEquals(0.95f, pc.getSizeModifier(), 0.001f);
             assertEquals(1, pc.getIncompatibleWith().size());
-            assertEquals(new ResourceLocation("archetype", "ram"), pc.getIncompatibleWith().get(0));
+            assertEquals(Identifier.fromNamespaceAndPath("archetype", "ram"), pc.getIncompatibleWith().get(0));
             assertEquals(2, pc.getProgression().size());
             assertEquals(1, pc.getAbilityStats().size());
             assertEquals(1, pc.getCommands().size());

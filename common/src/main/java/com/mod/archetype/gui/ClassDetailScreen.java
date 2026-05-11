@@ -9,11 +9,16 @@ import com.mod.archetype.platform.NetworkHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
+import net.minecraft.client.input.MouseButtonEvent;
 import java.util.List;
 
 public class ClassDetailScreen extends Screen {
@@ -26,12 +31,10 @@ public class ClassDetailScreen extends Screen {
     private float barAnimProgress = 0;
     private int selectBtnX, selectBtnY, selectBtnWidth, selectBtnHeight;
 
-    // Hovered ability slot tracking (set during render, used after scissor)
     private int hoveredAbilitySlot = -1;
     private int tooltipMouseX = 0;
     private int tooltipMouseY = 0;
 
-    // Layout constants
     private static final int PANEL_PADDING = 16;
     private static final int SECTION_GAP = 14;
     private static final int ITEM_GAP = 4;
@@ -51,7 +54,6 @@ public class ClassDetailScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // Dark vignette background
         renderDimBackground(g);
 
         barAnimProgress = Math.min(1.0f, barAnimProgress + partialTick * 0.02f);
@@ -74,18 +76,14 @@ public class ClassDetailScreen extends Screen {
 
         int y = scissorTop - (int) scrollOffset;
 
-        // Reset hovered ability slot each frame
         hoveredAbilitySlot = -1;
 
-        // Header
         y = renderHeader(g, contentX, y, innerWidth, classColor);
         y += SECTION_GAP;
 
-        // Separator line in class color
         renderColoredSeparator(g, contentX, y, innerWidth, classColor);
         y += SECTION_GAP;
 
-        // Attributes
         if (!playerClass.getAttributes().isEmpty()) {
             y = renderSectionTitle(g, "gui.archetype.attributes", contentX, y, innerWidth, classColor);
             y += 6;
@@ -93,7 +91,6 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Active abilities
         if (!playerClass.getActiveAbilities().isEmpty()) {
             y = renderSectionTitle(g, "gui.archetype.abilities", contentX, y, innerWidth, classColor);
             y += 6;
@@ -101,7 +98,6 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Passive abilities
         if (!playerClass.getPassiveAbilities().isEmpty()) {
             y = renderSectionTitle(g, "gui.archetype.passives", contentX, y, innerWidth, classColor);
             y += 6;
@@ -109,7 +105,6 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Resource
         if (playerClass.getResource() != null) {
             y = renderSectionTitle(g, "gui.archetype.resource", contentX, y, innerWidth, classColor);
             y += 6;
@@ -117,26 +112,22 @@ public class ClassDetailScreen extends Screen {
             y += SECTION_GAP;
         }
 
-        // Select button
         y = renderSelectButton(g, contentX, y, innerWidth, mouseX, mouseY, classColor);
 
         contentHeight = y + scrollOffset - scissorTop + PANEL_PADDING;
 
         g.disableScissor();
 
-        // Ability slot tooltip (rendered after disableScissor)
         if (hoveredAbilitySlot >= 0 && hoveredAbilitySlot < playerClass.getActiveAbilities().size()) {
             renderAbilityTooltip(g, playerClass.getActiveAbilities().get(hoveredAbilitySlot),
                     tooltipMouseX, tooltipMouseY, innerWidth, classColor);
         }
 
-        // Scrollbar
         float viewHeight = scissorBottom - scissorTop;
         if (contentHeight > viewHeight) {
             renderScrollbar(g, panelX + panelWidth - SCROLLBAR_WIDTH - 4, scissorTop, viewHeight, classColor);
         }
 
-        // Back button (rendered outside scissor)
         renderBackButton(g, panelX + PANEL_PADDING, viewBottom - 4, mouseX, mouseY);
 
         // Render widgets (vanilla buttons)
@@ -148,12 +139,7 @@ public class ClassDetailScreen extends Screen {
     }
 
     private void renderDimBackground(GuiGraphics g) {
-        g.fill(0, 0, width, height, 0xCC000000);
-        // Vignette gradients
-        g.fillGradient(0, 0, width / 4, height, 0x88000000, 0x00000000);
-        g.fillGradient(width * 3 / 4, 0, width, height, 0x00000000, 0x88000000);
-        g.fillGradient(0, 0, width, height / 4, 0x88000000, 0x00000000);
-        g.fillGradient(0, height * 3 / 4, width, height, 0x00000000, 0x88000000);
+        g.fill(0, 0, width, height, 0xFF000000);
     }
 
     private void renderPanel(GuiGraphics g, int x, int y, int w, int h, int classColor) {
@@ -190,7 +176,7 @@ public class ClassDetailScreen extends Screen {
 
     private int renderSectionTitle(GuiGraphics g, String titleKey, int x, int y, int width, int classColor) {
         Component title = Component.translatable(titleKey).withStyle(Style.EMPTY.withColor(0xA0A0A0));
-        g.drawString(font, title, x, y, 0xA0A0A0, false);
+        g.drawString(font, title, x, y, 0xFFA0A0A0, false);
         int textWidth = font.width(title);
         // Line after text
         g.fill(x + textWidth + 6, y + font.lineHeight / 2, x + width, y + font.lineHeight / 2 + 1, 0x20FFFFFF);
@@ -200,15 +186,15 @@ public class ClassDetailScreen extends Screen {
     private int renderHeader(GuiGraphics g, int x, int y, int width, int classColor) {
         // Class name (scaled, centered)
         var pose = g.pose();
-        pose.pushPose();
+        pose.pushMatrix();
         float scale = 1.8f;
         Component name = Component.translatable(playerClass.getNameKey());
         int nameWidth = (int) (font.width(name) * scale);
         float nameX = x + (width - nameWidth) / 2f;
-        pose.translate(nameX, y, 0);
-        pose.scale(scale, scale, 1);
+        pose.translate(nameX, y);
+        pose.scale(scale, scale);
         g.drawString(font, name, 0, 0, 0xFF000000 | classColor, false);
-        pose.popPose();
+        pose.popMatrix();
         y += (int) (font.lineHeight * scale) + 6;
 
         // Lore — with word wrapping
@@ -218,7 +204,7 @@ public class ClassDetailScreen extends Screen {
             List<FormattedCharSequence> loreLines = font.split(lore, width);
             for (FormattedCharSequence line : loreLines) {
                 int lineWidth = font.width(line);
-                g.drawString(font, line, x + (width - lineWidth) / 2, y, 0x808080, false);
+                g.drawString(font, line, x + (width - lineWidth) / 2, y, 0xFF808080, false);
                 y += font.lineHeight + 1;
             }
         }
@@ -258,7 +244,27 @@ public class ClassDetailScreen extends Screen {
             int slotX = x + i * (slotSize + slotSpacing);
             int slotY = y;
 
-            // Slot background
+            // Item icon (scaled to fill slot)
+            String itemId = ability.item();
+            if (itemId != null && !itemId.isEmpty()) {
+                try {
+                    var itemRL = Identifier.parse(itemId);
+                    var item = BuiltInRegistries.ITEM.getValue(itemRL);
+                    if (item != Items.AIR) {
+                        ItemStack stack = new ItemStack(item);
+                        var pose = g.pose();
+                        pose.pushMatrix();
+                        pose.translate(slotX + slotSize / 2f, slotY + slotSize / 2f);
+                        pose.scale(2.0f, 2.0f);
+                        pose.translate(-8f, -8f);
+                        g.renderItem(stack, 0, 0);
+                        pose.popMatrix();
+                    }
+                } catch (Exception e) {
+                }
+            }
+
+            // Slot background overlay
             g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, 0x28FFFFFF);
             // 1px border using classColor
             int borderColor = 0x50000000 | classColor;
@@ -271,20 +277,7 @@ public class ClassDetailScreen extends Screen {
             String badge = "[" + key + "]";
             int badgeBg = 0xC0000000 | classColor;
             g.fill(slotX + 1, slotY + 1, slotX + 1 + font.width(badge) + 2, slotY + 1 + font.lineHeight, badgeBg);
-            g.drawString(font, badge, slotX + 2, slotY + 1, 0xFFFFFF, false);
-
-            // Ability name (truncated to fit slot width)
-            Component aName = Component.translatable(ability.nameKey());
-            String nameStr = aName.getString();
-            int maxNameW = slotSize - 4;
-            // Truncate if needed
-            while (font.width(nameStr) > maxNameW && nameStr.length() > 1) {
-                nameStr = nameStr.substring(0, nameStr.length() - 1);
-            }
-            if (!nameStr.equals(aName.getString())) {
-                nameStr = nameStr.substring(0, Math.max(0, nameStr.length() - 2)) + "..";
-            }
-            g.drawString(font, nameStr, slotX + 2, slotY + slotSize - font.lineHeight - 2, 0xDDDDDD, false);
+            g.drawString(font, badge, slotX + 2, slotY + 1, 0xFFFFFFFF, false);
 
             // Hover detection
             if (mouseX >= slotX && mouseX < slotX + slotSize && mouseY >= slotY && mouseY < slotY + slotSize) {
@@ -347,11 +340,11 @@ public class ClassDetailScreen extends Screen {
         String badge = "[" + key + "] ";
         int badgeW = font.width(badge);
         g.drawString(font, badge, tipX + 6, tipY + 4, 0xFF000000 | classColor, false);
-        g.drawString(font, aName, tipX + 6 + badgeW, tipY + 4, 0xFFFFFF, false);
+        g.drawString(font, aName, tipX + 6 + badgeW, tipY + 4, 0xFFFFFFFF, false);
 
         int ty = tipY + 4 + font.lineHeight + 2;
         for (FormattedCharSequence line : descLines) {
-            g.drawString(font, line, tipX + 6, ty, 0x999999, false);
+            g.drawString(font, line, tipX + 6, ty, 0xFF999999, false);
             ty += font.lineHeight + 1;
         }
     }
@@ -375,7 +368,7 @@ public class ClassDetailScreen extends Screen {
         // In detail screen (pre-select), always show entries, but note unlock level if any
         if (locked) {
             Component lockNote = Component.translatable("gui.archetype.locked", section.unlockLevel());
-            g.drawString(font, lockNote, x + 8, y, 0x888888, false);
+            g.drawString(font, lockNote, x + 8, y, 0xFF888888, false);
             y += font.lineHeight + 4;
         }
 
@@ -388,11 +381,11 @@ public class ClassDetailScreen extends Screen {
             g.fill(x + 4, y - 2, x + contentWidth - 12, y + totalH, 0x10000000 | classColor);
             g.fill(x + 4, y - 2, x + 6, y + totalH, 0x40000000 | classColor);
 
-            g.drawString(font, entryName, x + 10, y, 0xDDDDDD, false);
+            g.drawString(font, entryName, x + 10, y, 0xFFDDDDDD, false);
             y += font.lineHeight + 1;
 
             for (FormattedCharSequence dLine : dLines) {
-                g.drawString(font, dLine, x + 10, y, 0x888888, false);
+                g.drawString(font, dLine, x + 10, y, 0xFF888888, false);
                 y += font.lineHeight + 1;
             }
             y += 4;
@@ -430,7 +423,7 @@ public class ClassDetailScreen extends Screen {
 
             // Description — WORD WRAPPED
             for (FormattedCharSequence line : descLines) {
-                g.drawString(font, line, x + 18, y, 0x999999, false);
+                g.drawString(font, line, x + 18, y, 0xFF999999, false);
                 y += font.lineHeight + 1;
             }
             y += ITEM_GAP + 2;
@@ -446,7 +439,7 @@ public class ClassDetailScreen extends Screen {
         // Bar full inner width
         int barW = contentWidth;
         ClassScreenRenderer.renderProgressBar(g, x, y, barW, 8, 1.0f, res.color());
-        g.drawString(font, res.maxValue() + "/" + res.maxValue(), x + barW + 6, y, 0xCCCCCC, false);
+        g.drawString(font, res.maxValue() + "/" + res.maxValue(), x + barW + 6, y, 0xFFCCCCCC, false);
         y += 14;
         return y;
     }
@@ -476,7 +469,7 @@ public class ClassDetailScreen extends Screen {
         g.fill(btnX + btnWidth - 1, btnY, btnX + btnWidth, btnY + btnHeight, borderColor);
 
         Component text = Component.translatable("gui.archetype.select_class");
-        g.drawCenteredString(font, text, btnX + btnWidth / 2, btnY + (btnHeight - font.lineHeight) / 2, 0xFFFFFF);
+        g.drawCenteredString(font, text, btnX + btnWidth / 2, btnY + (btnHeight - font.lineHeight) / 2, 0xFFFFFFFF);
 
         return btnY + btnHeight;
     }
@@ -502,11 +495,14 @@ public class ClassDetailScreen extends Screen {
         boolean hovered = mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh;
 
         g.fill(bx, by, bx + bw, by + bh, hovered ? 0x40FFFFFF : 0x20FFFFFF);
-        g.drawString(font, back, bx + 6, by + (bh - font.lineHeight) / 2, hovered ? 0xFFFFFF : 0xAAAAAA, false);
+        g.drawString(font, back, bx + 6, by + (bh - font.lineHeight) / 2, hovered ? 0xFFFFFFFF : 0xFFAAAAAA, false);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (showConfirmation) {
             int yesX = width / 2 - 80;
             int yesY = height / 2 + 10;
@@ -549,12 +545,12 @@ public class ClassDetailScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, bl);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        scrollOffset -= (float) (delta * 20);
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        scrollOffset -= (float) (deltaY * 20);
         scrollOffset = Mth.clamp(scrollOffset, 0, Math.max(0, contentHeight - (height - 64)));
         return true;
     }
@@ -577,7 +573,7 @@ public class ClassDetailScreen extends Screen {
         g.fill(dx + dw - 1, dy, dx + dw, dy + dh, bc);
 
         Component message = Component.translatable("gui.archetype.confirm_rebirth");
-        g.drawCenteredString(font, message, width / 2, dy + 16, 0xFFFFFF);
+        g.drawCenteredString(font, message, width / 2, dy + 16, 0xFFFFFFFF);
 
         // Yes button
         int yesX = width / 2 - 80;
@@ -585,14 +581,14 @@ public class ClassDetailScreen extends Screen {
         boolean yesHover = mouseX >= yesX && mouseX <= yesX + 60 && mouseY >= yesY && mouseY <= yesY + 20;
         g.fill(yesX, yesY, yesX + 60, yesY + 20, yesHover ? 0xFF3A5A3A : 0xFF1A1A1A);
         g.fill(yesX, yesY, yesX + 60, yesY + 1, 0xCC44CC44);
-        g.drawCenteredString(font, Component.translatable("gui.yes"), yesX + 30, yesY + 6, 0x44CC44);
+        g.drawCenteredString(font, Component.translatable("gui.yes"), yesX + 30, yesY + 6, 0xFF44CC44);
 
         // No button
         int noX = width / 2 + 20;
         boolean noHover = mouseX >= noX && mouseX <= noX + 60 && mouseY >= yesY && mouseY <= yesY + 20;
         g.fill(noX, yesY, noX + 60, yesY + 20, noHover ? 0xFF5A3A3A : 0xFF1A1A1A);
         g.fill(noX, yesY, noX + 60, yesY + 1, 0xCCCC4444);
-        g.drawCenteredString(font, Component.translatable("gui.no"), noX + 30, yesY + 6, 0xCC4444);
+        g.drawCenteredString(font, Component.translatable("gui.no"), noX + 30, yesY + 6, 0xFFCC4444);
     }
 
     private double getBaseValue(String attributeId) {

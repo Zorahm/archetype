@@ -1,6 +1,8 @@
 package com.mod.archetype.entity;
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
@@ -21,18 +23,18 @@ public class ArchetypeProjectile extends ThrowableProjectile {
 
     @SuppressWarnings("unchecked")
     public ArchetypeProjectile(Level level, LivingEntity owner) {
-        super((EntityType<? extends ThrowableProjectile>) EntityType.SNOWBALL, level);
+        super((EntityType<? extends ThrowableProjectile>) (EntityType<?>) EntityType.SNOWBALL, level);
         this.setOwner(owner);
     }
 
     @Override
-    protected void defineSynchedData() {
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
-        if (!level().isClientSide && result.getEntity() instanceof LivingEntity target) {
+        if (!level().isClientSide() && result.getEntity() instanceof LivingEntity target) {
             LivingEntity owner = getOwner() instanceof LivingEntity le ? le : null;
             target.hurt(
                     owner != null ? damageSources().mobProjectile(this, owner) : damageSources().generic(),
@@ -47,7 +49,7 @@ public class ArchetypeProjectile extends ThrowableProjectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             if (explosionRadius > 0) {
                 level().explode(this, getX(), getY(), getZ(), explosionRadius, Level.ExplosionInteraction.NONE);
             }
@@ -61,18 +63,18 @@ public class ArchetypeProjectile extends ThrowableProjectile {
     public void setPierce(int pierce) { this.pierce = pierce; }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putFloat("Damage", damage);
-        tag.putFloat("ExplosionRadius", explosionRadius);
-        tag.putInt("Pierce", pierce);
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putFloat("Damage", damage);
+        output.putFloat("ExplosionRadius", explosionRadius);
+        output.putInt("Pierce", pierce);
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        damage = tag.getFloat("Damage");
-        explosionRadius = tag.getFloat("ExplosionRadius");
-        pierce = tag.getInt("Pierce");
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        damage = input.getFloatOr("Damage", 8.0f);
+        explosionRadius = input.getFloatOr("ExplosionRadius", 0f);
+        pierce = input.getIntOr("Pierce", 0);
     }
 }

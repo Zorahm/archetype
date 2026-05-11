@@ -13,11 +13,11 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Comparator;
@@ -49,7 +49,7 @@ public class ArchetypeCommand {
         return Component.literal(" \u00b7 ").withStyle(Style.EMPTY.withColor(C_MUTED));
     }
 
-    private static Component classComp(ResourceLocation classId) {
+    private static Component classComp(Identifier classId) {
         return ClassRegistry.getInstance().get(classId)
                 .map(cls -> (Component) Component.translatable(cls.getNameKey())
                         .withStyle(Style.EMPTY.withColor(0xFF000000 | cls.getColor()).withBold(true)))
@@ -73,9 +73,9 @@ public class ArchetypeCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("archetype")
                 .then(Commands.literal("set")
-                        .requires(src -> src.hasPermission(2))
+                        .requires(src -> Commands.LEVEL_GAMEMASTERS.check(src.permissions()))
                         .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("class", ResourceLocationArgument.id())
+                                .then(Commands.argument("class", IdentifierArgument.id())
                                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
                                                 ClassRegistry.getInstance().getAllIds(), builder))
                                         .executes(ArchetypeCommand::executeSet)
@@ -83,7 +83,7 @@ public class ArchetypeCommand {
                         )
                 )
                 .then(Commands.literal("remove")
-                        .requires(src -> src.hasPermission(2))
+                        .requires(src -> Commands.LEVEL_GAMEMASTERS.check(src.permissions()))
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(ArchetypeCommand::executeRemove)
                         )
@@ -97,7 +97,7 @@ public class ArchetypeCommand {
                         .executes(ArchetypeCommand::executeList)
                 )
                 .then(Commands.literal("reload")
-                        .requires(src -> src.hasPermission(2))
+                        .requires(src -> Commands.LEVEL_GAMEMASTERS.check(src.permissions()))
                         .executes(ArchetypeCommand::executeReload)
                 )
         );
@@ -107,7 +107,7 @@ public class ArchetypeCommand {
 
     private static int executeSet(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-        ResourceLocation classId = ResourceLocationArgument.getId(ctx, "class");
+        Identifier classId = IdentifierArgument.getId(ctx, "class");
         if (!ClassRegistry.getInstance().exists(classId)) throw ERROR_CLASS_NOT_FOUND.create();
 
         ClassManager.getInstance().assignClass(player, classId);
@@ -147,7 +147,7 @@ public class ArchetypeCommand {
             return 1;
         }
 
-        ResourceLocation classId = data.getCurrentClassId();
+        Identifier classId = data.getCurrentClassId();
         int level = data.getClassLevel();
         float resource = data.getResourceCurrent();
 
@@ -170,14 +170,14 @@ public class ArchetypeCommand {
     }
 
     private static int executeList(CommandContext<CommandSourceStack> ctx) {
-        Set<ResourceLocation> ids = ClassRegistry.getInstance().getAllIds();
+        Set<Identifier> ids = ClassRegistry.getInstance().getAllIds();
 
         MutableComponent msg = prefix()
                 .append(Component.translatable("commands.archetype.list", num(ids.size()))
                         .withStyle(Style.EMPTY.withColor(C_MUTED)));
 
         ids.stream()
-                .sorted(Comparator.comparing(ResourceLocation::getPath))
+                .sorted(Comparator.comparing(Identifier::getPath))
                 .forEach(id -> msg
                         .append(Component.literal("\n  \u2022 ").withStyle(Style.EMPTY.withColor(C_MUTED)))
                         .append(classComp(id))

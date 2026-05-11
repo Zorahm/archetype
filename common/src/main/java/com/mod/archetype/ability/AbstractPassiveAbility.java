@@ -3,7 +3,7 @@ package com.mod.archetype.ability;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;

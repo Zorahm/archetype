@@ -9,7 +9,7 @@ import com.mod.archetype.core.ClassManager;
 import com.mod.archetype.core.PlayerClass;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
@@ -28,7 +28,7 @@ public final class ArchetypeAPI {
         return ClassManager.getInstance().getClassDefinition(data.getCurrentClassId());
     }
 
-    public static boolean hasClass(Player player, ResourceLocation classId) {
+    public static boolean hasClass(Player player, Identifier classId) {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
         return data.hasClass() && classId.equals(data.getCurrentClassId());
     }
@@ -38,7 +38,7 @@ public final class ArchetypeAPI {
         return data.getClassLevel();
     }
 
-    public static void assignClass(ServerPlayer player, ResourceLocation classId) {
+    public static void assignClass(ServerPlayer player, Identifier classId) {
         ClassManager.getInstance().assignClass(player, classId);
     }
 
@@ -46,15 +46,15 @@ public final class ArchetypeAPI {
         ClassManager.getInstance().removeClass(player);
     }
 
-    public static void registerAbilityType(ResourceLocation id, ActiveAbilityFactory factory) {
+    public static void registerAbilityType(Identifier id, ActiveAbilityFactory factory) {
         AbilityRegistry.getInstance().registerActive(id, factory);
     }
 
-    public static void registerPassiveType(ResourceLocation id, PassiveAbilityFactory factory) {
+    public static void registerPassiveType(Identifier id, PassiveAbilityFactory factory) {
         AbilityRegistry.getInstance().registerPassive(id, factory);
     }
 
-    public static void registerConditionType(ResourceLocation id, ConditionFactory factory) {
+    public static void registerConditionType(Identifier id, ConditionFactory factory) {
         ConditionRegistry.getInstance().register(id, factory);
     }
 
@@ -62,7 +62,7 @@ public final class ArchetypeAPI {
         return ClassManager.getInstance().getAllClasses();
     }
 
-    public static Optional<PlayerClass> getClass(ResourceLocation id) {
+    public static Optional<PlayerClass> getClass(Identifier id) {
         return Optional.ofNullable(ClassManager.getInstance().getClassDefinition(id));
     }
 }

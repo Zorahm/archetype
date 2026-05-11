@@ -3,47 +3,50 @@ package com.mod.archetype.ability.active;
 import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
-import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 public class ChaseTeleportAbility extends AbstractActiveAbility {
 
     private final float baseDamage;
-    private final float baseSelfDamage;
 
     public ChaseTeleportAbility(ActiveAbilityEntry entry) {
         super(entry);
-        this.baseDamage = getFloat("base_damage", 1.0f);
-        this.baseSelfDamage = getFloat("self_damage", 3.0f);
+        this.baseDamage = getFloat("base_damage", 4.0f);
     }
 
     private float getEffectiveDamage(int level) {
         float dmg = baseDamage;
+        if (level >= 10) dmg += 1.0f;
         if (level >= 20) dmg += 1.0f;
+        if (level >= 30) dmg += 1.0f;
         if (level >= 40) dmg += 1.0f;
+        if (level >= 50) dmg += 1.0f;
         return dmg;
-    }
-
-    private float getEffectiveSelfDamage(int level) {
-        float dmg = baseSelfDamage;
-        if (level >= 20) dmg -= 1.0f;
-        if (level >= 40) dmg -= 1.0f;
-        if (level >= 60) dmg -= 1.0f;
-        return Math.max(0, dmg);
     }
 
     @Override
     public int getCooldownTicks(ServerPlayer player) {
         int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
         int cd = entry.cooldownTicks();
-        if (level >= 20) cd -= 20;
-        if (level >= 40) cd -= 20;
-        if (level >= 60) cd -= 20;
+        if (level >= 10) cd -= 20;
+        if (level >= 30) cd -= 20;
+        if (level >= 50) cd -= 20;
         return Math.max(20, cd);
+    }
+
+    private void applyResistance(ServerPlayer player, int level) {
+        if (level < 20) return;
+        int amplifier = (level >= 40) ? 1 : 0;
+        int durationTicks = 40; // 2s at level 20
+        if (level >= 30) durationTicks += 20; // 3s
+        if (level >= 40) durationTicks += 20; // 4s
+        player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, durationTicks, amplifier, false, false, false));
     }
 
     @Override
@@ -65,22 +68,17 @@ public class ChaseTeleportAbility extends AbstractActiveAbility {
         double teleX = targetPos.x + offset.x * 1.5;
         double teleY = targetPos.y;
         double teleZ = targetPos.z + offset.z * 1.5;
-
         player.teleportTo(teleX, teleY, teleZ);
 
         int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
         target.hurt(player.damageSources().playerAttack(player), getEffectiveDamage(level));
-
-        float selfDamage = getEffectiveSelfDamage(level);
-        if (selfDamage > 0) {
-            player.hurt(player.damageSources().magic(), selfDamage);
-        }
+        applyResistance(player, level);
 
         return ActivationResult.SUCCESS;
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "chase_teleport");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "chase_teleport");
     }
 }

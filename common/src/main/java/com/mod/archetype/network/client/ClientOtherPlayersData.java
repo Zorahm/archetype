@@ -1,6 +1,6 @@
 package com.mod.archetype.network.client;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.Nullable;
 import java.util.Map;
@@ -9,9 +9,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientOtherPlayersData {
 
-    private static final Map<UUID, ResourceLocation> playerClasses = new ConcurrentHashMap<>();
+    private static final Map<UUID, Identifier> playerClasses = new ConcurrentHashMap<>();
 
-    public static void update(UUID playerId, @Nullable ResourceLocation classId) {
+    public static void update(UUID playerId, @Nullable Identifier classId) {
         if (classId != null) {
             playerClasses.put(playerId, classId);
         } else {
@@ -20,7 +20,7 @@ public class ClientOtherPlayersData {
     }
 
     @Nullable
-    public static ResourceLocation getClass(UUID playerId) {
+    public static Identifier getClass(UUID playerId) {
         return playerClasses.get(playerId);
     }
 

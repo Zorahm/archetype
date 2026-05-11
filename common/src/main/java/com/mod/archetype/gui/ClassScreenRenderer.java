@@ -17,7 +17,7 @@ public class ClassScreenRenderer {
         int textX = centerX - textWidth / 2;
 
         g.fill(x, lineY, textX - pad, lineY + 1, 0x40FFFFFF);
-        g.drawString(font, title, textX, y, 0x888888, false);
+        g.drawString(font, title, textX, y, 0xFF888888, false);
         g.fill(textX + textWidth + pad, lineY, x + width, lineY + 1, 0x40FFFFFF);
     }
 
@@ -30,7 +30,7 @@ public class ClassScreenRenderer {
 
         // Truncate label to fixed column width so all bars align regardless of language
         String displayName = font.plainSubstrByWidth(name, ATTR_LABEL_WIDTH);
-        g.drawString(font, displayName, x, y, 0xCCCCCC, false);
+        g.drawString(font, displayName, x, y, 0xFFCCCCCC, false);
 
         // Background
         g.fill(barX, y + 2, barX + barWidth, y + 2 + barHeight, 0x40FFFFFF);

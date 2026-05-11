@@ -4,7 +4,7 @@ import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -12,11 +12,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
-import java.util.UUID;
-
 public class FireImmunityPassive extends AbstractPassiveAbility {
 
-    private static final UUID HP_SCALING_UUID = UUID.nameUUIDFromBytes("archetype:fire_immunity_hp_scaling".getBytes());
+    private static final Identifier HP_SCALING_ID = Identifier.fromNamespaceAndPath("archetype", "fire_immunity_hp_scaling");
     private int lastAppliedBonus = -1;
 
     public FireImmunityPassive(PassiveAbilityEntry entry) {
@@ -39,11 +37,11 @@ public class FireImmunityPassive extends AbstractPassiveAbility {
             if (bonusInt != lastAppliedBonus) {
                 AttributeInstance attr = player.getAttribute(Attributes.MAX_HEALTH);
                 if (attr != null) {
-                    attr.removeModifier(HP_SCALING_UUID);
+                    attr.removeModifier(HP_SCALING_ID);
                     if (bonusInt > 0) {
                         attr.addTransientModifier(new AttributeModifier(
-                                HP_SCALING_UUID, "archetype:hp_xp_scaling", bonus,
-                                AttributeModifier.Operation.ADDITION));
+                                HP_SCALING_ID, bonus,
+                                AttributeModifier.Operation.ADD_VALUE));
                     }
                     lastAppliedBonus = bonusInt;
                 }
@@ -55,7 +53,7 @@ public class FireImmunityPassive extends AbstractPassiveAbility {
     public void onRemove(ServerPlayer player) {
         AttributeInstance attr = player.getAttribute(Attributes.MAX_HEALTH);
         if (attr != null) {
-            attr.removeModifier(HP_SCALING_UUID);
+            attr.removeModifier(HP_SCALING_ID);
         }
         lastAppliedBonus = -1;
     }
@@ -69,7 +67,7 @@ public class FireImmunityPassive extends AbstractPassiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "fire_immunity");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "fire_immunity");
     }
 }

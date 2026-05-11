@@ -6,7 +6,8 @@ import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -55,8 +56,8 @@ public class TargetedEffectAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "targeted_effect");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "targeted_effect");
     }
 
     private List<EffectDef> parseEffects() {
@@ -65,14 +66,14 @@ public class TargetedEffectAbility extends AbstractActiveAbility {
             JsonArray arr = params.getAsJsonArray("effects");
             for (int i = 0; i < arr.size(); i++) {
                 JsonObject obj = arr.get(i).getAsJsonObject();
-                MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(obj.get("effect").getAsString()));
+                var effectHolder = BuiltInRegistries.MOB_EFFECT.get(Identifier.parse(obj.get("effect").getAsString()));
                 int dur = obj.has("duration") ? obj.get("duration").getAsInt() : 200;
                 int amp = obj.has("amplifier") ? obj.get("amplifier").getAsInt() : 0;
-                if (effect != null) result.add(new EffectDef(effect, dur, amp));
+                effectHolder.ifPresent(effect -> result.add(new EffectDef(effect, dur, amp)));
             }
         }
         return result;
     }
 
-    private record EffectDef(MobEffect effect, int duration, int amplifier) {}
+    private record EffectDef(Holder<MobEffect> effect, int duration, int amplifier) {}
 }

@@ -1,0 +1,20 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:barrier"
+    },
+    "title": {"translate": "advancement.archetype.same_class_rebirth.title"},
+    "description": {"translate": "advancement.archetype.same_class_rebirth.description"},
+    "frame": "challenge",
+    "hidden": true
+  },
+  "parent": "archetype:rebirth",
+  "criteria": {
+    "same_class": {
+      "trigger": "archetype:class_action",
+      "conditions": {
+        "action": "same_class_rebirth"
+      }
+    }
+  }
+}

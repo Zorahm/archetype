@@ -1,28 +1,26 @@
 package com.mod.archetype.mixin;
 
-import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EvokerFangs.class)
 public class EvokerFangsMixin {
 
-    @Redirect(
-        method = "dealDamage",
-        at = @At(value = "INVOKE",
-                 target = "Lnet/minecraft/world/entity/LivingEntity;hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z")
-    )
-    private boolean archetype_redirectDamage(LivingEntity target, DamageSource source, float originalDamage) {
+    @Inject(method = "dealDamage", at = @At("HEAD"))
+    private void archetype_applyResistance(LivingEntity target, CallbackInfo ci) {
         EvokerFangs self = (EvokerFangs) (Object) this;
         for (String tag : self.getTags()) {
-            if (tag.startsWith("archetype_dmg:")) {
-                float damage = Float.parseFloat(tag.substring("archetype_dmg:".length()));
-                return target.hurt(source, damage);
+            if (tag.startsWith("archetype_resistance:")) {
+                int amplifier = Integer.parseInt(tag.substring("archetype_resistance:".length()));
+                target.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 1, amplifier, false, false));
+                return;
             }
         }
-        return target.hurt(source, originalDamage);
     }
 }

@@ -3,7 +3,7 @@ package com.mod.archetype.ability.passive;
 import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
@@ -28,7 +28,7 @@ public class SlowFallPassive extends AbstractPassiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "slow_fall");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "slow_fall");
     }
 }

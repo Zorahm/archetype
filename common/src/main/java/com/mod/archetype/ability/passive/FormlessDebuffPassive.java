@@ -10,7 +10,8 @@ import com.mod.archetype.core.ActiveClassInstance;
 import com.mod.archetype.core.ClassManager;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
@@ -35,12 +36,10 @@ public class FormlessDebuffPassive extends AbstractPassiveAbility {
             JsonArray arr = params.getAsJsonArray("effects");
             for (int i = 0; i < arr.size(); i++) {
                 JsonObject obj = arr.get(i).getAsJsonObject();
-                MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(
-                        new ResourceLocation(obj.get("effect").getAsString()));
+                var effectHolder = BuiltInRegistries.MOB_EFFECT.get(
+                        Identifier.parse(obj.get("effect").getAsString()));
                 int amplifier = obj.has("amplifier") ? obj.get("amplifier").getAsInt() : 0;
-                if (effect != null) {
-                    result.add(new EffectDef(effect, amplifier));
-                }
+                effectHolder.ifPresent(effect -> result.add(new EffectDef(effect, amplifier)));
             }
         }
         return result;
@@ -89,9 +88,9 @@ public class FormlessDebuffPassive extends AbstractPassiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "formless_debuff");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "formless_debuff");
     }
 
-    private record EffectDef(MobEffect effect, int amplifier) {}
+    private record EffectDef(Holder<MobEffect> effect, int amplifier) {}
 }

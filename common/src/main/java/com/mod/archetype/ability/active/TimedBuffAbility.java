@@ -6,7 +6,8 @@ import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -54,8 +55,8 @@ public class TimedBuffAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "timed_buff");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "timed_buff");
     }
 
     private List<EffectEntry> parseEffects() {
@@ -66,14 +67,12 @@ public class TimedBuffAbility extends AbstractActiveAbility {
                 JsonObject obj = arr.get(i).getAsJsonObject();
                 String effectId = obj.get("effect").getAsString();
                 int amplifier = obj.has("amplifier") ? obj.get("amplifier").getAsInt() : 0;
-                MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(effectId));
-                if (effect != null) {
-                    result.add(new EffectEntry(effect, amplifier));
-                }
+                var effectHolder = BuiltInRegistries.MOB_EFFECT.get(Identifier.parse(effectId));
+                effectHolder.ifPresent(effect -> result.add(new EffectEntry(effect, amplifier)));
             }
         }
         return result;
     }
 
-    private record EffectEntry(MobEffect effect, int amplifier) {}
+    private record EffectEntry(Holder<MobEffect> effect, int amplifier) {}
 }

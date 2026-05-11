@@ -4,7 +4,7 @@ import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -34,7 +34,9 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
     private float getEffectiveDamage(int level) {
         float dmg = baseDamage;
         if (level >= 10) dmg += 1.0f;
+        if (level >= 20) dmg += 1.0f;
         if (level >= 30) dmg += 1.0f;
+        if (level >= 40) dmg += 1.0f;
         if (level >= 60) dmg += 1.0f;
         return dmg;
     }
@@ -89,7 +91,7 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
         int slownessAmp = getEffectiveSelfSlownessAmplifier(level);
         if (slownessAmp >= 0) {
             player.addEffect(new MobEffectInstance(
-                    MobEffects.MOVEMENT_SLOWDOWN, levitationDuration + 70, slownessAmp,
+                    MobEffects.SLOWNESS, levitationDuration + 70, slownessAmp,
                     false, true, true
             ));
         }
@@ -130,7 +132,7 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
             currentTarget = null;
         }
         if (ownerRef != null) {
-            ownerRef.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+            ownerRef.removeEffect(MobEffects.SLOWNESS);
             ownerRef = null;
         }
         phase = 0;
@@ -143,7 +145,7 @@ public class AntigravityThrowAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "antigravity_throw");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "antigravity_throw");
     }
 }

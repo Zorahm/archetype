@@ -9,30 +9,18 @@
   ],
   "attributes": [
     {
-      "attribute": "minecraft:generic.max_health",
-      "operation": "ADDITION",
-      "value": -6.0
-    },
-    {
-      "attribute": "minecraft:generic.attack_damage",
+      "attribute": "minecraft:attack_damage",
       "operation": "MULTIPLY_BASE",
       "value": -0.2
     }
   ],
   "passive_abilities": [
     {
-      "type": "archetype:no_sneak",
+      "type": "archetype:elytra_fragility",
       "params": {},
       "positive": false,
-      "name": "passive.archetype.vi.no_sneak.name",
-      "description": "passive.archetype.vi.no_sneak.description"
-    },
-    {
-      "type": "archetype:destroy_holy_items",
-      "params": {},
-      "positive": false,
-      "name": "passive.archetype.ram.enemy_of_angel.name",
-      "description": "passive.archetype.ram.enemy_of_angel.description"
+      "name": "passive.archetype.vi.fragile_wings.name",
+      "description": "passive.archetype.vi.fragile_wings.description"
     },
     {
       "type": "archetype:tool_fragility",
@@ -40,6 +28,15 @@
       "positive": false,
       "name": "passive.archetype.ram.fragile_world.name",
       "description": "passive.archetype.ram.fragile_world.description"
+    },
+    {
+      "type": "archetype:totem_offhand_damage",
+      "params": {
+        "damage_per_second": 8.0
+      },
+      "positive": false,
+      "name": "passive.archetype.vi.totem_aversion.name",
+      "description": "passive.archetype.vi.totem_aversion.description"
     }
   ],
   "active_abilities": [
@@ -53,7 +50,7 @@
         "dash_speed": 1.25,
         "dash_ticks": 5,
         "no_fall_ticks": 20,
-        "damage": 2.0,
+        "damage": 4.0,
         "charges": 1
       },
       "name": "ability.archetype.vi.dash.name",
@@ -86,7 +83,7 @@
   "ability_stats": [
     {
       "name": "gui.archetype.vi.stat.dash_damage",
-      "base": 3.0,
+      "base": 5.0,
       "format": "int",
       "bonuses": [
         {"level": 10, "value": 1},
@@ -99,8 +96,8 @@
       "base": 1,
       "format": "int",
       "bonuses": [
-        {"level": 20, "value": 1},
-        {"level": 40, "value": 1}
+        {"level": 15, "value": 1},
+        {"level": 30, "value": 1}
       ]
     },
     {
@@ -141,11 +138,11 @@
     }
   ],
   "progression": [
-    { "level": 10, "key": "progression.archetype.vi.level_10" },
-    { "level": 15, "key": "progression.archetype.vi.level_15" },
-    { "level": 20, "key": "progression.archetype.vi.level_20" },
-    { "level": 30, "key": "progression.archetype.vi.level_30" },
-    { "level": 40, "key": "progression.archetype.vi.level_40" },
-    { "level": 50, "key": "progression.archetype.vi.level_50" }
+    {"level": 10, "ability": "dash", "key": "progression.archetype.vi.dash.10"},
+    {"level": 15, "ability": "dash", "key": "progression.archetype.vi.dash.15"},
+    {"level": 20, "ability": "dash", "key": "progression.archetype.vi.dash.20"},
+    {"level": 30, "ability": "dash", "key": "progression.archetype.vi.dash.30"},
+    {"level": 40, "ability": "dash", "key": "progression.archetype.vi.dash.40"},
+    {"level": 50, "ability": "dash", "key": "progression.archetype.vi.dash.50"}
   ]
 }

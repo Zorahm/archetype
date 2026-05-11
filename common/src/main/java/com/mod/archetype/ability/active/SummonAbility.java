@@ -3,10 +3,11 @@ package com.mod.archetype.ability.active;
 import com.mod.archetype.ability.AbstractActiveAbility;
 import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -53,7 +54,7 @@ public class SummonAbility extends AbstractActiveAbility {
             if (old != null) old.discard();
         }
 
-        Entity entity = typeOpt.get().create(level);
+        Entity entity = typeOpt.get().create(level, EntitySpawnReason.MOB_SUMMONED);
         if (entity == null) return ActivationResult.FAILED;
 
         Vec3 spawnPos = player.position().add(player.getLookAngle().scale(2));
@@ -87,7 +88,7 @@ public class SummonAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "summon");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "summon");
     }
 }

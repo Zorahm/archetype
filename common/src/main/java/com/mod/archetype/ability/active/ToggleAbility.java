@@ -8,7 +8,8 @@ import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -64,8 +65,8 @@ public class ToggleAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "toggle");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "toggle");
     }
 
     private void applyEffects(ServerPlayer player) {
@@ -80,13 +81,13 @@ public class ToggleAbility extends AbstractActiveAbility {
             JsonArray arr = params.getAsJsonArray("effects");
             for (int i = 0; i < arr.size(); i++) {
                 JsonObject obj = arr.get(i).getAsJsonObject();
-                MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(obj.get("effect").getAsString()));
+                var effectHolder = BuiltInRegistries.MOB_EFFECT.get(Identifier.parse(obj.get("effect").getAsString()));
                 int amp = obj.has("amplifier") ? obj.get("amplifier").getAsInt() : 0;
-                if (effect != null) result.add(new EffectDef(effect, amp));
+                effectHolder.ifPresent(effect -> result.add(new EffectDef(effect, amp)));
             }
         }
         return result;
     }
 
-    private record EffectDef(MobEffect effect, int amplifier) {}
+    private record EffectDef(Holder<MobEffect> effect, int amplifier) {}
 }

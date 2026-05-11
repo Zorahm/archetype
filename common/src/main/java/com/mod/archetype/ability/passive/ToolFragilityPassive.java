@@ -4,10 +4,11 @@ import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
@@ -28,7 +29,7 @@ public class ToolFragilityPassive extends AbstractPassiveAbility {
         ItemStack mainHand = player.getMainHandItem();
         if (!mainHand.isEmpty() && mainHand.isDamageableItem()) {
             int extraDamage = (mainHand.getItem() instanceof BowItem || mainHand.getItem() instanceof CrossbowItem) ? 3 : 1;
-            mainHand.hurtAndBreak(extraDamage, player, p -> p.broadcastBreakEvent(player.getUsedItemHand()));
+            mainHand.hurtAndBreak(extraDamage, player, EquipmentSlot.MAINHAND);
         }
     }
 
@@ -37,12 +38,12 @@ public class ToolFragilityPassive extends AbstractPassiveAbility {
         // Extra durability damage on block break: +1 for tools (2x total)
         ItemStack mainHand = player.getMainHandItem();
         if (!mainHand.isEmpty() && mainHand.isDamageableItem()) {
-            mainHand.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(player.getUsedItemHand()));
+            mainHand.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
         }
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "tool_fragility");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "tool_fragility");
     }
 }

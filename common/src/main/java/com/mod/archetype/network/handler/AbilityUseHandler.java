@@ -10,8 +10,7 @@ import com.mod.archetype.core.PlayerClass;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.network.AbilityUsePacket;
 import com.mod.archetype.platform.PlayerDataAccess;
-import dev.architectury.event.EventResult;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 public class AbilityUseHandler {
@@ -45,7 +44,7 @@ public class AbilityUseHandler {
         }
 
         // Validation 4: not on cooldown (skip for abilities that manage their own cooldown/charges)
-        ResourceLocation abilityId = new ResourceLocation(ability.getType().getNamespace(), slotName);
+        Identifier abilityId = Identifier.fromNamespaceAndPath(ability.getType().getNamespace(), slotName);
         if (!ability.managesCooldown() && data.getCooldown(abilityId) > 0) return;
 
         // Validation 5: enough resource
@@ -63,8 +62,7 @@ public class AbilityUseHandler {
         if (!ability.canActivate(player)) return;
 
         // Validation 8: pre-use event
-        EventResult preUseResult = ArchetypeEvents.ABILITY_PRE_USE.invoker().onPreUse(player, ability);
-        if (preUseResult == EventResult.interruptFalse()) return;
+        if (!ArchetypeEvents.ABILITY_PRE_USE.invoker().onPreUse(player, ability)) return;
 
         // Activate
         ActivationResult result = ability.activate(player);

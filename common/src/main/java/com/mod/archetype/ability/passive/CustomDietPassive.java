@@ -4,7 +4,7 @@ import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -33,7 +33,7 @@ public class CustomDietPassive extends AbstractPassiveAbility {
 
     @Override
     public void onPlayerEat(ServerPlayer player, ItemStack food) {
-        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(food.getItem());
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(food.getItem());
         String itemIdStr = itemId.toString();
 
         if (foodItems.contains(itemIdStr)) {
@@ -42,12 +42,12 @@ public class CustomDietPassive extends AbstractPassiveAbility {
         } else {
             // Non-diet foods cause negative effects
             player.addEffect(new MobEffectInstance(MobEffects.HUNGER, 200, 1));
-            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
+            player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 100, 0));
         }
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "custom_diet");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "custom_diet");
     }
 }

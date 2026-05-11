@@ -3,12 +3,16 @@ package com.mod.archetype.ability.passive;
 import com.mod.archetype.Archetype;
 import com.mod.archetype.ability.AbstractPassiveAbility;
 import com.mod.archetype.core.PlayerClass.PassiveAbilityEntry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 
 import java.util.List;
@@ -18,7 +22,7 @@ public class PotionCreatePassive extends AbstractPassiveAbility {
     private final Random random = new Random();
     private int tickCounter = 0;
 
-    private static final List<Potion> POTIONS = List.of(
+    private static final List<Holder<Potion>> POTIONS = List.of(
             Potions.HEALING, Potions.HARMING, Potions.REGENERATION,
             Potions.STRENGTH, Potions.SWIFTNESS, Potions.SLOWNESS,
             Potions.POISON, Potions.WEAKNESS, Potions.FIRE_RESISTANCE,
@@ -36,7 +40,8 @@ public class PotionCreatePassive extends AbstractPassiveAbility {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack.isEmpty()) continue;
-            if (PotionUtils.getPotion(stack) != Potions.WATER) continue;
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+            if (contents == null || !contents.is(Potions.WATER)) continue;
 
             // Handle regular, splash, and lingering water potions
             if (stack.is(Items.POTION)) {
@@ -53,22 +58,25 @@ public class PotionCreatePassive extends AbstractPassiveAbility {
     }
 
     private void convertPotion(ServerPlayer player, ItemStack stack, net.minecraft.world.item.Item potionItem) {
-        Potion potion = POTIONS.get(random.nextInt(POTIONS.size()));
+        Holder<Potion> potion = POTIONS.get(random.nextInt(POTIONS.size()));
 
         if (stack.getCount() > 1) {
             stack.shrink(1);
             ItemStack newPotion = new ItemStack(potionItem, 1);
-            PotionUtils.setPotion(newPotion, potion);
+            newPotion.set(DataComponents.POTION_CONTENTS, new PotionContents(potion));
             if (!player.getInventory().add(newPotion)) {
                 player.drop(newPotion, false);
             }
         } else {
-            PotionUtils.setPotion(stack, potion);
+            stack.set(DataComponents.POTION_CONTENTS, new PotionContents(potion));
         }
+
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.BREWING_STAND_BREW, SoundSource.PLAYERS, 0.4f, 1.0f);
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation(Archetype.MOD_ID, "potion_create");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "potion_create");
     }
 }

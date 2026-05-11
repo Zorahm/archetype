@@ -3,7 +3,7 @@ package com.mod.archetype.network;
 import com.mod.archetype.Archetype;
 import com.mod.archetype.network.handler.*;
 import com.mod.archetype.platform.NetworkHandler;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class NetworkInit {
 
@@ -51,7 +51,7 @@ public class NetworkInit {
         );
     }
 
-    private static ResourceLocation id(String path) {
-        return new ResourceLocation(Archetype.MOD_ID, path);
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(Archetype.MOD_ID, path);
     }
 }

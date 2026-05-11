@@ -6,8 +6,10 @@ import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.ActiveClassInstance;
 import com.mod.archetype.core.ClassManager;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 public class FormCancelAbility extends AbstractActiveAbility {
 
@@ -28,8 +30,24 @@ public class FormCancelAbility extends AbstractActiveAbility {
             return ActivationResult.FAILED;
         }
 
+        playFormDeathSound(player, formShift);
         formShift.forceDeactivate(player);
         return ActivationResult.SUCCESS;
+    }
+
+    private void playFormDeathSound(ServerPlayer player, FormShiftAbility formShift) {
+        var sound = switch (formShift.getCurrentForm().formId) {
+            case "zombie"          -> SoundEvents.ZOMBIE_DEATH;
+            case "creeper"         -> SoundEvents.CREEPER_DEATH;
+            case "snowman"         -> SoundEvents.SNOW_GOLEM_DEATH;
+            case "blaze"           -> SoundEvents.BLAZE_DEATH;
+            case "wither_skeleton" -> SoundEvents.WITHER_SKELETON_DEATH;
+            default                -> null;
+        };
+        if (sound != null) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    sound, SoundSource.PLAYERS, 1.0f, 1.0f);
+        }
     }
 
     private FormShiftAbility getFormShiftAbility(ServerPlayer player) {
@@ -45,7 +63,7 @@ public class FormCancelAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "form_cancel");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "form_cancel");
     }
 }

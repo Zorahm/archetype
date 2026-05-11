@@ -9,7 +9,9 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 
@@ -21,10 +23,12 @@ public class ArchetypeFabric implements ModInitializer {
         ConfigManager.loadServerConfig(FabricLoader.getInstance().getConfigDir());
 
         // Register items
+        Identifier rebirthScrollId = Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "rebirth_scroll");
+        ResourceKey<Item> rebirthScrollKey = ResourceKey.create(Registries.ITEM, rebirthScrollId);
         ModItems.REBIRTH_SCROLL = Registry.register(
                 BuiltInRegistries.ITEM,
-                new ResourceLocation(Archetype.MOD_ID, "rebirth_scroll"),
-                new RebirthScrollItem(new Item.Properties().stacksTo(1))
+                rebirthScrollKey,
+                new RebirthScrollItem(new Item.Properties().setId(rebirthScrollKey).stacksTo(1))
         );
 
         // Add to creative tab

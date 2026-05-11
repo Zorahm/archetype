@@ -1,12 +1,12 @@
 package com.mod.archetype.condition;
 
 import com.mod.archetype.Archetype;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 public class NotCondition implements Condition {
 
-    private static final ResourceLocation TYPE = new ResourceLocation(Archetype.MOD_ID, "not");
+    private static final Identifier TYPE = Identifier.fromNamespaceAndPath(Archetype.MOD_ID, "not");
 
     private final Condition child;
 
@@ -20,7 +20,7 @@ public class NotCondition implements Condition {
     }
 
     @Override
-    public ResourceLocation getType() {
+    public Identifier getType() {
         return TYPE;
     }
 }

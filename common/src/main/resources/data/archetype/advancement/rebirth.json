@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {"translate": "advancement.archetype.rebirth.title"},
+    "description": {"translate": "advancement.archetype.rebirth.description"},
+    "frame": "challenge"
+  },
+  "parent": "archetype:choose_class",
+  "criteria": {
+    "obtain_scroll": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["archetype:rebirth_scroll"]
+          }
+        ]
+      }
+    }
+  }
+}

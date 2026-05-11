@@ -1,28 +1,9 @@
 plugins {
-    id "architectury-plugin" version "3.4-SNAPSHOT"
-    id "dev.architectury.loom" version "1.6-SNAPSHOT" apply false
-}
-
-architectury {
-    minecraft = rootProject.minecraft_version
-}
-
-subprojects {
-    apply plugin: "dev.architectury.loom"
-
-    loom {
-        silentMojangMappingsLicense()
-    }
-
-    dependencies {
-        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        mappings loom.officialMojangMappings()
-    }
+    id "fabric-loom" version "1.15-SNAPSHOT" apply false
 }
 
 allprojects {
     apply plugin: "java"
-    apply plugin: "architectury-plugin"
 
     base {
         archivesName = rootProject.archives_base_name
@@ -32,12 +13,12 @@ allprojects {
     group = rootProject.maven_group
 
     repositories {
-        maven { url "https://maven.architectury.dev/" }
+        maven { url "https://maven.fabricmc.net/" }
     }
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = "UTF-8"
-        options.release = 17
+        options.release = 21
     }
 
     java {

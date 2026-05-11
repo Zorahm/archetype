@@ -7,7 +7,7 @@ import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -30,9 +30,7 @@ import java.util.Set;
 public class ViDashAbility extends AbstractActiveAbility {
 
     private final int dashTicks;
-    private final int noFallTicks;
     private int remainingDashTicks;
-    private int remainingNoFall;
     private final Set<Integer> hitEntities = new HashSet<>();
     private Vec3 dashDirection = Vec3.ZERO;
 
@@ -64,7 +62,6 @@ public class ViDashAbility extends AbstractActiveAbility {
     public ViDashAbility(ActiveAbilityEntry entry) {
         super(entry);
         this.dashTicks = getInt("dash_ticks", 5);
-        this.noFallTicks = getInt("no_fall_ticks", 20);
         this.maxChargesBase = getInt("charges", 1);
     }
 
@@ -82,8 +79,8 @@ public class ViDashAbility extends AbstractActiveAbility {
 
     private int computeMaxCharges(ServerPlayer player) {
         int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
-        // +1 charge at XP 20, +1 at XP 40
-        int extra = (classLevel >= 20 ? 1 : 0) + (classLevel >= 40 ? 1 : 0);
+        // +1 charge at XP 15, +1 at XP 30
+        int extra = (classLevel >= 15 ? 1 : 0) + (classLevel >= 30 ? 1 : 0);
         return maxChargesBase + extra;
     }
 
@@ -107,7 +104,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         }
         if (prevCharges == 0 && charges > 0) {
             var data = PlayerDataAccess.INSTANCE.getClassData(player);
-            data.setCooldown(new ResourceLocation("archetype", entry.slot()), 0);
+            data.setCooldown(Identifier.fromNamespaceAndPath("archetype", entry.slot()), 0);
         }
     }
 
@@ -158,7 +155,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         lastRefillTime = player.level().getGameTime();
         if (charges == 0) {
             var data = PlayerDataAccess.INSTANCE.getClassData(player);
-            data.setCooldown(new ResourceLocation("archetype", entry.slot()), computeRefillTicks(player));
+            data.setCooldown(Identifier.fromNamespaceAndPath("archetype", entry.slot()), computeRefillTicks(player));
         }
 
         int classLevel = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
@@ -183,7 +180,7 @@ public class ViDashAbility extends AbstractActiveAbility {
         ItemStack offhand = player.getOffhandItem();
         currentFireTrail = offhand.is(Items.BLAZE_POWDER) && classLevel >= 20;
         currentWitherTrail = offhand.is(Items.WITHER_ROSE);
-        currentSnowSlow = offhand.is(Items.SNOW_BLOCK);
+        currentSnowSlow = offhand.is(Items.SNOWBALL);
 
         // Consume offhand item
         if (currentFireTrail || currentWitherTrail || currentSnowSlow) {
@@ -194,16 +191,15 @@ public class ViDashAbility extends AbstractActiveAbility {
         dashDirection = computeDashDirection(player);
 
         currentDashSpeed = getFloat("dash_speed", 2.0f);
-        player.setDeltaMovement(dashDirection.scale(currentDashSpeed));
+        player.setDeltaMovement(dashDirection.x * currentDashSpeed, player.getDeltaMovement().y, dashDirection.z * currentDashSpeed);
         player.hurtMarked = true;
         active = true;
         remainingDashTicks = dashTicks;
-        remainingNoFall = noFallTicks;
         remainingFireImmunityTicks = currentFireTrail ? 20 : 0;
         hitEntities.clear();
 
         // Resistance during dash
-        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, currentResistanceAmplifier, true, false, false));
+        player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 20, currentResistanceAmplifier, true, false, false));
 
         // Sound effect
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -211,7 +207,8 @@ public class ViDashAbility extends AbstractActiveAbility {
 
         // Dragon breath particle
         if (player.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.DRAGON_BREATH,
+            serverLevel.sendParticles(
+                    net.minecraft.core.particles.PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0f),
                     player.getX(), player.getY() + 1, player.getZ(),
                     15, 0.2, 0.5, 0.2, 0.1);
         }
@@ -226,8 +223,8 @@ public class ViDashAbility extends AbstractActiveAbility {
     @Override
     public void tickActive(ServerPlayer player) {
         if (remainingDashTicks > 0) {
-            // Force movement along dash direction
-            player.setDeltaMovement(dashDirection.scale(currentDashSpeed));
+            // Force movement along dash direction, preserve vertical velocity
+            player.setDeltaMovement(dashDirection.x * currentDashSpeed, player.getDeltaMovement().y, dashDirection.z * currentDashSpeed);
             player.hurtMarked = true;
             remainingDashTicks--;
 
@@ -255,7 +252,7 @@ public class ViDashAbility extends AbstractActiveAbility {
                     living.addEffect(new MobEffectInstance(MobEffects.WITHER, currentEffectDurationTicks, currentEffectAmplifier));
                 }
                 if (currentSnowSlow && entity instanceof LivingEntity living) {
-                    living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, currentEffectDurationTicks, currentEffectAmplifier));
+                    living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, currentEffectDurationTicks, currentEffectAmplifier));
                 }
             }
 
@@ -264,8 +261,8 @@ public class ViDashAbility extends AbstractActiveAbility {
                 placeFireAlongPath(player, currentPos, projectedPos);
             }
 
-            // Stop horizontal movement when dash ends
-            if (remainingDashTicks <= 0) {
+            // Stop horizontal movement when dash ends (only on ground)
+            if (remainingDashTicks <= 0 && player.getDeltaMovement().y >= 0) {
                 player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
                 player.hurtMarked = true;
             }
@@ -277,13 +274,7 @@ public class ViDashAbility extends AbstractActiveAbility {
             remainingFireImmunityTicks--;
         }
 
-        // No-fall protection continues after dash movement ends
-        if (remainingNoFall > 0) {
-            player.fallDistance = 0;
-            remainingNoFall--;
-        }
-
-        if (remainingDashTicks <= 0 && remainingNoFall <= 0 && remainingFireImmunityTicks <= 0) {
+        if (remainingDashTicks <= 0 && remainingFireImmunityTicks <= 0) {
             active = false;
             hitEntities.clear();
         }
@@ -307,7 +298,7 @@ public class ViDashAbility extends AbstractActiveAbility {
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "vi_dash");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "vi_dash");
     }
 }

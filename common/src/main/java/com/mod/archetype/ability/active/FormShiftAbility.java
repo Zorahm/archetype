@@ -8,9 +8,11 @@ import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
+import net.minecraft.core.Holder;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -28,15 +30,14 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class FormShiftAbility extends AbstractActiveAbility {
 
-    private static final UUID FORM_HEALTH_UUID = UUID.fromString("a1b2c3d4-1111-4000-8000-000000000001");
-    private static final UUID FORM_ATTACK_DAMAGE_UUID = UUID.fromString("a1b2c3d4-2222-4000-8000-000000000002");
-    private static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("a1b2c3d4-3333-4000-8000-000000000003");
-    private static final UUID ZOMBIE_NIGHT_DAMAGE_UUID = UUID.fromString("a1b2c3d4-4444-4000-8000-000000000004");
-    private static final UUID ZOMBIE_NIGHT_SPEED_UUID = UUID.fromString("a1b2c3d4-5555-4000-8000-000000000005");
+    private static final Identifier FORM_HEALTH_ID = Identifier.fromNamespaceAndPath("archetype", "form_health");
+    private static final Identifier FORM_ATTACK_DAMAGE_ID = Identifier.fromNamespaceAndPath("archetype", "form_damage");
+    private static final Identifier FORM_ATTACK_SPEED_ID = Identifier.fromNamespaceAndPath("archetype", "form_speed");
+    private static final Identifier ZOMBIE_NIGHT_DAMAGE_ID = Identifier.fromNamespaceAndPath("archetype", "zombie_night_damage");
+    private static final Identifier ZOMBIE_NIGHT_SPEED_ID = Identifier.fromNamespaceAndPath("archetype", "zombie_night_speed");
 
     private final List<FormDefinition> forms;
     private final int globalDamageGrowthPer5Levels;
@@ -75,6 +76,11 @@ public class FormShiftAbility extends AbstractActiveAbility {
         return active && currentForm != null;
     }
 
+    public float getFallDamageMultiplier() {
+        if (currentForm == null) return 1.0f;
+        return currentForm.fallDamageMultiplier;
+    }
+
     @Override
     public ActivationResult activate(ServerPlayer player) {
         if (active) {
@@ -96,15 +102,28 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
         if (matchedForm == null) return ActivationResult.FAILED;
 
-        held.shrink(1);
+        if (matchedForm.consumesItem) {
+            held.shrink(1);
+        }
 
         currentForm = matchedForm;
         active = true;
 
         applyFormModifiers(player, matchedForm);
         playFormSound(player, matchedForm.formId);
+        spawnFormParticles(player, "minecraft:trial_spawner_detection");
 
         return ActivationResult.SUCCESS;
+    }
+
+    private void spawnFormParticles(ServerPlayer player, String particleId) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) return;
+        var particleType = BuiltInRegistries.PARTICLE_TYPE.getValue(Identifier.parse(particleId));
+        if (particleType instanceof ParticleOptions options) {
+            serverLevel.sendParticles(options,
+                    player.getX(), player.getY() + 0.1, player.getZ(),
+                    5, 0.3, 0.0, 0.3, 0.1);
+        }
     }
 
     private void playFormSound(ServerPlayer player, String formId) {
@@ -130,36 +149,36 @@ public class FormShiftAbility extends AbstractActiveAbility {
         float speedMod = form.getEffectiveAttackSpeedModifier(level);
 
         if (healthMod != 0) {
-            applyModifier(player, Attributes.MAX_HEALTH, FORM_HEALTH_UUID,
-                    "Form Health", healthMod, AttributeModifier.Operation.ADDITION);
+            applyModifier(player, Attributes.MAX_HEALTH, FORM_HEALTH_ID,
+                    "Form Health", healthMod, AttributeModifier.Operation.ADD_VALUE);
             if (healthMod > 0) {
                 player.setHealth(Math.min(player.getHealth() + healthMod, player.getMaxHealth()));
             }
         }
         if (damageMod != 0) {
-            applyModifier(player, Attributes.ATTACK_DAMAGE, FORM_ATTACK_DAMAGE_UUID,
-                    "Form Damage", damageMod, AttributeModifier.Operation.MULTIPLY_BASE);
+            applyModifier(player, Attributes.ATTACK_DAMAGE, FORM_ATTACK_DAMAGE_ID,
+                    "Form Damage", damageMod, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         }
         if (speedMod != 0) {
-            applyModifier(player, Attributes.ATTACK_SPEED, FORM_ATTACK_SPEED_UUID,
-                    "Form Speed", speedMod, AttributeModifier.Operation.MULTIPLY_BASE);
+            applyModifier(player, Attributes.ATTACK_SPEED, FORM_ATTACK_SPEED_ID,
+                    "Form Speed", speedMod, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         }
     }
 
-    private void applyModifier(ServerPlayer player, net.minecraft.world.entity.ai.attributes.Attribute attribute,
-                               UUID uuid, String name, double value, AttributeModifier.Operation op) {
+    private void applyModifier(ServerPlayer player, Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute,
+                               Identifier id, String name, double value, AttributeModifier.Operation op) {
         AttributeInstance inst = player.getAttribute(attribute);
         if (inst == null) return;
-        inst.removeModifier(uuid);
-        inst.addTransientModifier(new AttributeModifier(uuid, name, value, op));
+        inst.removeModifier(id);
+        inst.addTransientModifier(new AttributeModifier(id, value, op));
     }
 
     private void removeFormModifiers(ServerPlayer player) {
-        removeModifier(player, Attributes.MAX_HEALTH, FORM_HEALTH_UUID);
-        removeModifier(player, Attributes.ATTACK_DAMAGE, FORM_ATTACK_DAMAGE_UUID);
-        removeModifier(player, Attributes.ATTACK_SPEED, FORM_ATTACK_SPEED_UUID);
-        removeModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_UUID);
-        removeModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_UUID);
+        removeModifier(player, Attributes.MAX_HEALTH, FORM_HEALTH_ID);
+        removeModifier(player, Attributes.ATTACK_DAMAGE, FORM_ATTACK_DAMAGE_ID);
+        removeModifier(player, Attributes.ATTACK_SPEED, FORM_ATTACK_SPEED_ID);
+        removeModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_ID);
+        removeModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_ID);
         zombieNightModifiersActive = false;
 
         if (player.getHealth() > player.getMaxHealth()) {
@@ -167,11 +186,11 @@ public class FormShiftAbility extends AbstractActiveAbility {
         }
     }
 
-    private void removeModifier(ServerPlayer player, net.minecraft.world.entity.ai.attributes.Attribute attribute,
-                                UUID uuid) {
+    private void removeModifier(ServerPlayer player, Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute,
+                                Identifier id) {
         AttributeInstance inst = player.getAttribute(attribute);
         if (inst != null) {
-            inst.removeModifier(uuid);
+            inst.removeModifier(id);
         }
     }
 
@@ -192,40 +211,37 @@ public class FormShiftAbility extends AbstractActiveAbility {
     private void tickZombieForm(ServerPlayer player) {
         if (player.level().isClientSide()) return;
         int level = PlayerDataAccess.INSTANCE.getClassData(player).getClassLevel();
-        boolean isDay = player.level().isDay();
+        long dayTime = player.level().getDayTime() % 24000;
+        boolean isDay = dayTime < 12000;
         boolean hasSkyAccess = player.level().canSeeSky(player.blockPosition());
         boolean isNightOrCave = !isDay || !hasSkyAccess;
 
         if (player.tickCount % 20 == 0) {
-            // Constant slowness I, hidden particles
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, false, false));
+            player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 0, false, false, false));
 
-            // Sun damage
             if (isDay && hasSkyAccess && currentForm.isSunDamageEnabled(level)) {
-                player.setSecondsOnFire(2);
+                player.setRemainingFireTicks(40);
             }
 
-            // Night vision at night/caves when level >= 10
             if (currentForm.hasNightVisionAtLevel(level) && isNightOrCave) {
                 player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 400, 0, false, false, false));
             }
 
-            // Night attack bonuses (applied dynamically based on day/night)
             if (isNightOrCave) {
                 float nightDamage = currentForm.getEffectiveNightAttackDamage(level);
                 float nightSpeed = currentForm.getEffectiveNightAttackSpeed(level);
                 if (nightDamage > 0) {
-                    applyModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_UUID,
-                            "Zombie Night Damage", nightDamage, AttributeModifier.Operation.MULTIPLY_BASE);
+                    applyModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_ID,
+                            "Zombie Night Damage", nightDamage, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
                 }
                 if (nightSpeed > 0) {
-                    applyModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_UUID,
-                            "Zombie Night Speed", nightSpeed, AttributeModifier.Operation.MULTIPLY_BASE);
+                    applyModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_ID,
+                            "Zombie Night Speed", nightSpeed, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
                 }
                 zombieNightModifiersActive = nightDamage > 0 || nightSpeed > 0;
             } else if (zombieNightModifiersActive) {
-                removeModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_UUID);
-                removeModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_UUID);
+                removeModifier(player, Attributes.ATTACK_DAMAGE, ZOMBIE_NIGHT_DAMAGE_ID);
+                removeModifier(player, Attributes.ATTACK_SPEED, ZOMBIE_NIGHT_SPEED_ID);
                 zombieNightModifiersActive = false;
             }
         }
@@ -238,9 +254,6 @@ public class FormShiftAbility extends AbstractActiveAbility {
         }
     }
 
-    /**
-     * Called by FormlessDebuffPassive when the player attacks an entity.
-     */
     public void handleOnHit(ServerPlayer player, Entity target) {
         if (!active || currentForm == null || !(target instanceof LivingEntity living)) return;
 
@@ -267,7 +280,7 @@ public class FormShiftAbility extends AbstractActiveAbility {
                 }
             }
             case "effect" -> {
-                MobEffect effect = currentForm.getOnHitEffect();
+                Holder<MobEffect> effect = currentForm.getOnHitEffect();
                 if (effect != null) {
                     int duration = currentForm.getEffectiveOnHitEffectDuration(level);
                     int amplifier = currentForm.getEffectiveOnHitEffectAmplifier(level);
@@ -282,26 +295,28 @@ public class FormShiftAbility extends AbstractActiveAbility {
             }
             case "fire" -> {
                 int fireTicks = currentForm.getEffectiveOnHitFireDuration(level);
-                living.setSecondsOnFire(fireTicks / 20);
+                living.setRemainingFireTicks(fireTicks);
             }
         }
     }
 
     @Override
     public void forceDeactivate(ServerPlayer player) {
+        if (currentForm != null) {
+            spawnFormParticles(player, "minecraft:trial_omen");
+        }
         removeFormModifiers(player);
         currentForm = null;
         active = false;
 
-        // Sync form deactivation to client
         var data = PlayerDataAccess.INSTANCE.getClassData(player);
-        ResourceLocation abilityId = new ResourceLocation("archetype", "ability_1");
+        Identifier abilityId = Identifier.fromNamespaceAndPath("archetype", "ability_1");
         data.setToggleState(abilityId, false);
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "form_shift");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "form_shift");
     }
 
     static class FormDefinition {
@@ -309,7 +324,6 @@ public class FormShiftAbility extends AbstractActiveAbility {
         final String formId;
         final String onHitType;
 
-        // On-hit base params
         final float baseOnHitDamage;
         final float baseOnHitRadius;
         final String onHitEffectId;
@@ -317,16 +331,17 @@ public class FormShiftAbility extends AbstractActiveAbility {
         final int baseOnHitEffectAmplifier;
         final int baseOnHitFireDuration;
 
-        // Attribute modifiers
         final float attackDamageModifier;
         final float attackSpeedModifier;
         final float maxHealthModifier;
 
-        // Zombie-specific
         final boolean hasSunDamage;
         final float baseNightAttackDamage;
         final float baseNightAttackSpeed;
 
+        final float fallDamageMultiplier;
+
+        final boolean consumesItem;
         final JsonArray progression;
 
         FormDefinition(JsonObject json) {
@@ -351,12 +366,15 @@ public class FormShiftAbility extends AbstractActiveAbility {
             this.baseNightAttackDamage = json.has("night_attack_damage_modifier") ? json.get("night_attack_damage_modifier").getAsFloat() : 0;
             this.baseNightAttackSpeed = json.has("night_attack_speed_modifier") ? json.get("night_attack_speed_modifier").getAsFloat() : 0;
 
+            this.fallDamageMultiplier = json.has("fall_damage_multiplier") ? json.get("fall_damage_multiplier").getAsFloat() : 1.0f;
+
+            this.consumesItem = !json.has("consumes_item") || json.get("consumes_item").getAsBoolean();
             this.progression = json.has("progression") ? json.getAsJsonArray("progression") : new JsonArray();
         }
 
-        MobEffect getOnHitEffect() {
+        Holder<MobEffect> getOnHitEffect() {
             if (onHitEffectId.isEmpty()) return null;
-            return BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(onHitEffectId));
+            return BuiltInRegistries.MOB_EFFECT.get(Identifier.parse(onHitEffectId)).orElse(null);
         }
 
         boolean isSunDamageEnabled(int level) {
@@ -477,7 +495,14 @@ public class FormShiftAbility extends AbstractActiveAbility {
 
         float getEffectiveHealthModifier(int level) {
             if ("zombie".equals(formId)) {
-                return 0;
+                float bonus = 0;
+                for (JsonElement elem : progression) {
+                    JsonObject p = elem.getAsJsonObject();
+                    if (p.has("level") && p.has("health_modifier") && level >= p.get("level").getAsInt()) {
+                        bonus = p.get("health_modifier").getAsFloat();
+                    }
+                }
+                return bonus;
             }
             return maxHealthModifier;
         }

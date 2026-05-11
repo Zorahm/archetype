@@ -1,6 +1,6 @@
 package com.mod.archetype.ability;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 public interface ActiveAbility {
@@ -29,7 +29,7 @@ public interface ActiveAbility {
 
     default int getMaxCharges(ServerPlayer player) { return -1; }
 
-    ResourceLocation getType();
+    Identifier getType();
 
     String getSlot();
 
@@ -47,5 +47,5 @@ public interface ActiveAbility {
 
     String getDescriptionKey();
 
-    ResourceLocation getIcon();
+    Identifier getIcon();
 }

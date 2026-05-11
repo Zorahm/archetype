@@ -5,7 +5,7 @@ import com.mod.archetype.ability.ActivationResult;
 import com.mod.archetype.core.PlayerClass.ActiveAbilityEntry;
 import com.mod.archetype.data.PlayerClassData;
 import com.mod.archetype.platform.PlayerDataAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -14,11 +14,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.Random;
-import java.util.UUID;
 
 public class SpaceRiftAbility extends AbstractActiveAbility {
-    private static final UUID RIFT_SPEED_UUID = UUID.nameUUIDFromBytes("archetype:rift_speed".getBytes());
-    private static final UUID RIFT_HP_UUID = UUID.nameUUIDFromBytes("archetype:rift_hp".getBytes());
+    private static final Identifier RIFT_SPEED_ID = Identifier.fromNamespaceAndPath("archetype", "rift_speed");
+    private static final Identifier RIFT_HP_ID = Identifier.fromNamespaceAndPath("archetype", "rift_hp");
 
     private final Random random = new Random();
     private final int realCooldown; // actual cooldown applied after effect ends
@@ -105,43 +104,43 @@ public class SpaceRiftAbility extends AbstractActiveAbility {
         switch (effect) {
             case LOW_GRAVITY -> {
                 player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 1200, 0, true, false));
-                player.addEffect(new MobEffectInstance(MobEffects.JUMP, 1200, 2, true, false));
+                player.addEffect(new MobEffectInstance(MobEffects.JUMP_BOOST, 1200, 2, true, false));
             }
             case HIGH_GRAVITY -> {
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 1200, 1, true, false));
+                player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 1200, 1, true, false));
             }
             case SHRINK -> {
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 1200, 0, true, false));
+                player.addEffect(new MobEffectInstance(MobEffects.SPEED, 1200, 0, true, false));
             }
             case GROW -> {
-                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 1200, 0, true, false));
+                player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 1200, 0, true, false));
             }
             case SPEED_UP -> {
                 AttributeInstance attr = player.getAttribute(Attributes.MOVEMENT_SPEED);
                 if (attr != null) {
-                    attr.removeModifier(RIFT_SPEED_UUID);
-                    attr.addTransientModifier(new AttributeModifier(RIFT_SPEED_UUID, "archetype:rift_speed", 0.3, AttributeModifier.Operation.MULTIPLY_BASE));
+                    attr.removeModifier(RIFT_SPEED_ID);
+                    attr.addTransientModifier(new AttributeModifier(RIFT_SPEED_ID, 0.3, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
                 }
             }
             case SPEED_DOWN -> {
                 AttributeInstance attr = player.getAttribute(Attributes.MOVEMENT_SPEED);
                 if (attr != null) {
-                    attr.removeModifier(RIFT_SPEED_UUID);
-                    attr.addTransientModifier(new AttributeModifier(RIFT_SPEED_UUID, "archetype:rift_speed", -0.2, AttributeModifier.Operation.MULTIPLY_BASE));
+                    attr.removeModifier(RIFT_SPEED_ID);
+                    attr.addTransientModifier(new AttributeModifier(RIFT_SPEED_ID, -0.2, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
                 }
             }
             case HP_UP -> {
                 AttributeInstance attr = player.getAttribute(Attributes.MAX_HEALTH);
                 if (attr != null) {
-                    attr.removeModifier(RIFT_HP_UUID);
-                    attr.addTransientModifier(new AttributeModifier(RIFT_HP_UUID, "archetype:rift_hp", 4.0, AttributeModifier.Operation.ADDITION));
+                    attr.removeModifier(RIFT_HP_ID);
+                    attr.addTransientModifier(new AttributeModifier(RIFT_HP_ID, 4.0, AttributeModifier.Operation.ADD_VALUE));
                 }
             }
             case HP_DOWN -> {
                 AttributeInstance attr = player.getAttribute(Attributes.MAX_HEALTH);
                 if (attr != null) {
-                    attr.removeModifier(RIFT_HP_UUID);
-                    attr.addTransientModifier(new AttributeModifier(RIFT_HP_UUID, "archetype:rift_hp", -4.0, AttributeModifier.Operation.ADDITION));
+                    attr.removeModifier(RIFT_HP_ID);
+                    attr.addTransientModifier(new AttributeModifier(RIFT_HP_ID, -4.0, AttributeModifier.Operation.ADD_VALUE));
                     if (player.getHealth() > player.getMaxHealth()) {
                         player.setHealth(player.getMaxHealth());
                     }
@@ -154,17 +153,17 @@ public class SpaceRiftAbility extends AbstractActiveAbility {
         switch (currentEffect) {
             case LOW_GRAVITY -> {
                 player.removeEffect(MobEffects.SLOW_FALLING);
-                player.removeEffect(MobEffects.JUMP);
+                player.removeEffect(MobEffects.JUMP_BOOST);
             }
-            case HIGH_GRAVITY, GROW -> player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
-            case SHRINK -> player.removeEffect(MobEffects.MOVEMENT_SPEED);
+            case HIGH_GRAVITY, GROW -> player.removeEffect(MobEffects.SLOWNESS);
+            case SHRINK -> player.removeEffect(MobEffects.SPEED);
             case SPEED_UP, SPEED_DOWN -> {
                 AttributeInstance attr = player.getAttribute(Attributes.MOVEMENT_SPEED);
-                if (attr != null) attr.removeModifier(RIFT_SPEED_UUID);
+                if (attr != null) attr.removeModifier(RIFT_SPEED_ID);
             }
             case HP_UP, HP_DOWN -> {
                 AttributeInstance attr = player.getAttribute(Attributes.MAX_HEALTH);
-                if (attr != null) attr.removeModifier(RIFT_HP_UUID);
+                if (attr != null) attr.removeModifier(RIFT_HP_ID);
                 if (player.getHealth() > player.getMaxHealth()) {
                     player.setHealth(player.getMaxHealth());
                 }
@@ -206,12 +205,12 @@ public class SpaceRiftAbility extends AbstractActiveAbility {
      */
     private void applyRealCooldown(ServerPlayer player) {
         PlayerClassData data = PlayerDataAccess.INSTANCE.getClassData(player);
-        ResourceLocation abilityId = new ResourceLocation(entry.type().getNamespace(), entry.slot());
+        Identifier abilityId = Identifier.fromNamespaceAndPath(entry.type().getNamespace(), entry.slot());
         data.setCooldown(abilityId, realCooldown);
     }
 
     @Override
-    public ResourceLocation getType() {
-        return new ResourceLocation("archetype", "space_rift");
+    public Identifier getType() {
+        return Identifier.fromNamespaceAndPath("archetype", "space_rift");
     }
 }
